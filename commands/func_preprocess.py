@@ -3,10 +3,6 @@
 This script uses nipype for anatomical preprocessing
 """
 
-import sys
-sys.path.append('/Users/zarrar/Code/nipype') # replace with dynamic path
-sys.path.append('/Users/zarrar/Dropbox/code/niscripts/include') # replace with dynamic path
-
 import numpy as np
 
 from nipype.utils.filemanip import fname_presuffix
@@ -19,6 +15,10 @@ import nipype.interfaces.utility as util # utility
 import nipype.pipeline.engine as pe # pypeline engine
 import os # system functions
 import argparse # command-line
+import os.path as op
+
+import sys
+sys.path.append(op.join(op.dirname(op.abspath( __file__ )), "../include"))
 
 import e_afni, misc, usage_subjects # my own extra stuff
 from utilities import *
