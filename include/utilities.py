@@ -9,6 +9,9 @@ class OutputConnector(object):
         self.outnode = outnode
         return
     
+    def __call__(self, *args, **kwrds):
+        return self.connect(*args, **kwrds)
+    
     def connect(self, procnode, procfield, outfield, outnode=None, **rename_kwrds):
         rename_kwrds.setdefault('format_string', outfield)
         rename_kwrds.setdefault('keep_ext', True)

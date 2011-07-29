@@ -114,6 +114,7 @@ def wrap_func_preproc_workflow(
     inputnode = preproc.get_node("inputspec")
     outputnode = preproc.get_node("outputspec")
     
+    
     ######
     # Setup data source
     ######
@@ -447,7 +448,7 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     preproc.connect(concatnode, 'out', selectnode, 'inlist')
     preproc.connect(inputnode, ('fwhm', chooseindex), selectnode, 'index')
     rename_smooth = renamer.connect(selectnode, 'out', 'func_mc_sm', 
-                                    name="func_mc_sm%(fwhm)s", 
+                                    format_string="func_mc_sm%(fwhm)s", 
                                     fwhm=None)
     preproc.connect(inputnode, ('fwhm', fwhm_used), rename_smooth, 'fwhm')
     
@@ -463,7 +464,7 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     preproc.connect(selectnode, 'out', filt, 'in_file')
     ## set renamed output
     rename_filt = renamer.connect(filt, 'out_file', 'func_mc_sm_ft', 
-                                  name="func_mc_sm%(fwhm)s_hp%(hp)s_lp%(lp)s",
+                                  format_string="func_mc_sm%(fwhm)s_hp%(hp)s_lp%(lp)s",
                                   fwhm=None, hp=None, lp=None)
     preproc.connect(inputnode, ('fwhm', fwhm_used), rename_filt, 'fwhm')
     preproc.connect(inputnode, ('highpass', filter_used), rename_filt, 'hp')
