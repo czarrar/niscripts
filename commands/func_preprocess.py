@@ -630,9 +630,9 @@ def main(arglist):
     parser = create_parser()
     args = parser.parse_args(arglist)
     kwrds = vars(args)
-    ap_pipeline = wrap_func_preproc_workflow(**kwrds)
-    ap_pipeline.run()
-    ap_pipeline.write_graph()
+    fp_pipeline = wrap_func_preproc_workflow(**kwrds)
+    fp_pipeline.run(plugin=args.plugin, plugin_args=args.plugin_args)
+    #fp_pipeline.write_graph()
     return
 
 if __name__ == "__main__":

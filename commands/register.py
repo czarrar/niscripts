@@ -1012,8 +1012,8 @@ def main(arglist):
     args = parser.parse_args(arglist)
     kwrds = vars(args)
     reg_pipe = register(**kwrds)
-    reg_pipe.run()
-    reg_pipe.write_graph()
+    reg_pipe.run(plugin=args.plugin, plugin_args=args.plugin_args)
+    #reg_pipe.write_graph()
     return
 
 def test_p(fnirt=False):

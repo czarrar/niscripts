@@ -151,7 +151,7 @@ def main(arglist):
     args = parser.parse_args(arglist)
     kwrds = vars(args)
     ap_pipeline = create_anat_preproc_workflow(**kwrds)
-    ap_pipeline.run()
+    ap_pipeline.run(plugin=args.plugin, plugin_args=args.plugin_args)
     return
 
 

@@ -27,6 +27,19 @@ class store_basedir(argparse.Action):
         setattr(namespace, 'output_basedir', os.path.abspath(values[1]))
     
 
+class store_plugin(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if values[0] == "MultiProc":
+            nvalues = 2
+            namespace.plugin_args = {'n_procs': values[1]}
+        else:
+            nvalues = 1
+            namespace.plugin_args = {}
+        if len(values) > nvalues:
+            parser.error("Too many arguments (%i) specified for %s" % (len(values), option_string))
+        setattr(namespace, self.dest, values[0])
+    
+
 
 # Parent Parser
 
@@ -43,3 +56,5 @@ parent_group.add_argument('--workingdir', action=store_directory, required=True)
 parent_group.add_argument('--output-type', default="NIFTI_GZ", choices=['NIFTI', 'NIFTI_GZ'])
 
 parent_group.add_argument('--name', default=argparse.SUPPRESS)
+
+parent_group.add_argument('--plugin', choices=["Linear", "MultiProc", "SGE"], nargs="+", action=store_plugin, required=True)
