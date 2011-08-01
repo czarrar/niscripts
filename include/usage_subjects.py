@@ -31,7 +31,7 @@ class store_plugin(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         if values[0] == "MultiProc":
             nvalues = 2
-            namespace.plugin_args = {'n_procs': values[1]}
+            namespace.plugin_args = {'n_procs': int(values[1])}
         else:
             nvalues = 1
             namespace.plugin_args = {}
