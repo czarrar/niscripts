@@ -630,9 +630,9 @@ def main(arglist):
     parser = create_parser()
     args = parser.parse_args(arglist)
     kwrds = vars(args)
-    del kwrds['plugin']; del kwrds['plugin_args']
+    plugin = kwrds.pop('plugin'); plugin_args = kwrds.pop('plugin_args')
     fp_pipeline = wrap_func_preproc_workflow(**kwrds)
-    fp_pipeline.run(plugin=args.plugin, plugin_args=args.plugin_args)
+    fp_pipeline.run(plugin=plugin, plugin_args=plugin_args)
     #fp_pipeline.write_graph()
     return
 

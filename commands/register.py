@@ -1011,9 +1011,9 @@ def main(arglist):
     parser = create_parser()
     args = parser.parse_args(arglist)
     kwrds = vars(args)
-    del kwrds['plugin']; del kwrds['plugin_args']
+    plugin = kwrds.pop('plugin'); plugin_args = kwrds.pop('plugin_args')
     reg_pipe = register(**kwrds)
-    reg_pipe.run(plugin=args.plugin, plugin_args=args.plugin_args)
+    reg_pipe.run(plugin=plugin, plugin_args=plugin_args)
     #reg_pipe.write_graph()
     return
 
