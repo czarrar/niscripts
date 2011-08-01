@@ -57,4 +57,4 @@ parent_group.add_argument('--output-type', default="NIFTI_GZ", choices=['NIFTI',
 
 parent_group.add_argument('--name', default=argparse.SUPPRESS)
 
-parent_group.add_argument('--plugin', choices=["Linear", "MultiProc", "SGE"], nargs="+", action=store_plugin, required=True)
+parent_group.add_argument('--plugin', nargs="+", action=store_plugin, required=True)
