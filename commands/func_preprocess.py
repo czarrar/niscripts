@@ -78,7 +78,7 @@ def fwhm_used(fwhm):
     if fwhm<1:
         return str(0)
     else:
-        return str(fwhm).replace(".", "-")
+        return str(int(fwhm))
 
 def filter_used(filt):
     if filt<0:
@@ -89,7 +89,30 @@ def filter_used(filt):
 def getmeanscale(medianvals):
     return ['-mul %.10f'%(10000./val) for val in medianvals]
 
+def combine_motion_params(in_files):
+    import sys
+    from os import getcwd, environ
+    from os.path import join, basename, splitext
+    sys.path.append(join(environ.get("NISCRIPTS"), "include"))
+    from execute import Process
+    
+    cwd = getcwd()
+    ext = "png"
+    out_file = join(cwd, basename(in_files[0]))
+    f = file(out_file, 'w')
+    
+    tmp = Process("cat %s" % " ".join(in_files), stdout=f, cwd=cwd, to_print=True)
+    print tmp.stderr
+    
+    return out_file
+
+def get_overlay_args(fname):
+    """Args for the overlay1 option of slicer"""
+    return (fname, 1, 1)
+
 tolist = lambda x: [x]
+
+
 
 def wrap_func_preproc_workflow(
     subject_list,  runs, 
@@ -150,7 +173,7 @@ def wrap_func_preproc_workflow(
     datasink.inputs.base_directory = output_basedir
     
     ## substitute map stuff
-    preprocsinksubs = get_mapnode_substitutions(preproc, outputnode, runs, unmap=["func_mc_ref"])
+    preprocsinksubs = get_mapnode_substitutions(preproc, outputnode, runs, unmap=["func_mc_ref", "example_func_all", "func_mask_all"])
     datasink.inputs.substitutions = preprocsinksubs
     
     # replace subject_id stuff with functional scan
@@ -210,6 +233,13 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
         "func_mc_sm_ft",    # time filtered data
         "func_preproc",     # final output (also has been intensity normalized)
         "func_mean",        # mean of final output
+        "example_func_all", 
+        "func_mask_all",
+        "motion_all",
+        "pics_func_mean_head1",
+        "pics_func_mean_head2",
+        "pics_func_mean_brain1",
+        "pics_func_mean_brain2"
     ]
     outputnode = pe.Node(util.IdentityInterface(fields=output_fields),
                         name="outputspec")
@@ -291,8 +321,13 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
         renamer.connect(motion_correct, ('mean_img', pickfirst), 'func_mc_ref')
     renamer.connect(motion_correct, 'par_file', 'motion')
     
-    # Slice func for reporting
-    ## TODO
+    # Combine motion parameters from different runs
+    combinemotion = pe.Node(util.Function(input_names=["in_files"],
+                                    output_names=["out_file"],
+                                    function=combine_motion_params),
+                           name="combinemotion")
+    preproc.connect(motion_correct, 'par_file', combinemotion, 'in_files')
+    renamer.connect(combinemotion, 'out_file', 'motion_all', format_string="motion")
     
     # Plot rotation parameters from MCFLIRT
     plotrot = pe.MapNode(fsl.PlotMotionParams(in_source="fsl", plot_type="rotations"),
@@ -330,6 +365,20 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
                            name="03_meanfunc1")
     preproc.connect(motion_correct, 'out_file', meanfunc1, 'in_file')
     
+    # Get slices
+    slicer_head1 = pe.MapNode(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
+                                iterfield = ["in_file"], 
+                                name = 'slicer_head1')
+    slicer_head2 = pe.MapNode(interface=misc.Slicer(width=5, height=4, slice_name="sagittal"), 
+                                iterfield = ["in_file"], 
+                                name = 'slicer_head2')
+    preproc.connect([
+        (meanfunc1, slicer_head1, [('out_file', 'in_file')]),
+        (meanfunc1, slicer_head2, [('out_file', 'in_file')])
+    ])
+    renamer.connect(slicer_head1, "out_file", "pics_func_mean_head1")
+    renamer.connect(slicer_head2, "out_file", "pics_func_mean_head2")
+    
     # Skullstrip the mean functional image
     meanmask1 = pe.MapNode(afni.ThreedAutomask(dilate = 1),
                            iterfield = ["in_file"],
@@ -344,6 +393,27 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     preproc.connect(meanfunc1, 'out_file', meanfunc2, 'in_file')
     preproc.connect(meanmask1, 'out_file', meanfunc2, 'mask_file')
     renamer.connect(meanfunc2, 'out_file', 'example_func')
+    
+    # Get slices
+    slicer_brain1 = pe.MapNode(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
+                                iterfield = ["in_file"], 
+                                name = 'slicer_brain1')
+    slicer_brain2 = pe.MapNode(interface=misc.Slicer(width=5, height=4, slice_name="sagittal"), 
+                                iterfield = ["in_file"], 
+                                name = 'slicer_brain2')
+    preproc.connect([
+        (meanfunc2, slicer_brain1, [('out_file', 'in_file')]),
+        (meanfunc2, slicer_brain2, [('out_file', 'in_file')])
+    ])
+    renamer.connect(slicer_brain1, "out_file", "pics_func_mean_brain1")
+    renamer.connect(slicer_brain2, "out_file", "pics_func_mean_brain2")
+    
+    # Combine different means and get their mean
+    mergenode = pe.Node(fsl.Merge(dimension="t"), name="03b_merge")
+    preproc.connect(meanfunc2, 'out_file', mergenode, 'in_files')
+    meanfunc = pe.Node(fsl.MeanImage(), name="03b_meanfunc")
+    preproc.connect(mergenode, 'merged_file', meanfunc, 'in_file')
+    renamer.connect(meanfunc, 'out_file', 'example_func_all', format_string="example_func")
     
     # Apply to 4D functional
     funcbrain1 = pe.MapNode(fsl.ApplyMask(),
@@ -384,6 +454,15 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
                             name="04_dilatemask")
     preproc.connect(threshold, 'out_file', dilatemask, 'in_file')
     renamer.connect(dilatemask, 'out_file', 'func_mask')
+    
+    # Combine masks
+    mergenode = pe.Node(fsl.Merge(dimension="t"), name="04b_merge")
+    preproc.connect(dilatemask, 'out_file', mergenode, 'in_files')
+    maskfunc = pe.Node(fsl.ImageMaths(op_string="-Tmin", 
+                                          suffix="_mask"),
+                           name="04b_maskfunc")
+    preproc.connect(mergenode, 'merged_file', maskfunc, 'in_file')
+    renamer.connect(maskfunc, 'out_file', 'func_mask_all', format_string="func_mask")
     
     # Mask the runs again with this new mask
     funcbrain2 = pe.MapNode(fsl.ApplyMask(),

@@ -5,7 +5,7 @@ This script uses nipype for normalization
 
 import sys
 sys.path.append('/Users/zarrar/Code/nipype') # replace with dynamic path
-sys.path.append('/Users/zarrar/Dropbox/code/niscripts/include') # replace with dynamic path
+sys.path.append('/Users/zarrar/Code/Python/niscripts/include') # replace with dynamic path
 
 import numpy as np
 
@@ -23,16 +23,52 @@ import re
 
 import e_afni, misc, usage_subjects # my own extra stuff
 from utilities import *
+from process import *
 
 tolist = lambda x: [x]
 
+
+# TODO:
+# - try coplanar registration
+# - test out new mean images from func_preprocess
+
 def reg_pics(in_file, ref_file):
-    COMMANDS[6]="slicer fnirt_highres2standard standard -s 2 -x 0.35 sla.png -x 0.45 slb.png -x 0.55 slc.png -x 0.65 sld.png -y 0.35 sle.png -y 0.45 slf.png -y 0.55 slg.png -y 0.65 slh.png -z 0.35 sli.png -z 0.45 slj.png -z 0.55 slk.png -z 0.65 sll.png"
-    COMMANDS[7]="pngappend sla.png + slb.png + slc.png + sld.png + sle.png + slf.png + slg.png + slh.png + sli.png + slj.png + slk.png + sll.png fnirt_highres2standard1.png"
-    COMMANDS[8]="slicer standard fnirt_highres2standard -s 2 -x 0.35 sla.png -x 0.45 slb.png -x 0.55 slc.png -x 0.65 sld.png -y 0.35 sle.png -y 0.45 slf.png -y 0.55 slg.png -y 0.65 slh.png -z 0.35 sli.png -z 0.45 slj.png -z 0.55 slk.png -z 0.65 sll.png"
-    COMMANDS[9]="pngappend sla.png + slb.png + slc.png + sld.png + sle.png + slf.png + slg.png + slh.png + sli.png + slj.png + slk.png + sll.png fnirt_highres2standard2.png"
-    COMMANDS[10]="pngappend fnirt_highres2standard1.png - fnirt_highres2standard2.png fnirt_highres2standard.png"
+    import sys
+    from os import getcwd, environ
+    from os.path import join, basename, splitext
+    sys.path.append(join(environ.get("NISCRIPTS"), "include"))
+    from execute import Process
     
+    cwd = getcwd()
+    ext = "png"
+    prefix = join(cwd, splitext(basename(in_file.replace(".gz", "")))[0])
+    cmd_args = {'in_file': in_file, 'ref_file': ref_file, 'ext': ext, 'prefix': prefix}
+    
+    # TODO: raise an exception if there is an error
+    print Process("slicer %(in_file)s %(ref_file)s -s 2 -x 0.35 sla.png -x 0.45 slb.png -x 0.55 slc.png -x 0.65 sld.png -y 0.35 sle.png -y 0.45 slf.png -y 0.55 slg.png -y 0.65 slh.png -z 0.35 sli.png -z 0.45 slj.png -z 0.55 slk.png -z 0.65 sll.png" % cmd_args, cwd=cwd, to_print=True).stderr
+    print Process("pngappend sla.png + slb.png + slc.png + sld.png + sle.png + slf.png + slg.png + slh.png + sli.png + slj.png + slk.png + sll.png %(prefix)s_1.%(ext)s" % cmd_args, cwd=cwd, to_print=True).stderr
+    print Process("slicer %(ref_file)s %(in_file)s -s 2 -x 0.35 sla.png -x 0.45 slb.png -x 0.55 slc.png -x 0.65 sld.png -y 0.35 sle.png -y 0.45 slf.png -y 0.55 slg.png -y 0.65 slh.png -z 0.35 sli.png -z 0.45 slj.png -z 0.55 slk.png -z 0.65 sll.png" % cmd_args, cwd=cwd, to_print=True).stderr
+    print Process("pngappend sla.png + slb.png + slc.png + sld.png + sle.png + slf.png + slg.png + slh.png + sli.png + slj.png + slk.png + sll.png %(prefix)s_2.%(ext)s" % cmd_args, cwd=cwd, to_print=True).stderr 
+    print Process("pngappend %(prefix)s_1.%(ext)s - %(prefix)s_2.%(ext)s %(prefix)s.%(ext)s" % cmd_args, cwd = cwd, to_print=True).stderr
+    print Process("rm -f sl*.png", cwd = cwd, to_print=True).stderr
+    
+    out_file = "%(prefix)s.%(ext)s" % cmd_args
+    return out_file
+
+
+def interp4fnirt(interp):
+    if interp == "lin":
+        interp = "trilinear"
+    return interp
+
+def interp4flirt(interp):
+    if interp == "spline":
+        interp = "sinc"
+    elif interp == "lin":
+        interp = "trilinear"
+    elif interp == "nn":
+        interp = "nearestneighbour"
+    return interp
 
 class RegOutputConnector(object):
     def __init__(self, workflow, outnode, innode):
@@ -63,19 +99,16 @@ class RegOutputConnector(object):
         if ftype == "in2ref":
             self.workflow.connect(self.innode, 'in_prefix', rnode, 'a')
             self.workflow.connect(self.innode, 'ref_prefix', rnode, 'b')
-        elif ftype == "ref2in"
+        elif ftype == "ref2in":
             self.workflow.connect(self.innode, 'ref_prefix', rnode, 'a')
             self.workflow.connect(self.innode, 'in_prefix', rnode, 'b')
         
         return rnode
 
 
-# applywarp
-('nn' or 'trilinear' or 'sinc' or 'spline')
-
 def create_nonlin_reg_workflow(
     name = "nonlinear_registration", 
-    regtype = 'highres2standard'):
+    reg_type = 'highres2standard'):
     
     # check reg_type
     reg_opts = ['highres2standard', 'manual']
@@ -102,7 +135,8 @@ def create_nonlin_reg_workflow(
         "refmask_file", # standard brain mask
         "config_file",  # file specifying command-line parameters
         "in_prefix",
-        "out_prefix",
+        "ref_prefix",
+        "interp",       # not used!
         # internal
         "wtype" # lin, nonlin, lin_linker, or nonlin_linker
     ]
@@ -110,6 +144,7 @@ def create_nonlin_reg_workflow(
                             name="inputspec")
     
     # set workflow type
+    inputnode.inputs.interp = 'notused'
     inputnode.inputs.wtype = 'nonlin'
     
     # regtype
@@ -126,9 +161,9 @@ def create_nonlin_reg_workflow(
     output_fields = [
         "log_file",
         "in2ref_warped",
-        "fieldcoeff_file",
-        "jacobian_file",
-        #"in2ref_pic"
+        "in2ref_fieldcoeff",
+        "in2ref_jacobian",
+        "in2ref_png"
     ]
     outputnode = pe.Node(util.IdentityInterface(fields=output_fields),
                         name="outputspec")
@@ -141,36 +176,46 @@ def create_nonlin_reg_workflow(
     # Commands
     #####
     
-    fnirt = pe.Node(fsl.FNIRT(fieldcoeff_file=fieldcoeff, jacobian_file=jacobian),
+    fnirt = pe.Node(fsl.FNIRT(fieldcoeff_file=True, jacobian_file=True),
                     name="fnirt")
     normalize.connect([
         (inputnode, fnirt, [('in_file', 'in_file'), 
-                            ('ref_file', 'ref'), 
+                            ('ref_file', 'ref_file'), 
                             ('affine_file', 'affine_file'), 
                             ('refmask_file', 'refmask_file'), 
                             ('config_file', 'config_file')])
     ])
     renamer(fnirt, 'log_file', 'log_file', format_string="fnirt_log")
     renamer(fnirt, 'warped_file', 'in2ref_warped')
-    renamer(fnirt, 'fieldcoef_file', 'fieldcoeff_file', format_string"%(a)s2%(b)s_warp")
-    renamer(fnirt, 'jacobian_file', 'jacobian_file', format_string"%(a)s2%(b)s_jac")
-        
-    # pics (using slicer)
-    ## input over ref
-    reg_slicer_a = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
-                            name='reg_slicer_a')
+    renamer(fnirt, 'fieldcoeff_file', 'in2ref_fieldcoeff', format_string="%(a)s2%(b)s_warp")
+    renamer(fnirt, 'jacobian_file', 'in2ref_jacobian', format_string="%(a)s2%(b)s_jac")
+    
+    regpics = pe.Node(util.Function(input_names=["in_file", "ref_file"],
+                                    output_names=["out_file"],
+                                    function=reg_pics),
+                           name="regpics")
     normalize.connect([
-        (inputnode, reg_slicer_a, [('ref_file', 'in_file')]),
-        (fnirt, reg_slicer_a, [('out_file', 'edge_overlay')]),
-
+        (fnirt, regpics, [('warped_file', 'in_file')]),
+        (inputnode, regpics, [('ref_file', 'ref_file')])
     ])
-    ## ref over input
-    reg_slicer_b = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
-                            name='reg_slicer_b')
-    normalize.connect([
-        (fnirt, reg_slicer_b, [('warped_file', 'in_file')]),
-        (inputnode, reg_slicer_b, [('ref_file', 'edge_overlay')])
-    ])
+    renamer(regpics, 'out_file', 'in2ref_png', format_string="%(a)s_%(b)s_fnirt")
+    
+    ## pics (using slicer)
+    ### input over ref
+    #reg_slicer_a = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
+    #                        name='reg_slicer_a')
+    #normalize.connect([
+    #    (inputnode, reg_slicer_a, [('ref_file', 'in_file')]),
+    #    (fnirt, reg_slicer_a, [('out_file', 'edge_overlay')]),
+    #
+    #])
+    ### ref over input
+    #reg_slicer_b = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
+    #                        name='reg_slicer_b')
+    #normalize.connect([
+    #    (fnirt, reg_slicer_b, [('warped_file', 'in_file')]),
+    #    (inputnode, reg_slicer_b, [('ref_file', 'edge_overlay')])
+    #])
     # combine
     #concat_pics = pe.Node(interface=util.Merge(2, axis="hstack"), 
     #                name="concat_pics")
@@ -184,6 +229,98 @@ def create_nonlin_reg_workflow(
     #renamer(reg_pngappend, 'out_file', 'in2ref_png')
     
     return normalize
+
+def create_link_nonlin_reg_workflow(
+    name="link_nonlinear_registration",
+    reg_type="func2standard"):
+    
+    # check reg_type
+    reg_opts = ['coplanar2standard', 'highres2standard', 'func2standard', 'manual']
+    if reg_type not in reg_opts:
+        raise Exception("reg_type must be one of: %s" % ", ".join(reg_opts))
+    
+    #####
+    # Setup workflow
+    #####
+    
+    linker = pe.Workflow(name=name)
+    
+    
+    #####
+    # Setup input node
+    #####
+    
+    input_fields = [
+        # required
+        "in_file",
+        "in2ref_mat_file",
+        "in2ref_field_file", 
+        "ref_file",
+        # required if reg_types not specified
+        "in_prefix",    # e.g. highres
+        "ref_prefix",   # e.g. standard
+        # optional
+        "interp",
+        # internal
+        "wtype" # lin, nonlin, lin_linker, or nonlin_linker
+    ]
+    inputnode = pe.Node(interface=util.IdentityInterface(fields=input_fields), 
+                            name="inputspec")
+    
+    # set defaults
+    inputnode.inputs.interp = 'trilinear'
+    inputnode.inputs.wtype = 'nonlin_linker'
+    
+    # set in and out prefix
+    if reg_type != 'manual':
+        re_io = re.search("(?P<in>\w+)2(?P<ref>\w+)", reg_type).groupdict()
+        inputnode.inputs.in_prefix = re_io['in']
+        inputnode.inputs.ref_prefix = re_io['ref']    
+    
+    
+    #####
+    # Setup output node
+    #####
+    
+    # Outputs
+    output_fields = [
+        "in2ref",
+        "in2ref_png",
+    ]
+    outputnode = pe.Node(util.IdentityInterface(fields=output_fields),
+                        name="outputspec")
+    
+    # Rename output filenames
+    renamer = RegOutputConnector(linker, outputnode, inputnode)
+    
+    
+    #####
+    # Commands
+    #####
+    
+    # Applywarp
+    warpbrain = pe.Node(fsl.ApplyWarp(), name="warpbrain")
+    linker.connect([
+        (inputnode, warpbrain, [('interp', 'interp'),
+                                ('in_file', 'in_file'),
+                                ('in2ref_mat_file', 'premat'),
+                                ('in2ref_field_file', 'field_file'),
+                                ('ref_file', 'ref_file')])
+    ])
+    renamer(warpbrain, 'out_file', 'in2ref')
+    
+    # Pics
+    regpics = pe.Node(util.Function(input_names=["in_file", "ref_file"],
+                                    output_names=["out_file"],
+                                    function=reg_pics),
+                           name="regpics")
+    linker.connect([
+        (warpbrain, regpics, [('out_file', 'in_file')]),
+        (inputnode, regpics, [('ref_file', 'ref_file')])
+    ])
+    renamer(regpics, 'out_file', 'in2ref_png', format_string="%(a)s_%(b)s_fnirt")
+    
+    return linker
 
 
 # have search 
@@ -277,7 +414,7 @@ def create_lin_reg_workflow(
         #"ref2in",
         "in2ref_mat",
         "ref2in_mat",
-        #"in2ref_png",
+        "in2ref_png",
     ]
     outputnode = pe.Node(util.IdentityInterface(fields=output_fields),
                         name="outputspec")
@@ -352,22 +489,32 @@ def create_lin_reg_workflow(
     #])
     #renamer(apply_invert_mat, 'out_matrix_file', 'ref2in')
     
-    # pics (using slicer)
-    ## input over ref
-    reg_slicer_a = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
-                            name='reg_slicer_a')
+    regpics = pe.Node(util.Function(input_names=["in_file", "ref_file"],
+                                    output_names=["out_file"],
+                                    function=reg_pics),
+                           name="regpics")
     normalize.connect([
-        (inputnode, reg_slicer_a, [('ref_file', 'in_file')]),
-        (flirt, reg_slicer_a, [('out_file', 'edge_overlay')]),
-        
+        (flirt, regpics, [('out_file', 'in_file')]),
+        (inputnode, regpics, [('ref_file', 'ref_file')])
     ])
-    ## ref over input
-    reg_slicer_b = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
-                            name='reg_slicer_b')
-    normalize.connect([
-        (flirt, reg_slicer_b, [('out_file', 'in_file')]),
-        (inputnode, reg_slicer_b, [('ref_file', 'edge_overlay')])
-    ])
+    renamer(regpics, 'out_file', 'in2ref_png')
+    
+    ## pics (using slicer)
+    ### input over ref
+    #reg_slicer_a = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
+    #                        name='reg_slicer_a')
+    #normalize.connect([
+    #    (inputnode, reg_slicer_a, [('ref_file', 'in_file')]),
+    #    (flirt, reg_slicer_a, [('out_file', 'edge_overlay')]),
+    #    
+    #])
+    ### ref over input
+    #reg_slicer_b = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
+    #                        name='reg_slicer_b')
+    #normalize.connect([
+    #    (flirt, reg_slicer_b, [('out_file', 'in_file')]),
+    #    (inputnode, reg_slicer_b, [('ref_file', 'edge_overlay')])
+    #])
     # combine
     #concat_pics = pe.Node(interface=util.Merge(2, axis="hstack"), 
     #                name="concat_pics")
@@ -446,7 +593,7 @@ def create_link_lin_reg_workflow(
         #"ref2in",
         "in2ref_mat",
         "ref2in_mat",
-        #"in2ref_png",
+        "in2ref_png",
     ]
     outputnode = pe.Node(util.IdentityInterface(fields=output_fields),
                         name="outputspec")
@@ -475,22 +622,33 @@ def create_link_lin_reg_workflow(
     ])
     renamer(apply_mat, 'out_file', 'in2ref')
     
-    # pics (using slicer)
-    ## input over ref
-    reg_slicer_a = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
-                            name='reg_slicer_a')
+    # pics
+    regpics = pe.Node(util.Function(input_names=["in_file", "ref_file"],
+                                    output_names=["out_file"],
+                                    function=reg_pics),
+                           name="regpics")
     linker.connect([
-        (inputnode, reg_slicer_a, [('ref_file', 'in_file')]),
-        (apply_mat, reg_slicer_a, [('out_file', 'edge_overlay')]),
-        
+        (apply_mat, regpics, [('out_file', 'in_file')]),
+        (inputnode, regpics, [('ref_file', 'ref_file')])
     ])
-    ## ref over input
-    reg_slicer_b = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
-                            name='reg_slicer_b')
-    linker.connect([
-        (apply_mat, reg_slicer_b, [('out_file', 'in_file')]),
-        (inputnode, reg_slicer_b, [('ref_file', 'edge_overlay')])
-    ])
+    renamer(regpics, 'out_file', 'in2ref_png')
+    
+    ## pics (using slicer)
+    ### input over ref
+    #reg_slicer_a = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
+    #                        name='reg_slicer_a')
+    #linker.connect([
+    #    (inputnode, reg_slicer_a, [('ref_file', 'in_file')]),
+    #    (apply_mat, reg_slicer_a, [('out_file', 'edge_overlay')]),
+    #    
+    #])
+    ### ref over input
+    #reg_slicer_b = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
+    #                        name='reg_slicer_b')
+    #linker.connect([
+    #    (apply_mat, reg_slicer_b, [('out_file', 'in_file')]),
+    #    (inputnode, reg_slicer_b, [('ref_file', 'edge_overlay')])
+    #])
     ### combine
     #concat_pics = pe.Node(interface=util.Merge(2, axis="hstack"), 
     #                name="concat_pics")
@@ -509,7 +667,8 @@ def create_link_lin_reg_workflow(
 def create_func2standard_workflow(
     name="func2standard",
     coplanar = False, 
-    search_type = 'normal'):
+    search_type = 'normal',
+    fnirt = False):
     
     #####
     # Setup input node
@@ -517,11 +676,18 @@ def create_func2standard_workflow(
     
     input_fields = [
         "func",
-        "coplanar", # optional
         "highres",
         "standard",
-        "interp"    # optional
+        # required if fnirt set
+        "highres_head", 
+        "standard_head", 
+        "standard_mask", 
+        "fnirt_config", 
+        # optional
+        "coplanar",
+        "interp"
     ]
+    
     inputnode = pe.Node(interface=util.IdentityInterface(fields=input_fields, 
                                                          mandatory_inputs=False), 
                             name="inputspec")
@@ -552,6 +718,20 @@ def create_func2standard_workflow(
         (inputnode, highres2standard, [('highres', 'inputspec.in_file'), 
                                        ('standard', 'inputspec.ref_file')])
     ])
+    
+    if fnirt:
+        name = "fnirt_highres2standard"
+        fnirt_highres2standard = create_nonlin_reg_workflow(name = name)
+        workflows.highres.append(fnirt_highres2standard)
+        normalize.connect([
+            (inputnode, fnirt_highres2standard, [
+                ('highres_head', 'inputspec.in_file'), 
+                ('standard_head', 'inputspec.ref_file'), 
+                ('standard_mask', 'inputspec.refmask_file'),
+                ('fnirt_config', 'inputspec.config_file')]),
+            (highres2standard, fnirt_highres2standard, [
+                ('outputspec.in2ref_mat', 'inputspec.affine_file')])
+        ])
     
     if coplanar:
         # func2coplanar
@@ -610,22 +790,46 @@ def create_func2standard_workflow(
         (highres2standard, func2standard, [('outputspec.in2ref_mat', 'inputspec.x2ref_mat_file')])
     ])
     
+    if fnirt:
+        name = "fnirt_func2standard"
+        fnirt_func2standard = create_link_nonlin_reg_workflow(name = name)
+        workflows.func.append(fnirt_func2standard)
+        normalize.connect([
+            (inputnode, fnirt_func2standard, [
+                ('func', 'inputspec.in_file'),
+                ('standard', 'inputspec.ref_file')
+            ]),
+            (func2highres, fnirt_func2standard, [
+                ('outputspec.in2ref_mat', 'inputspec.in2ref_mat_file')
+            ]),
+            (fnirt_highres2standard, fnirt_func2standard, [
+                ('outputspec.in2ref_fieldcoeff', 'inputspec.in2ref_field_file')
+            ])
+        ])
+    
     # link interp input
     for wf in workflows.func:
-        normalize.connect(inputnode, 'interp', wf, 'inputspec.interp')    
+        if wf.name.find("fnirt") == -1:
+            normalize.connect(inputnode, ('interp', interp4flirt), wf, 'inputspec.interp')
+        else:
+            normalize.connect(inputnode, ('interp', interp4fnirt), wf, 'inputspec.interp')            
     for wf in workflows.highres:
-        normalize.connect(inputnode, 'interp', wf, 'inputspec.interp')    
+        if wf.name.find("fnirt") == -1:
+            normalize.connect(inputnode, ('interp', interp4flirt), wf, 'inputspec.interp')
+        else:
+            normalize.connect(inputnode, ('interp', interp4fnirt), wf, 'inputspec.interp')
     
     return (normalize, workflows)
 
 
-# inputs (bunch): func, coplanar, highres
-# outputs (bunch): func, coplanar, highres
+# inputs (bunch): func, coplanar, highres, [highres_head, standard_head, standard_mask, 
+#                                           fnirt_config]
+# outputs (bunch): func, highres
 def register( 
     subject_list, 
     input_basedir, inputs, standard, 
     output_basedir, outputs, workingdir, 
-    interp, search, output_type, 
+    fnirt, interp, search, output_type, 
     name="linear_registration_func2standard"):
     
     if isinstance(inputs, dict):
@@ -642,7 +846,7 @@ def register(
         have_coplanar = True
     else:
         have_coplanar = False
-    regproc, workflows = create_func2standard_workflow(name, have_coplanar, search)
+    regproc, workflows = create_func2standard_workflow(name, have_coplanar, search, fnirt)
     regproc.base_dir = workingdir
     
     # get input / set certain inputs
@@ -667,6 +871,8 @@ def register(
     outfields = ['func', 'highres']
     if have_coplanar:
         outfields.append('coplanar')
+    if fnirt:
+        outfields.append('highres_head')
     datasource = pe.Node(interface=nio.DataGrabber(infields=['subject_id'], 
                                                     outfields=outfields), 
                          name='datasource')
@@ -681,9 +887,11 @@ def register(
                                         highres = [['subject_id']]
                                       )
     if have_coplanar:
-        datasource.inputs.field_template['coplanar'] = os.path.join("%s", "%s%s" % (inputs.coplanar, ext))
+        datasource.inputs.field_template['coplanar'] = os.path.join("%s", inputs.coplanar)
         datasource.inputs.template_args['coplanar'] = [['subject_id']]
-    
+    if fnirt:
+        datasource.inputs.field_template['highres_head'] = os.path.join("%s", inputs.highres_head)
+        datasource.inputs.template_args['highres_head'] = [['subject_id']]
     
     # Link inputs
     regproc.connect([
@@ -692,6 +900,11 @@ def register(
     ])
     if have_coplanar:
         regproc.connect(datasource, 'coplanar', inputnode, 'coplanar')
+    if fnirt:
+        regproc.connect(datasource, 'highres_head', inputnode, 'highres_head')
+        inputnode.inputs.standard_head = inputs.standard_head
+        inputnode.inputs.standard_mask = inputs.standard_mask
+        inputnode.inputs.fnirt_config = inputs.fnirt_config
     
     
     ######
@@ -739,8 +952,34 @@ class store_coplanar(argparse.Action):
         if not hasattr(namespace, 'inputs'):
             namespace.inputs = {}
         namespace.inputs[k] = value
+        return
     
 
+class store_fnirt(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if len(values) > 4:
+            parser.error("Too many arguments (%i) specified for %s" % (len(values), option_string))
+        
+        standard_image = fsl.Info.standard_image
+        inputs = dict(zip(
+                    ['highres_head', 'standard_head', 'standard_mask', 'fnirt_config'],
+                    values
+                ))
+        inputs.setdefault('standard_head', standard_image("MNI152_T1_2mm.nii.gz"))
+        inputs.setdefault('standard_mask', standard_image("MNI152_T1_2mm_brain_mask_dil.nii.gz"))
+        inputs.setdefault('fnirt_config', os.path.join(
+            os.environ["FSLDIR"], "etc/flirtsch/T1_2_MNI152_2mm.cnf"
+        ))
+        
+        if not hasattr(namespace, 'inputs'):
+            namespace.inputs = {}
+        namespace.inputs.update(inputs)
+        setattr(namespace, self.dest, True)
+        
+        return
+    
+
+# highres-head, standard_head, standard_mask, fnirt_config
 
 #class store_regdir(argparse.Action):
 #    def __call__(self, parser, namespace, value, option_string=None):
@@ -758,11 +997,12 @@ def create_parser():
         parents=[usage_subjects.parent_parser]
     )
     group = parser.add_argument_group("Registration Options")
-    group.add_argument("--interp", choices=["trilinear", "nearestneighbour", "sinc"], default="trilinear")
+    group.add_argument("--interp", choices=["lin", "nn", "sinc", "spline"], default="trilinear")
     group.add_argument("--search", choices=["nada", "normal", "full"], default="normal")
     group.add_argument("--func", nargs=2, action=store_func_highres, default=argparse.SUPPRESS, required=True)
     group.add_argument("--coplanar", action=store_coplanar, default=argparse.SUPPRESS)
     group.add_argument("--highres", nargs=2, action=store_func_highres, default=argparse.SUPPRESS, required=True)
+    group.add_argument("--fnirt", nargs="+", action=store_fnirt, default=False)
     group.add_argument("--standard", default=fsl.Info.standard_image("MNI152_T1_2mm_brain.nii.gz"))
     
     return parser
@@ -776,10 +1016,12 @@ def main(arglist):
     reg_pipe.write_graph()
     return
 
-def test_p():
-    arglist = "-s tb3417 -b /Users/zarrar/Projects/tnetworks/output --workingdir /Users/zarrar/Projects/tnetworks/tmp --func func/func_ref.nii.gz func/reg --highres highres/brain.nii.gz highres/reg".split()
+def test_p(fnirt=False):
+    arglist = "-s tb3417 -b /Users/zarrar/Projects/tnetworks/output --workingdir /Users/zarrar/Projects/tnetworks/tmp --func func/func_ref.nii.gz func/reg --highres highres/brain.nii.gz highres/reg"
+    if fnirt:
+        arglist += " --fnirt highres/head.nii.gz"
     parser = create_parser()
-    args = parser.parse_args(arglist)
+    args = parser.parse_args(arglist.split())
     kwrds = vars(args)
     reg_pipe = register(**kwrds)
     return reg_pipe
