@@ -16,11 +16,12 @@ import nipype.pipeline.engine as pe # pypeline engine
 import os # system functions
 import argparse # command-line
 import os.path as op
+from nipype.interfaces.base import traits
 
 import sys
-sys.path.append(op.join(op.dirname(op.abspath( __file__ )), "../include"))
+sys.path.append(op.join(os.environ.get("NISCRIPTS"), "include"))
 
-import e_afni, misc, usage_subjects # my own extra stuff
+import misc, usage # my own extra stuff
 from utilities import *
 
 from nipype.workflows.fsl import create_susan_smooth
@@ -114,12 +115,12 @@ tolist = lambda x: [x]
 
 
 
-def wrap_func_preproc_workflow(
-    subject_list,  runs, 
-    input_basedir, input_prefix, 
+def functional_preprocessing(
+    subject_list, 
+    inputs, outputs, workingdir, output_type, 
     fwhm, hpfilter, lpfilter, tr, motion_nstages, 
-    output_basedir, output_funcdir, workingdir, output_type, 
     name="functional_preprocessing", whichvol="middle", timeshift=False, tpattern=None):
+    """todo"""
     
     #####
     # Setup pipeline
@@ -154,9 +155,15 @@ def wrap_func_preproc_workflow(
     datasource = pe.Node(interface=nio.DataGrabber(infields=['subject_id'], 
                                                     outfields=['func']), 
                          name='datasource')
-    datasource.inputs.base_directory=os.path.abspath(input_basedir)
-    datasource.inputs.template = os.path.join("%s", "%s%s" % (input_prefix, ext))
-    datasource.inputs.template_args = dict(func=[['subject_id', runs]])
+    datasource.inputs.base_directory=os.path.abspath(inputs.basedir)
+    datasource.inputs.template = os.path.join("%s", inputs.func)
+    datasource.inputs.template_args = dict(func=[['subject_id']])
+    
+    # Get the number of runs for each participant (for renaming purposes)
+    datasource.inputs.subject_id = subject_list
+    ds = datasource.run()
+    runs = [ len(x) for x in ds.outputs.func ]  # list with number of runs per subject
+    max_runs = max(runs)
     
     # Link inputs
     preproc.connect(subinfo, 'subject_id', datasource, 'subject_id')
@@ -170,14 +177,15 @@ def wrap_func_preproc_workflow(
     # Datasink
     ## will get: "base_directory/subject_id/output_anatdir"
     datasink = pe.Node(interface=nio.DataSink(), name='datasink')
-    datasink.inputs.base_directory = output_basedir
+    datasink.inputs.base_directory = outputs.basedir
     
     ## substitute map stuff
-    preprocsinksubs = get_mapnode_substitutions(preproc, outputnode, runs, unmap=["func_mc_ref", "example_func_all", "func_mask_all"])
+    preprocsinksubs = get_mapnode_substitutions(preproc, outputnode, max_runs, 
+        unmap=["func_mc_ref", "example_func_all", "func_mask_all", "motion_all"])
     datasink.inputs.substitutions = preprocsinksubs
     
     # replace subject_id stuff with functional scan
-    datasink.inputs.regexp_substitutions = (r"_subject_id_(\w|\d)+", output_funcdir)
+    datasink.inputs.regexp_substitutions = (r"_subject_id_(\w|\d)+", outputs.func)
     
     ## connect
     preproc.connect(subinfo, 'subject_id', datasink, 'container')
@@ -290,7 +298,7 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     # get orientation using following command:
     # orient=$( 3dinfo /Users/Shared/fsl/data/standard/MNI152_T1_2mm.nii.gz | grep orient | sed -e s/.*orient// -e s/\]// )
     # so add additional input of reference orientation! (maybe this can be a general option?)
-    reorient = pe.MapNode(interface=e_afni.Threedresample(orientation='RPI'), 
+    reorient = pe.MapNode(interface=afni.Threedresample(orientation='RPI'), 
                             iterfield=["in_file"], name='01_reorient')
     preproc.connect(deoblique, "out_file", reorient, "in_file")
     
@@ -327,7 +335,7 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
                                     function=combine_motion_params),
                            name="combinemotion")
     preproc.connect(motion_correct, 'par_file', combinemotion, 'in_files')
-    renamer.connect(combinemotion, 'out_file', 'motion_all', format_string="motion")
+    renamer.connect(combinemotion, 'out_file', 'motion_all')
     
     # Plot rotation parameters from MCFLIRT
     plotrot = pe.MapNode(fsl.PlotMotionParams(in_source="fsl", plot_type="rotations"),
@@ -588,53 +596,34 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     return preproc
 
 
-def test_p():
-    arglist = "-s tb3417 -b /Users/zarrar/Projects/tnetworks /Users/zarrar/Projects/tnetworks/output --workingdir /Users/zarrar/Projects/tnetworks/tmp --tr 2 --fwhm 5 -i *_wm_run%02i -o func --nruns 3".split()
-    parser = create_parser()
-    args = parser.parse_args(arglist)
-    kwrds = vars(args)
-    ap_pipeline = wrap_func_preproc_workflow(**kwrds)
-    return ap_pipeline
-
-def create_parser():
-    """Create command-line interface"""
-    def nruns_to_runs(string):
-        value = int(string)
-        values = range(1, value+1)
-        return values
+class FuncPreprocParser(usage.NiParser):
+    def _create_parser(self, *args, **kwrds):
+        """Create command-line interface"""
+        parser = super(FuncPreprocParser, self)._create_parser(
+            description="""
+                Run preprocessing for each participant's functional images.
+            """
+        )
+        group = parser.add_argument_group('Functional Preprocessing Options')
+        group.add_argument('--func', nargs=2, action=usage.store_io, required=True)
+        group.add_argument('--fwhm', type=float, default=5.0)
+        group.add_argument('--hpfilter', type=float, default=128)
+        group.add_argument('--lpfilter', type=float, default=-1)
+        group.add_argument('--tr', type=float, required=True)
+        group.add_argument('--motion-nstages', type=int, choices=range(1,5), default=3)
+        group.add_argument('--whichvol', default="middle", choices=["first", "middle", "mean"])
+        group.add_argument("--timeshift", default=False, action="store_true")
+        group.add_argument("--tpattern", choices=["alt+z", "alt+z2", "alt-z", "seq+z", "seq-z"])
+        return parser
     
-    parser = argparse.ArgumentParser(
-        description="""
-            Run preprocessing for each participant's functional images.
-        """,
-        parents=[usage_subjects.parent_parser]
-    )
-    group = parser.add_argument_group('Functional Preprocessing Options')
-    group.add_argument('-i', '--input-prefix', required=True)
-    group.add_argument('-o', '--output-dir', required=True, dest="output_funcdir")
-    group.add_argument('--fwhm', type=float, default=6.0)
-    group.add_argument('--hpfilter', type=float, default=128)
-    group.add_argument('--lpfilter', type=float, default=-1)
-    group.add_argument('--tr', type=float, required=True)
-    group.add_argument('--motion-stages', type=int, default=3, dest="motion_nstages")
-    group.add_argument('--whichvol', default="middle", choices=["first", "middle", "mean"])
-    group.add_argument("--timeshift", default=False, action="store_true")
-    group.add_argument("--tpattern", choices=["alt+z", "alt+z2", "alt-z", "seq+z", "seq-z"], default=argparse.SUPPRESS)
-    mgroup = parser.add_mutually_exclusive_group(required=True)
-    mgroup.add_argument('-r', '--runs', type=int, nargs='+')
-    mgroup.add_argument('--nruns', type=nruns_to_runs, dest="runs")
-    return parser
-
 
 def main(arglist):
-    parser = create_parser()
-    args = parser.parse_args(arglist)
-    kwrds = vars(args)
-    plugin = kwrds.pop('plugin'); plugin_args = kwrds.pop('plugin_args')
-    fp_pipeline = wrap_func_preproc_workflow(**kwrds)
-    fp_pipeline.run(plugin=plugin, plugin_args=plugin_args)
-    #fp_pipeline.write_graph()
-    return
+    pp = FuncPreprocParser()
+    pp(functional_preprocessing, arglist)
+
+def test_wf():
+    arglist = "-s tb3417 -b /Users/zarrar/Projects/tnetworks /Users/zarrar/Projects/tnetworks/output --workingdir /Users/zarrar/Projects/tnetworks/tmp --tr 2 --fwhm 5 --func *_wm_run*.nii.gz wm --plugin Linear"
+    main(arglist.split())
 
 if __name__ == "__main__":
     main(sys.argv[1:])

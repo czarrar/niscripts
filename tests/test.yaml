@@ -1,0 +1,4 @@
+basedir: /mnt/nfs/psych/distwm01/subjects /mnt/nfs/psych/distwm01/subjects # input output
+workingdir: /mnt/nfs/psych/distwm01/nipype
+output_type: NIFTI_GZ
+plugin: MultiProc 4

@@ -3,9 +3,9 @@
 This script uses nipype for normalization
 """
 
-import sys
+import os, sys
 sys.path.append('/Users/zarrar/Code/nipype') # replace with dynamic path
-sys.path.append('/Users/zarrar/Code/Python/niscripts/include') # replace with dynamic path
+sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
 
 import numpy as np
 
@@ -17,11 +17,10 @@ import nipype.interfaces.afni as afni # afni
 from nipype.interfaces.afni.base import Info
 import nipype.interfaces.utility as util # utility
 import nipype.pipeline.engine as pe # pypeline engine
-import os # system functions
 import argparse # command-line
 import re
 
-import e_afni, misc, usage_subjects # my own extra stuff
+import misc, usage # my own extra stuff
 from utilities import *
 from process import *
 
@@ -440,7 +439,7 @@ def create_lin_reg_workflow(
     # Commands
     #####
     
-    if reg_type and re_io['in'] == 'func':  # do a 2-stage registration
+    if reg_type and (re_io['in'] == 'func' or re_io['in'] == 'coplanar'):
         flirt_init = pe.Node(fsl.FLIRT(cost='corratio', cost_func='corratio'), 
                             name="flirt_init")
         normalize.connect([
@@ -827,17 +826,10 @@ def create_func2standard_workflow(
 # outputs (bunch): func, highres
 def register( 
     subject_list, 
-    input_basedir, inputs, standard, 
-    output_basedir, outputs, workingdir, 
-    fnirt, interp, search, output_type, 
+    inputs, outputs, workingdir, output_type,
+    standard, fnirt, interp, search,  
     name="linear_registration_func2standard"):
-    
-    if isinstance(inputs, dict):
-        inputs = Bunch(**inputs)
-    if isinstance(outputs, dict):
-        outputs = Bunch(**outputs)
-    # todo: check elements in inputs and outputs
-    
+        
     #####
     # Setup workflow
     #####
@@ -876,7 +868,7 @@ def register(
     datasource = pe.Node(interface=nio.DataGrabber(infields=['subject_id'], 
                                                     outfields=outfields), 
                          name='datasource')
-    datasource.inputs.base_directory=os.path.abspath(input_basedir)
+    datasource.inputs.base_directory=os.path.abspath(inputs.basedir)
     datasource.inputs.template = "*"
     datasource.inputs.field_template = dict(
         func = os.path.join("%s", inputs.func),
@@ -916,7 +908,7 @@ def register(
     ## will get: "base_directory/subject_id/output_dir"
     for k in datasinks:
         datasinks[k] = pe.Node(interface=nio.DataSink(), name='datasink_%s' % k)
-        datasinks[k].inputs.base_directory = os.path.abspath(output_basedir)
+        datasinks[k].inputs.base_directory = os.path.abspath(outputs.basedir)
         # set container to subject_id
         regproc.connect(subinfo, 'subject_id', datasinks[k], 'container')
         # replace subject_id stuff with output directory and reg
@@ -934,27 +926,6 @@ def register(
     return regproc
 
 
-class store_func_highres(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        k = option_string.replace("-", "")
-        if not hasattr(namespace, 'inputs'):
-            namespace.inputs = {}
-        if not hasattr(namespace, 'outputs'):
-            namespace.outputs = {}
-        namespace.inputs[k] = values[0]
-        namespace.outputs[k] = values[1]
-        return
-    
-
-class store_coplanar(argparse.Action):
-    def __call__(self, parser, namespace, value, option_string=None):
-        k = option_string.replace("-", "")
-        if not hasattr(namespace, 'inputs'):
-            namespace.inputs = {}
-        namespace.inputs[k] = value
-        return
-    
-
 class store_fnirt(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         if len(values) > 4:
@@ -971,61 +942,38 @@ class store_fnirt(argparse.Action):
             os.environ["FSLDIR"], "etc/flirtsch/T1_2_MNI152_2mm.cnf"
         ))
         
-        if not hasattr(namespace, 'inputs'):
-            namespace.inputs = {}
         namespace.inputs.update(inputs)
-        setattr(namespace, self.dest, True)
-        
-        return
+        namespace.fnirt = True
     
 
-# highres-head, standard_head, standard_mask, fnirt_config
-
-#class store_regdir(argparse.Action):
-#    def __call__(self, parser, namespace, value, option_string=None):
-#        outputs = getattr(namespace, 'outputs', {})
-#        outputs[option_string] = value
-#        setattr(namespace, 'outputs', outputs)
-#    
-#
-
-def create_parser():
-    parser = argparse.ArgumentParser(
-        description="""
-            Register/normalize functional image to standard space
-        """,
-        parents=[usage_subjects.parent_parser]
-    )
-    group = parser.add_argument_group("Registration Options")
-    group.add_argument("--interp", choices=["lin", "nn", "sinc", "spline"], default="trilinear")
-    group.add_argument("--search", choices=["nada", "normal", "full"], default="normal")
-    group.add_argument("--func", nargs=2, action=store_func_highres, default=argparse.SUPPRESS, required=True)
-    group.add_argument("--coplanar", action=store_coplanar, default=argparse.SUPPRESS)
-    group.add_argument("--highres", nargs=2, action=store_func_highres, default=argparse.SUPPRESS, required=True)
-    group.add_argument("--fnirt", nargs="+", action=store_fnirt, default=False)
-    group.add_argument("--standard", default=fsl.Info.standard_image("MNI152_T1_2mm_brain.nii.gz"))
+class RegParser(usage.NiParser):
+    def _create_parser(self, *args, **kwrds):
+        """Create command-line interface"""
+        parser = super(RegParser, self)._create_parser(
+            description="""
+                Register/normalize functional image to standard space
+            """
+        )
+        group = parser.add_argument_group("Registration Options")
+        group.add_argument("--interp", choices=["lin", "nn", "sinc", "spline"], default="trilinear")
+        group.add_argument("--search", choices=["nada", "normal", "full"], default="normal")
+        group.add_argument("--func", nargs=2, action=usage.store_io, default=argparse.SUPPRESS, required=True)
+        group.add_argument("--coplanar", action=usage.store_input, default=argparse.SUPPRESS)
+        group.add_argument("--highres", nargs=2, action=usage.store_io, default=argparse.SUPPRESS, required=True)
+        group.add_argument("--fnirt", nargs="+", action=store_fnirt, default=False)
+        group.add_argument("--standard", default=fsl.Info.standard_image("MNI152_T1_2mm_brain.nii.gz"))
+        return parser
     
-    return parser
 
 def main(arglist):
-    parser = create_parser()
-    args = parser.parse_args(arglist)
-    kwrds = vars(args)
-    plugin = kwrds.pop('plugin'); plugin_args = kwrds.pop('plugin_args')
-    reg_pipe = register(**kwrds)
-    reg_pipe.run(plugin=plugin, plugin_args=plugin_args)
-    #reg_pipe.write_graph()
-    return
+    pp = RegParser()
+    pp(register, arglist)
 
-def test_p(fnirt=False):
-    arglist = "-s tb3417 -b /Users/zarrar/Projects/tnetworks/output --workingdir /Users/zarrar/Projects/tnetworks/tmp --func func/func_ref.nii.gz func/reg --highres highres/brain.nii.gz highres/reg"
+def test_wf(fnirt=True):
+    arglist = "-s tb3417 -b /Users/zarrar/Projects/tnetworks/output /Users/zarrar/Projects/tnetworks/output --workingdir /Users/zarrar/Projects/tnetworks/tmp --func func/func_ref.nii.gz func/reg --highres highres/brain.nii.gz highres/reg"
     if fnirt:
         arglist += " --fnirt highres/head.nii.gz"
-    parser = create_parser()
-    args = parser.parse_args(arglist.split())
-    kwrds = vars(args)
-    reg_pipe = register(**kwrds)
-    return reg_pipe
+    main(arglist.split())
 
 if __name__ == "__main__":
     main(sys.argv[1:])

@@ -18,13 +18,14 @@ import argparse # command-line
 import os.path as op
 
 import sys
-sys.path.append(op.join(op.dirname(op.abspath( __file__ )), "../include"))
+sys.path.append(op.join(os.environ.get("NISCRIPTS"), "include"))
 
-import e_afni, misc, usage_subjects # my own extra stuff
+import e_afni, misc, usage # my own extra stuff
 
-
-
-def create_anat_preproc_workflow(subject_list, input_basedir, input_prefix, output_basedir, output_anatdir, workingdir, output_type="NIFTI_GZ", name="anatomical_preprocessing"):
+def anatomical_preprocessing(
+    subject_list, 
+    inputs, outputs, workingdir, output_type, 
+    name="anatomical_preprocessing"):
     
     ######
     # Setup data source
@@ -40,8 +41,8 @@ def create_anat_preproc_workflow(subject_list, input_basedir, input_prefix, outp
                     
     # Say where to find input data
     datasource = pe.Node(interface=nio.DataGrabber(infields=['subject_id'], outfields=['struct']), name='datasource')
-    datasource.inputs.base_directory=os.path.abspath(input_basedir)
-    datasource.inputs.template = os.path.join("%s", "%s%s" % (input_prefix, ext))
+    datasource.inputs.base_directory=os.path.abspath(inputs.basedir)
+    datasource.inputs.template = os.path.join("%s", inputs.struct)
     datasource.inputs.template_args = dict(struct=[['subject_id']])
     
     
@@ -52,7 +53,7 @@ def create_anat_preproc_workflow(subject_list, input_basedir, input_prefix, outp
     # Main processes
     copy = pe.Node(interface=e_afni.Threedcopy(), name='copy')
     deoblique = pe.Node(interface=afni.ThreedWarp(deoblique=True), name='deoblique')
-    reorient = pe.Node(interface=e_afni.Threedresample(orientation='RPI'), name='reorient')
+    reorient = pe.Node(interface=afni.Threedresample(orientation='RPI'), name='reorient')
     skull_strip = pe.Node(interface=e_afni.ThreedSkullStrip(), name='skull_strip')
     brain_mask = pe.Node(interface=fsl.ImageMaths(op_string='-bin'), name='brain_mask')
     
@@ -89,10 +90,10 @@ def create_anat_preproc_workflow(subject_list, input_basedir, input_prefix, outp
     # Datasink
     ## will get: "base_directory/subject_id/output_anatdir"
     datasink = pe.Node(interface=nio.DataSink(), name='datasink')
-    datasink.inputs.base_directory = os.path.abspath(output_basedir)
+    datasink.inputs.base_directory = os.path.abspath(outputs.basedir)
     def get_substitutions(sid):
         return ('_subject_id_%s' % sid, "_subject_id_XXX")
-    datasink.inputs.regexp_substitutions = ("_subject_id_XXX", output_anatdir)
+    datasink.inputs.regexp_substitutions = ("_subject_id_XXX", outputs.struct)
     
     
     ######
@@ -132,42 +133,27 @@ def create_anat_preproc_workflow(subject_list, input_basedir, input_prefix, outp
     return ap_pipeline
 
 
-def create_parser():
-    """Create command-line interface"""
-    parser = argparse.ArgumentParser(
-        description="""
-            Run preprocessing for each participant's structual images.
-        """,
-        parents=[usage_subjects.parent_parser]
-    )
-    group = parser.add_argument_group('Program Specific Options')
-    group.add_argument('-i', '--input-prefix', required=True)
-    group.add_argument('-o', '--output-dir', required=True, dest="output_anatdir")
-    return parser
-
+class AnatPreprocParser(usage.NiParser):
+    def _create_parser(self, *args, **kwrds):
+        """Create command-line interface"""
+        parser = super(AnatPreprocParser, self)._create_parser(
+            description="""
+                Run preprocessing for each participant's structual images.
+            """
+        )
+        group = parser.add_argument_group('Program Specific Options')
+        group.add_argument('--struct', nargs=2, action=usage.store_io, required=True)
+        return parser
+    
 
 def main(arglist):
-    parser = create_parser()
-    args = parser.parse_args(arglist)
-    kwrds = vars(args)
-    plugin = kwrds.pop('plugin'); plugin_args = kwrds.pop('plugin_args')
-    ap_pipeline = create_anat_preproc_workflow(**kwrds)
-    ap_pipeline.run(plugin=plugin, plugin_args=plugin_args)
-    return
+    pp = AnatPreprocParser()
+    pp(anatomical_preprocessing, arglist)
 
-
-def test_ap():
+def test_wf():
     """Testing on my computer"""
-    subject_list = ["sub05676"]
-    input_basedir = "/Users/zarrar/Projects/tnetworks/"
-    input_prefix = "anat/mprage"
-    output_basedir = "/Users/zarrar/Projects/tnetworks/output/"
-    output_anatdir = "anat"
-    output_workingdir = "/Users/zarrar/Projects/tnetworks/nipype/"
-    ap_pipeline = create_anat_preproc_workflow(subject_list, input_basedir, input_prefix, output_basedir, output_anatdir, output_workingdir)
-    ap_pipeline.run()
-    ap_pipeline.write_graph()
-    return
+    arglist="-b /Users/zarrar/Projects/tnetworks /Users/zarrar/Projects/tnetworks/output --workingdir /Users/zarrar/Projects/tnetworks/tmp --struct *_highres.nii.gz highres --plugin Linear -s tb3417"
+    main(arglist.split())
 
 if __name__ == "__main__":
     main(sys.argv[1:])

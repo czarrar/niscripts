@@ -32,7 +32,7 @@ class OutputConnector(object):
     
 
 # borrowed from Fluid_NiPype
-def get_mapnode_substitutions(workflow, output_node, runs, unmap=[]):
+def get_mapnode_substitutions(workflow, output_node, nruns, unmap=[]):
     import networkx as nx
     from nipype.pipeline.engine import MapNode
     substitutions = []
@@ -45,10 +45,10 @@ def get_mapnode_substitutions(workflow, output_node, runs, unmap=[]):
         e[0].name for e in nx.edges(workflow._graph) \
             if e[1] is output_node and isinstance(e[0],MapNode) and e[0].name in unmapfields
     ]
-    for r in runs:
+    for r in range(nruns):
         for node in mapnodes:
-            substitutions.append(("_%s%d"%(node, r-1), "run_%d"%(r)))
+            substitutions.append(("_%s%d"%(node, r), "run_%d"%(r+1)))
         for node in unmapnodes:
-            substitutions.append(("_%s%d"%(node, r-1), ""))
+            substitutions.append(("_%s%d"%(node, r), ""))
     return substitutions
 
