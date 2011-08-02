@@ -7,10 +7,13 @@
 # This is a wrapper around FSL's slicer and overlay programs
 # note: several options from these two programs aren't supported here
 
+import os, sys
+sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
+
 from execute import *
 from tempfile import mkstemp, mkdtemp
 from math import ceil
-import re, argparse, string, os, sys
+import re, argparse, string
 
 ###
 # Process command-line inputs
