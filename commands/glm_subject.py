@@ -153,7 +153,7 @@ class AnalyzeSubject(object):
         
         # copy mask
         ext = op.splitext(self.mask)[1]
-        if ext == "gz":
+        if ext == ".gz":
             ext = op.splitext(op.splitext(self.mask)[0])[1] + ext
         if isinstance(self.mask, str):
             self.slog.info("...copying mask")
