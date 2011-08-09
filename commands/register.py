@@ -682,6 +682,7 @@ def special_output_workflow(
         # required
         "standard",
         "highres2standard_mat",
+        "interp",
         "wtype" # lin, nonlin, lin_linker, or nonlin_linker
     ]
     if fnirt:
@@ -693,6 +694,7 @@ def special_output_workflow(
                             name="inputspec")
     
     # set defaults
+    inputnode.inputs.interp = "not_used"
     inputnode.inputs.wtype = 'special_linker'
     
     
