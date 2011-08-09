@@ -663,6 +663,69 @@ def create_link_lin_reg_workflow(
     return linker
 
 
+def special_output_workflow(
+    name="special_output",
+    fnirt=False):
+    
+    #####
+    # Setup workflow
+    #####
+    
+    linker = pe.Workflow(name=name)
+    
+    
+    #####
+    # Setup input node
+    #####
+    
+    input_fields = [
+        # required
+        "standard",
+        "highres2standard_mat",
+        "wtype" # lin, nonlin, lin_linker, or nonlin_linker
+    ]
+    if fnirt:
+        input_fields.extend([
+            "highres2standard_warp"
+        ])
+    
+    inputnode = pe.Node(interface=util.IdentityInterface(fields=input_fields), 
+                            name="inputspec")
+    
+    # set defaults
+    inputnode.inputs.wtype = 'special_linker'
+    
+    
+    #####
+    # Setup output node
+    #####
+    
+    # Outputs
+    output_fields = [
+        "standard",
+        "highres2standard_mat"
+    ]
+    if fnirt:
+        output_fields.extend([
+            "highrest2standard_warp"
+        ])
+    outputnode = pe.Node(util.IdentityInterface(fields=output_fields),
+                        name="outputspec")
+    
+    # Rename output filenames
+    renamer = RegOutputConnector(linker, outputnode, inputnode)
+    
+    # standard
+    renamer.connect(inputnode, 'standard', 'standard')
+    # mat
+    linker.connect(inputnode, "highres2standard_mat", outputnode, "highres2standard_mat")
+    # warp
+    if fnirt:
+        linker.connect(inputnode, "highres2standard_warp", outputnode, "highres2standard_warp")
+    
+    return linker
+
+
 def create_func2standard_workflow(
     name="func2standard",
     coplanar = False, 
@@ -677,18 +740,20 @@ def create_func2standard_workflow(
         "func",
         "highres",
         "standard",
-        # required if fnirt set
-        "highres_head", 
-        "standard_head", 
-        "standard_mask", 
-        "fnirt_config", 
         # optional
         "coplanar",
         "interp"
     ]
+    if fnirt:
+        input_fields.extend([
+            # required if fnirt set
+            "highres_head", 
+            "standard_head", 
+            "standard_mask", 
+            "fnirt_config",
+        ])
     
-    inputnode = pe.Node(interface=util.IdentityInterface(fields=input_fields, 
-                                                         mandatory_inputs=False), 
+    inputnode = pe.Node(interface=util.IdentityInterface(fields=input_fields), 
                             name="inputspec")
     
     # set defaults
@@ -805,6 +870,17 @@ def create_func2standard_workflow(
                 ('outputspec.in2ref_fieldcoeff', 'inputspec.in2ref_field_file')
             ])
         ])
+    
+    # special output linker
+    special = special_output_workflow(fnirt=fnirt)
+    workflows.func.append(special)
+    normalize.connect([
+        (inputnode, special, [('standard', 'inputspec.standard')]),
+        (highres2standard, special, [('outputspec.in2ref_mat', 'inputspec.highres2standard_mat')])
+    ])
+    if fnirt:
+        normalize.connect(fnirt_highres2standard, 'outputspec.in2ref_fieldcoeff', 
+                            special, 'inputspec.highres2standard_warp')
     
     # link interp input
     for wf in workflows.func:
