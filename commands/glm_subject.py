@@ -168,6 +168,7 @@ class AnalyzeSubject(object):
                 op.join(self.outputdir, "allsubjs_masks%s" % ext),
                 op.join(self.outputdir, "mask%s" % ext),
             ))
+        self.mask = op.join(self.outputdir, "mask%s" % ext)
         
         # -> custom_timing_files
         # -> stats folder
@@ -447,6 +448,26 @@ class AnalyzeSubject(object):
                         p = self.slog.command(cmd, cwd=self.outputdir)
                         if p.retcode != 0:
                             raise DeconError("problem executing '%s'" % cmd)
+        
+        # warp mask
+        if reg_type == "flirt":
+            cmd = "flirt -in %s -ref reg/standard -applyxfm -init reg/func2standard.mat -interp nearestneighbour -out reg_standard/mask" % self.mask
+            if self.dry_run:
+                self.slog.drycommand(cmd)
+            else:
+                p = self.slog.command(cmd, cwd=self.outputdir)
+                if p.retcode != 0:
+                    raise DeconError("problem executing '%s'" % cmd)
+        elif reg_type == "fnirt":
+            cmd = "applywarp --in=%s --ref=reg/standard --premat=reg/func2highres.mat --warp=reg/highres2standard_warp --interp=nn --out=reg_standard/mask" % self.mask
+            if self.dry_run:
+                self.slog.drycommand(cmd)
+            else:
+                p = self.slog.command(cmd, cwd=self.outputdir)
+                if p.retcode != 0:
+                    raise DeconError("problem executing '%s'" % cmd)
+            
+            
         
         return
     
