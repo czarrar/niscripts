@@ -707,7 +707,7 @@ def special_output_workflow(
     ]
     if fnirt:
         output_fields.extend([
-            "highrest2standard_warp"
+            "highres2standard_warp"
         ])
     outputnode = pe.Node(util.IdentityInterface(fields=output_fields),
                         name="outputspec")
