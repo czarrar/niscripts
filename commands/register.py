@@ -679,6 +679,7 @@ def special_output_workflow(
     
     input_fields = [
         # required
+        "func",
         "standard",
         "highres2standard_mat",
         "interp",
@@ -703,6 +704,7 @@ def special_output_workflow(
     
     # Outputs
     output_fields = [
+        "func",
         "standard",
         "highres2standard_mat"
     ]
@@ -716,6 +718,8 @@ def special_output_workflow(
     # Rename output filenames
     renamer = RegOutputConnector(linker, outputnode, inputnode)
     
+    # func
+    renamer.connect(inputnode, 'func', 'func')
     # standard
     renamer.connect(inputnode, 'standard', 'standard')
     # mat
@@ -876,7 +880,8 @@ def create_func2standard_workflow(
     special = special_output_workflow(fnirt=fnirt)
     workflows.func.append(special)
     normalize.connect([
-        (inputnode, special, [('standard', 'inputspec.standard')]),
+        (inputnode, special, [('standard', 'inputspec.standard'),
+                              ('func', 'inputspec.func')]),
         (highres2standard, special, [('outputspec.in2ref_mat', 'inputspec.highres2standard_mat')])
     ])
     if fnirt:
