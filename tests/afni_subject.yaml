@@ -1,0 +1,102 @@
+vars:
+    base: "/Users/zarrar/Projects/tnetworks/output/${subject}/wm"
+    evdir: "${base}/evs/afni"
+    funcdir: "${base}/all_runs"
+
+decon:
+    data:
+        infiles: ${base}/run_${run}/func_preproc.nii.gz
+        mkdir: ["${funcdir}","${funcdir}/decons"]
+        outmat: ${funcdir}/decons/task_hrf.1D
+        outpic: ${funcdir}/decons/task_hrf.jpg
+        runfile: ${base}/good_runs.txt
+        overwrite: False
+    
+    options:
+        polort: A
+        local_times: True
+    
+    evs:
+        stim_times_IM:
+            - memoranda-corr: ${evdir}/01_mem_corr.txt 'SPMG2(3.5)'
+            - delay1-corr: ${evdir}/01_delay1_corr.txt 'SPMG2(6)'
+            - delay2-none-corr: ${evdir}/01_delay2_corr_none.txt 'SPMG2(6)'
+            - delay2-scenes-corr: ${evdir}/01_delay2_corr_scenes.txt 'SPMG2(6)'
+            - delay2-faces-corr: ${evdir}/01_delay2_corr_faces.txt 'SPMG2(6)'
+            - probe-corr: ${evdir}/01_probe_corr.txt 'SPMG2(1.5)'
+            - memoranda-incorr: ${evdir}/01_mem_incorr.txt 'SPMG2(3.5)'
+            - delay1-incorr: ${evdir}/01_delay1_incorr.txt 'SPMG2(6)'
+            - delay2-none-incorr: ${evdir}/01_delay2_incorr_none.txt 'SPMG2(6)'
+            - delay2-scenes-incorr: ${evdir}/01_delay2_incorr_scenes.txt 'SPMG2(6)'
+            - delay2-faces-incorr: ${evdir}/01_delay2_incorr_faces.txt 'SPMG2(6)'
+            - probe-incorr: ${evdir}/01_probe_incorr.txt 'SPMG2(1.5)'
+        stim_times:
+            - memoranda-catch: ${evdir}/01_mem_catch.txt 'SPMG2(3.5)'
+            - delay1-catch2: ${evdir}/01_delay1_catch_2.txt 'SPMG2(6)'
+            - delay1-catch4: ${evdir}/01_delay1_catch_4.txt 'SPMG2(6)'
+            - delay1-catch6: ${evdir}/01_delay1_catch_6.txt 'SPMG2(6)'
+            - delay2-catch2: ${evdir}/01_delay2_catch_2.txt 'SPMG2(6)'
+            - delay2-catch4: ${evdir}/01_delay2_catch_4.txt 'SPMG2(6)'
+            - probe-catch: ${evdir}/01_probe_catch.txt 'SPMG2(1.5)'
+        stim_times_AM1:
+            - rt-corr: ${evdir}/01_rt_corr.txt 'dmBLOCK'
+            - rt-incorr: ${evdir}/01_rt_incorr.txt 'dmBLOCK'
+            - rt-catch: ${evdir}/01_rt_catch.txt 'dmBLOCK'
+        stim_file:
+            - roll: ${base}/motion_all.par'[0]'
+            - pitch: ${base}/motion_all.par'[1]'
+            - yaw: ${base}/motion_all.par'[2]'
+            - dS: ${base}/motion_all.par'[3]'
+            - dL: ${base}/motion_all.par'[4]'
+            - dP: ${base}/motion_all.par'[5]'
+        stim_base: [roll, pitch, yaw, dS, dL, dP]
+    
+    contrasts:
+        - Mem_Corr: +1*memoranda-corr
+        - Delay1_Corr: +1*delay1-corr
+        - Delay2_None_Corr: +1*delay2-none-corr
+        - Delay2_Scenes_Corr: +1*delay2-scenes-corr
+        - Delay2_Faces_Corr: +1*delay2-faces-corr
+        - Probe_Corr: +1*probe-corr
+        - RT_Corr: +1*rt-corr
+        - Delay1_vs_None_Corr: +0.5*delay1-corr -0.5*delay2-none-corr
+        - Scenes_vs_None_Corr: +0.5*delay2-scenes-corr -0.5*delay2-none-corr
+        - Faces_vs_None_Corr: +0.5*delay2-faces-corr -0.5*delay2-none-corr
+        - Faces_vs_Scenes_Corr: +0.5*delay2-faces-corr -0.5*delay2-scenes-corr
+        - Mem_Corr_vs_Incorr: +0.5*memoranda-corr -0.5*memoranda-incorr
+        - Delay1_Corr_vs_Incorr: +0.5*delay1-corr -0.5*delay1-incorr
+        - None_Corr_vs_Incorr: +0.5*delay2-none-corr -0.5*delay2-none-incorr
+        - Scenes_Corr_vs_Incorr: +0.5*delay2-scenes-corr -0.5*delay2-scenes-incorr
+        - Faces_Corr_vs_Incorr: +0.5*delay2-faces-corr -0.5*delay2-faces-incorr
+    
+
+reml:
+    data:
+        infiles: ${base}/run_${run}/func_preproc.nii.gz
+        inmat: ${funcdir}/decons/task_hrf.1D
+        runfile: ${base}/good_runs.txt
+        mask: ${base}/func_mask.nii.gz
+        mkdir: ${funcdir}/analysis
+        outdir: ${funcdir}/analysis/XXX.reml
+        overwrite: 0
+    
+    cores: 1
+    
+    type: reml  # default is reml
+
+betaSeries:
+    data:
+        indir: ${funcdir}/analysis/XXX.reml
+    evs:
+        - memoranda-corr: 2
+        - delay1-corr: 2
+        - delay2-none-corr: 2
+        - delay2-scenes-corr: 2
+        - delay2-faces-corr: 2
+        - probe-corr: 2
+        - memoranda-incorr: 2
+        - delay1-incorr: 2
+        - delay2-none-incorr: 2
+        - delay2-scenes-incorr: 2
+        - delay2-faces-incorr: 2
+        - probe-incorr: 2

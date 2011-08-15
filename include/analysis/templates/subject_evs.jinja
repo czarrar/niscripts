@@ -1,0 +1,57 @@
+{% for ev_name,ev in evs.iteritems() %}
+    {% set ev_num = loop.index %}
+    
+    # EV title
+    set fmri(evtitle{{ ev_num }}) "{{ ev_name }}"
+    
+    # Basic waveform shape
+    # 0 : Square
+    # 1 : Sinusoid
+    # 2 : Custom (1 entry per volume)
+    # 3 : Custom (3 column format)
+    # 4 : Interaction
+    # 10 : Empty (all zeros)
+    set fmri(shape{{ ev_num }}) {{ ev.waveform }}
+    
+    # Convolution
+    # 0 : None
+    # 1 : Gaussian
+    # 2 : Gamma
+    # 3 : Double-Gamma HRF
+    # 4 : Gamma basis functions
+    # 5 : Sine basis functions
+    # 6 : FIR basis functions
+    set fmri(convolve{{ ev_num }}) {{ ev.convolution }}
+    
+    {% if ev.convolution == 2 or ev.convolution == 3 %}
+        # Convolve phase
+        set fmri(convolve_phase{{ ev_num }}) {{ ev.phase|default(0)|float }}
+    {% endif %}
+    
+    # Apply temporal filtering
+    set fmri(tempfilt_yn{{ ev_num }}) {{ ev.tempfilt|int }}
+
+    # Add temporal derivative
+    set fmri(deriv_yn{{ ev_num }}) {{ ev.tempderiv|int }}
+    
+    {% if ev.waveform == 2 or ev.waveform == 3 %}
+        # Custom EV file
+        set fmri(custom{{ ev_num }}) "{{ ev.fname }}"
+    {% endif %}
+    
+    {% if ev.convolution == 2 %}
+        # Gamma sigma
+        set fmri(gammasigma{{ ev_num }}) {{ ev.gamma.sigma|default(3)|float }}
+
+        # Gamma delay
+        set fmri(gammadelay{{ ev_num }}) {{ ev.gamma.delay|default(6)|float }}
+    {% endif %}
+    
+    # Orthogonalise EV {{ ev_num }} wrt EV 0
+    set fmri(ortho{{ ev_num }}.0) {{ ev.ortho_yn|default(0)|int }}
+    
+    {% for i in range(loop.length) %}
+        # Orthogonalise EV {{ ev_num }} wrt EV {{ loop.index }}
+        set fmri(ortho{{ ev_num }}.{{ loop.index }}) 0
+    {% endfor %}
+{% endfor %}

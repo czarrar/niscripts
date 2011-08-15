@@ -3,13 +3,13 @@
 This script uses nipype for anatomical preprocessing
 """
 
-
 import numpy as np
 
 from nipype.utils.filemanip import fname_presuffix
 import nipype.interfaces.io as nio # Data i/o
 import nipype.interfaces.fsl as fsl # fsl
 import nipype.interfaces.afni as afni # afni
+import nipype.interfaces.freesurfer as fs # afni
 from nipype.interfaces.afni.base import Info
 import nipype.interfaces.utility as util # utility
 import nipype.pipeline.engine as pe # pypeline engine
@@ -21,116 +21,193 @@ import sys
 sys.path.append(op.join(os.environ.get("NISCRIPTS"), "include"))
 
 import e_afni, misc, usage # my own extra stuff
+from utilities import SimpleOutputConnector
+
+
+def get_overlay_args(fname):
+    """Args for the overlay1 option of slicer"""
+    return (fname, 1, 1)
 
 def anatomical_preprocessing(
     subject_list, 
-    inputs, outputs, workingdir, output_type, 
-    name="anatomical_preprocessing"):
+    inputs, outputs, workingdir, output_type,
+    freesurfer_dir, orientation, name="anatomical_preprocessing"):
+    
+    #####
+    # Setup workflow
+    #####
+    
+    preproc = create_anatomical_preprocessing_workflow(name=name)
+    
+    # get input / set certain inputs
+    inputnode = preproc.get_node("inputspec")
+    inputnode.inputs.freesurfer_dir = freesurfer_dir
+    inputnode.inputs.orientation = orientation
+    
     
     ######
     # Setup data source
     ######
     
-    # File extension business
-    ext = Info.outputtype_to_ext(output_type)
-    afni.AFNICommand.set_default_outputtype(output_type)
-    
     # Subject source node
     subinfo = pe.Node(interface=util.IdentityInterface(fields=['subject_id']), name='subinfo', 
                         iterables=('subject_id', subject_list))
-                    
+    
     # Say where to find input data
     datasource = pe.Node(interface=nio.DataGrabber(infields=['subject_id'], outfields=['struct']), name='datasource')
     datasource.inputs.base_directory=os.path.abspath(inputs.basedir)
     datasource.inputs.template = os.path.join("%s", inputs.struct)
-    datasource.inputs.template_args = dict(struct=[['subject_id']])
+    datasource.inputs.template_args = dict(struct=[['subject_id']])    
+    
+    # Link inputs
+    preproc.connect([
+        (subinfo, datasource, [('subject_id', 'subject_id')]),
+        (datasource, inputnode, [('struct', 'struct')])
+    ])
+    
+    
+    ######
+    # Setup data source
+    ######
+    
+    # Datasink
+    datasink = pe.Node(interface=nio.DataSink(), name='datasink')
+    
+    # set base directory
+    datasink.inputs.base_directory = os.path.abspath(outputs.basedir)
+    
+    # replace subject_id stuff with anat
+    datasink.inputs.regexp_substitutions = (r"_subject_id_(\w|\d)+", outputs.struct)
+    
+    ## connect
+    preproc.connect(subinfo, 'subject_id', datasink, 'container')
+    outputnode = preproc.get_node("outputspec")
+    output_fields = outputnode.outputs.get()
+    for field in output_fields:
+        preproc.connect(outputnode, field, datasink, "@%s" % field)
+    
+    return preproc
+
+
+def create_anatomical_preprocessing_workflow(name="anatomical_preprocessing"):
+    """Prepares anatomical image for fMRI analysis. This includes:
+    
+    1. Intensity Normalization (w/freesurfer)
+    2. Skull Stripping (w/freesurfer)
+    3. Reorient images (for consistency during registration)
+    
+    PNG images of the head and brain mask are also created for QC.
+    """
+    
+    #####
+    # Setup workflow
+    #####
+    
+    preproc = pe.Workflow(name=name)
+    
+    
+    #####
+    # Setup input node
+    #####
+    
+    input_fields = [
+        "subject_id",
+        "freesurfer_dir",   # $SUBJECTS_DIR
+        "struct",
+        "orientation"
+    ]
+    inputnode = pe.Node(interface=util.IdentityInterface(fields=input_fields), 
+                            name="inputspec")
+    
+    # defaults
+    inputnode.inputs.orientation = "RPI"    # fsl's standard brain
+    
+    
+    #####
+    # Setup output node
+    #####
+    
+    # Outputs
+    output_fields = [
+        "orig",
+        "head",
+        "brain",
+        "brain_mask",
+        "head_axial_pic",
+        "brain_mask_axial_pic",
+        "brain_mask_sagittal_pic"        
+    ]
+    outputnode = pe.Node(util.IdentityInterface(fields=output_fields),
+                        name="outputspec")
+    
+    # renaming
+    renamer = SimpleOutputConnector(preproc, outputnode)
     
     
     ######
     # Commands
     ######
     
-    # Main processes
-    copy = pe.Node(interface=e_afni.Threedcopy(), name='copy')
-    deoblique = pe.Node(interface=afni.ThreedWarp(deoblique=True), name='deoblique')
-    reorient = pe.Node(interface=afni.Threedresample(orientation='RPI'), name='reorient')
-    skull_strip = pe.Node(interface=e_afni.ThreedSkullStrip(), name='skull_strip')
-    brain_mask = pe.Node(interface=fsl.ImageMaths(op_string='-bin'), name='brain_mask')
+    # TODO: check if need any of this below
+    ## Deoblique (so image plays well with AFNI)
+    #deoblique = pe.Node(interface=afni.ThreedWarp(deoblique=True), name='deoblique')
+    #preproc.connect(inputnode, 'struct', deoblique, 'in_file')
+    #
+    ## Reorient (so image plays well with registration)
+    #reorient = pe.Node(interface=afni.Threedresample(orientation='RPI'), name='reorient')
+    #preproc.connect(deoblique, 'out_file', reorient, 'in_file')
+    #
+    #skull_strip = pe.Node(interface=e_afni.ThreedSkullStrip(), name='skull_strip') 
     
-    # Pictures!
-    ## of head
+    # Skull Strip with Freesurfer
+    skull_strip = pe.Node(interface=fs.ReconAll(direcive='autorecon1'), name="skull_strip")
+    preproc.connect([
+        (inputnode, skull_strip, [('struct', 'T1_files'),
+                                  ('subject_id', 'subject_id'),
+                                  ('freesurfer_dir', 'subjects_dir')])
+    ])
+    
+    # Convert to nifti
+    ## orig
+    convert_orig = pe.Node(fs.MRIConvert(out_type="niigz"), name="convert_orig")
+    preproc.connect(skull_strip, 'orig', convert_orig, 'in_file')
+    preproc.connect(inputnode, 'orientation', convert_orig, 'out_orientation')
+    renamer(convert_orig, 'out_file', 'orig')
+    ## head
+    convert_head = pe.Node(fs.MRIConvert(out_type="niigz"), name="convert_head")
+    preproc.connect(skull_strip, 'T1', convert_head, 'in_file')
+    preproc.connect(inputnode, 'orientation', convert_head, 'out_orientation')
+    renamer(convert_head, 'out_file', 'head')
+    ## brain
+    convert_brain = pe.Node(fs.MRIConvert(out_type="niigz"), name="convert_brain")
+    preproc.connect(skull_strip, 'brain', convert_brain, 'in_file')
+    preproc.connect(inputnode, 'orientation', convert_brain, 'out_orientation')
+    renamer(convert_brain, 'out_file', 'brain')
+    
+    # Create brain mask
+    brain_mask = pe.Node(interface=fsl.ImageMaths(op_string='-bin'), name='brain_mask')
+    preproc.connect(convert_brain, 'out_file', brain_mask, 'in_file')
+    renamer(brain_mask, 'out_file', 'brain_mask')
+    
+    # Pic of head
     slicer_head = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
                             name='slicer_head')
-    ## of brain mask on top of the head
+    preproc.connect(convert_head, 'out_file', slicer_head, 'in_file')
+    renamer(slicer_head, 'out_file', 'head_axial_pic')
+    
+    # Pic of brain mask overlaid on head (axial)
     slicer_mask1 = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), name='slicer_mask1')
+    preproc.connect(convert_head, 'out_file', slicer_mask1, 'in_file')
+    preproc.connect(brain_mask, ('out_file', get_overlay_args), slicer_mask1, 'in_file')
+    renamer(slicer_mask1, 'out_file', 'brain_mask_axial_pic')
+    
+    # Pic of brain mask overlaid on head (sagittal)
     slicer_mask2 = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="sagittal"), name='slicer_mask2')
-    def get_overlay_args(fname):
-        """Args for the overlay1 option of slicer"""
-        return (fname, 1, 1)
+    preproc.connect(convert_head, 'out_file', slicer_mask2, 'in_file')
+    preproc.connect(brain_mask, ('out_file', get_overlay_args), slicer_mask2, 'in_file')
+    renamer(slicer_mask2, 'out_file', 'brain_mask_sagittal_pic')
     
-    ######
-    # Setup Output
-    ######
-    
-    # Rename filenames
-    headname = pe.Node(util.Rename(format_string="head", keep_ext=True), 
-                        name="headname")
-    brainname = pe.Node(util.Rename(format_string="brain", keep_ext=True), 
-                        name="brainname")
-    maskname = pe.Node(util.Rename(format_string="brain_mask", keep_ext=True), 
-                        name="maskname")
-    pic_headname = pe.Node(util.Rename(format_string="pic_head_axial", keep_ext=True), 
-                            name="pic_headname")
-    pic_maskname1 = pe.Node(util.Rename(format_string="pic_brain_mask_axial", keep_ext=True), 
-                            name="pic_maskname1")
-    pic_maskname2 = pe.Node(util.Rename(format_string="pic_brain_mask_sagittal", keep_ext=True), 
-                            name="pic_maskname2")
-    
-    
-    # Datasink
-    ## will get: "base_directory/subject_id/output_anatdir"
-    datasink = pe.Node(interface=nio.DataSink(), name='datasink')
-    datasink.inputs.base_directory = os.path.abspath(outputs.basedir)
-    def get_substitutions(sid):
-        return ('_subject_id_%s' % sid, "_subject_id_XXX")
-    datasink.inputs.regexp_substitutions = ("_subject_id_XXX", outputs.struct)
-    
-    
-    ######
-    # Do the workflow!
-    ######
-    
-    ap_pipeline = pe.Workflow(name=name)
-    ap_pipeline.base_dir = os.path.abspath(workingdir)
-    
-    ap_pipeline.connect([(subinfo, datasource, [('subject_id', 'subject_id')]),
-                        (datasource, copy, [('struct', 'in_file')]), 
-                        (copy, deoblique, [('out_file', 'in_file')]), 
-                        (deoblique, reorient, [('out_file', 'in_file')]),
-                        (reorient, skull_strip, [('out_file', 'in_file')]),
-                        (skull_strip, brain_mask, [('out_file', 'in_file')]),
-                        (reorient, slicer_head, [('out_file', 'in_file')]),
-                        (reorient, slicer_mask1, [('out_file', 'in_file')]),
-                        (reorient, slicer_mask2, [('out_file', 'in_file')]),
-                        (brain_mask, slicer_mask1, [(('out_file', get_overlay_args), 'overlay1')]),
-                        (brain_mask, slicer_mask2, [(('out_file', get_overlay_args), 'overlay1')]),
-                        (reorient, headname, [('out_file', 'in_file')]), 
-                        (skull_strip, brainname, [('out_file', 'in_file')]), 
-                        (brain_mask, maskname, [('out_file', 'in_file')]), 
-                        (slicer_head, pic_headname, [('out_file', 'in_file')]),
-                        (slicer_mask1, pic_maskname1, [('out_file', 'in_file')]),
-                        (slicer_mask2, pic_maskname2, [('out_file', 'in_file')]),
-                        (subinfo, datasink, [('subject_id', 'container'), 
-                         (('subject_id', get_substitutions), 'substitutions')]), 
-                        (headname, datasink, [('out_file', '@head')]),
-                        (brainname, datasink, [('out_file', '@brain')]),
-                        (maskname, datasink, [('out_file', '@brain_mask')]),
-                        (pic_headname, datasink, [('out_file', '@pic_head')]),
-                        (pic_maskname1, datasink, [('out_file', '@pic_brain_mask1')]),
-                        (pic_maskname2, datasink, [('out_file', '@pic_brain_mask2')])
-                        ])
-    
-    return ap_pipeline
+    return preproc
 
 
 class AnatPreprocParser(usage.NiParser):
@@ -141,14 +218,18 @@ class AnatPreprocParser(usage.NiParser):
                 Run preprocessing for each participant's structual images.
             """
         )
-        group = parser.add_argument_group('Program Specific Options')
+        group = parser.add_argument_group('Anatomical Preprocessing Options')
         group.add_argument('--struct', nargs=2, action=usage.store_io, required=True)
+        group.add_argument('--freesurfer-dir', action=usage.store_directory, required=True)
+        group.add_argument('--orientation', default='RPI')
+        # 3dinfo /Users/Shared/fsl/data/standard/MNI152_T1_2mm.nii.gz | grep orient | sed -e s/.*-orient\ // -e s/]// # to get orientation from standard brain
         return parser
     
 
 def main(arglist):
     pp = AnatPreprocParser()
     pp(anatomical_preprocessing, arglist)
+    
 
 def test_wf():
     """Testing on my computer"""

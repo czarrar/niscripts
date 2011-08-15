@@ -369,7 +369,7 @@ class AnalyzeSubject(object):
         for i in xrange(len(self.glt_labels)):
             label = self.glt_labels[i]
             ## coef
-            cmd = "3dcalc -a %s'[%s#0_Coef]' -expr 'a' -prefix stats/coef%02i_%s.nii.gz" % ("stats/bucket.nii.gz", label, i, label)
+            cmd = "3dcalc -a %s'[%s#0_Coef]' -expr 'a' -prefix stats/coef%02i_%s.nii.gz" % ("stats/bucket.nii.gz", label, i+1, label)
             if self.dry_run:
                 self.slog.drycommand(cmd)
             else:
@@ -377,7 +377,7 @@ class AnalyzeSubject(object):
                 if p.retcode != 0:
                     raise DeconError("Error extracting Coef for %s from bucket" % label)
             ## tstat
-            cmd = "3dcalc -a %s'[%s#0_Tstat]' -expr 'a' -prefix stats/tstat%02i_%s.nii.gz" % ("stats/bucket.nii.gz", label, i, label)
+            cmd = "3dcalc -a %s'[%s#0_Tstat]' -expr 'a' -prefix stats/tstat%02i_%s.nii.gz" % ("stats/bucket.nii.gz", label, i+1, label)
             if self.dry_run:
                 self.slog.drycommand(cmd)
             else:
@@ -449,6 +449,43 @@ class AnalyzeSubject(object):
                         if p.retcode != 0:
                             raise DeconError("problem executing '%s'" % cmd)
         
+        # make buckets for afni
+        n = len(self.glt_labels)
+        coefs = [ "coef%02i_%s.nii.gz" % (i+1, self.glt_labels[i]) for i in xrange(n) ]
+        cmd = "3dbucket -prefix coefs -fbuc %s" % " ".join(coefs)
+        if self.dry_run:
+            self.slog.drycommand(cmd)
+        else:
+            p = self.slog.command(cmd, cwd=self.outputdir)
+            if p.retcode != 0:
+                raise DeconError("problem executing '%s'" % cmd)
+        tstats = [ "tstat%02i_%s.nii.gz" % (i+1, self.glt_labels[i]) for i in xrange(n) ]
+        cmd = "3dbucket -prefix tstats -fbuc %s" % " ".join(tstats)
+        if self.dry_run:
+            self.slog.drycommand(cmd)
+        else:
+            p = self.slog.command(cmd, cwd=self.outputdir)
+            if p.retcode != 0:
+                raise DeconError("problem executing '%s'" % cmd)
+        
+        
+        # relabel buckets
+        opts = [ "-sublabel %i '%s'" % (i, self.glt_labels[i]) for i in xrange(n) ]
+        cmd = "3drefit %s coefs+tlrc" % " ".join(opts)
+        if self.dry_run:
+            self.slog.drycommand(cmd)
+        else:
+            p = self.slog.command(cmd, cwd=self.outputdir)
+            if p.retcode != 0:
+                raise DeconError("problem executing '%s'" % cmd)
+        cmd = "3drefit %s tstats+tlrc" % " ".join(opts)
+        if self.dry_run:
+            self.slog.drycommand(cmd)
+        else:
+            p = self.slog.command(cmd, cwd=self.outputdir)
+            if p.retcode != 0:
+                raise DeconError("problem executing '%s'" % cmd)
+        
         # warp mask
         if reg_type == "flirt":
             cmd = "flirt -in %s -ref reg/standard -applyxfm -init reg/func2standard.mat -interp nearestneighbour -out reg_standard/mask" % self.mask
@@ -466,15 +503,12 @@ class AnalyzeSubject(object):
                 p = self.slog.command(cmd, cwd=self.outputdir)
                 if p.retcode != 0:
                     raise DeconError("problem executing '%s'" % cmd)
-            
-            
         
         return
     
 
 class Analyze(object):
-    def __init__(self, subject_list, config_file, interp="lin", cores=1, dry_run=False, verbosity=0, 
-                 force=False):
+    def __init__(self, subject_list, config_file, interp="lin", cores=1, dry_run=False, verbosity=0, force=False):
         # cores
         os.putenv("OMP_NUM_THREADS", str(cores))
         # config

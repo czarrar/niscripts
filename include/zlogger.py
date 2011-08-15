@@ -6,7 +6,8 @@ import logging.config
 from execute import Process
 
 # Add level names
-logging.IMPORTANT = 28
+# warning = 30
+logging.IMPORTANT = 28  
 logging.TITLE = 26
 logging.SUBTITLE = 24
 logging.COMMAND = 18
@@ -22,7 +23,7 @@ logging.addLevelName(logging.COMMAND_STDOUT, 'COMMAND_STDOUT')
 logging.addLevelName(logging.COMMAND_STDERR, 'COMMAND_STDERR')
 
 # Get logger wrapper
-def getLogger(name=None, level=logging.DEBUG, fname=None):
+def getLogger(name=None, level=logging.DEBUG, fname=None, extra={}, allow_exceptions=False):
     # create logger
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
@@ -43,15 +44,26 @@ def getLogger(name=None, level=logging.DEBUG, fname=None):
     ch.setFormatter(formatter)
     logger.addHandler(ch)
     
-    return Adapter(logger, {})
+    return Adapter(logger, extra, allow_exceptions)
 
+class LoggerError(Exception):
+    """todo"""
+
+class LoggerCritical(Exception):
+    """todo"""
 
 class Adapter(logging.LoggerAdapter):
-    def command(self, msg, cwd=None, *args, **kwargs):
-        self.log(logging.COMMAND, msg, *args, **kwargs)
-        p = Process(msg, to_print=False, cwd=cwd)
+    def __init__(self, logger, extra, allow_exceptions=False, **kwargs):
+        super(Adapter, self).__init__(logger, extra, **kwargs)
+        self.allow_exceptions = allow_exceptions
+    
+    def command(self, cmd, cwd=None, *args, **kwargs):
+        self.log(logging.COMMAND, cmd, *args, **kwargs)
+        p = Process(cmd, to_print=False, cwd=cwd)
         self.log(logging.COMMAND_STDOUT, p.stdout)
         self.log(logging.COMMAND_STDERR, p.stderr)
+        if self.allow_exceptions and p.retcode != 0:
+            raise LoggerError("Error calling: %s" % cmd)
         return p
     
     def drycommand(self, msg, *args, **kwargs):
@@ -66,11 +78,18 @@ class Adapter(logging.LoggerAdapter):
     def important(self, msg, *args, **kwargs):
         self.log(logging.IMPORTANT, msg, *args, **kwargs)
     
-    def warn(self, msg, *args, **kwargs):
-        self.warning(msg, *args, **kwargs)
+    def error(self, msg, *args, **kwargs):
+        self.log(logging.ERROR, msg, *args, **kwargs)
+        if self.allow_exceptions:
+            raise LoggerError(msg)
+    
+    def critical(self, msg, *args, **kwargs):
+        self.log(logging.CRITICAL, msg, *args, **kwargs)
+        if self.allow_exceptions:
+            raise LoggerCritical(msg)
     
     def fatal(self, msg, *args, **kwargs):
-        self.critical(msg, *args, **kwargs)
+        self.log(logging.CRITICAL, msg, exc_info=1, *args, **kwargs)
         raise SystemExit(1)
     
 

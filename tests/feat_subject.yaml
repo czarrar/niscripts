@@ -1,0 +1,159 @@
+vars:
+    base: "/Users/zarrar/Projects/tnetworks/output/${subject}/wm"
+    funcdir: ${base}/all_runs
+    evdir: "${base}/fsl_evs"
+
+combine:
+    data:
+        infiles: ${base}/run_${run}/func_preproc.nii.gz
+        mkdir: ${funcdir}
+        outfunc: ${funcdir}/func_preproc.nii.gz
+        runfile: ${base}/good_runs.txt
+    
+    decon:
+        polort: A   # can remove run effects if have multiple runs
+        inconfound: ${base}/motion_all.par
+        outconfound: ${funcdir}/confound_evs.1D
+
+fsf:
+    data:
+        infile: "${funcdir}/func_preproc.nii.gz"
+        outdir: "${funcdir}/analysis/ztest.feat"
+        outfsf: "${funcdir}/fsfs/ztest.fsf"
+        highpass_filter: 128
+        # TR is automatic but you could do tr: 2 to force a TR of 2 seconds
+        overwrite: 0    # 0 = quit if output exists, 1 = add '+' to outdir if exists, 2 = overwrite
+
+    stats:
+        prewhiten: True         # default = True
+        confoundev_file: ${funcdir}/confound_evs.1D # default = none
+        evs:
+            mem_corr:
+                fname: ${evdir}/mem_corr.txt # can do 1 or 3 column format
+                convolution: double-gamma
+                tempfilt: True              # default = False
+                tempderiv: True             # default = False
+            del1_corr:
+                fname: ${evdir}/delay1_corr.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+            none_corr:
+                fname: ${evdir}/delay2_corr_none.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+            scenes_corr:
+                fname: ${evdir}/delay2_corr_scenes.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+            faces_corr:
+                fname: ${evdir}/delay2_corr_faces.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+            probe_corr:
+                fname: ${evdir}/probe_corr.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+            rt_corr:
+                fname: ${evdir}/rt_corr.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+            mem_incorr:
+                fname: ${evdir}/mem_incorr.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+            del1_incorr:
+                fname: ${evdir}/delay1_incorr.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+            none_incorr:
+                fname: ${evdir}/delay2_incorr_none.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+            scenes_incorr:
+                fname: ${evdir}/delay2_incorr_scenes.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+            faces_incorr:
+                fname: ${evdir}/delay2_incorr_faces.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+            probe_incorr:
+                fname: ${evdir}/probe_incorr.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+            rt_incorr:
+                fname: ${evdir}/rt_incorr.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+            mem_catch:
+                fname: ${evdir}/mem_catch.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+            del1_catch:
+                fname: ${evdir}/delay1_catch.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+            del2_catch:
+                fname: ${evdir}/delay2_catch.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+            probe_catch:
+                fname: ${evdir}/probe_catch.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+            rt_catch:
+                fname: ${evdir}/rt_catch.txt
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: True
+        contrasts:
+            Delay1_vs_None_Correct: '+0.5*del1_corr -0.5*none_corr'
+            Scenes_vs_None_Correct: '+0.5*scenes_corr -0.5*none_corr'
+            Faces_vs_None_Correct: '+0.5*faces_corr -0.5*none_corr'
+            Faces_vs_Scenes_Correct: '+0.5*faces_corr -0.5*scenes_corr'
+            Mem_Correct_vs_Incorrect: '+0.5*mem_corr -0.5*mem_incorr'
+            Delay1_Correct_vs_Incorrect: '+0.5*del1_corr -0.5*del1_incorr'
+            None_Correct_vs_Incorrect: '+0.5*none_corr -0.5*none_incorr'
+            Scenes_Correct_vs_Incorrect: '+0.5*scenes_corr -0.5*scenes_incorr'
+            Faces_Correct_vs_Incorrect: '+0.5*faces_corr -0.5*faces_incorr'
+            Memoranda_Correct: '+1*mem_corr' # or [1,0]
+            Delay1_Correct: '+1*del1_corr'
+            None_Correct: '+1*none_corr'
+            Scenes_Correct: '+1*scenes_corr'
+            Faces_Correct: '+1*faces_corr'
+            Probe_Correct: '+1*probe_corr'
+            RT_Correct: '+1*rt_corr'
+            Memoranda_Incorrect: '+1*mem_incorr' # or [1,0]
+            Delay1_Incorrect: '+1*del1_incorr'
+            None_Incorrect: '+1*none_incorr'
+            Scenes_Incorrect: '+1*scenes_incorr'
+            Faces_Incorrect: '+1*faces_incorr'
+            Probe_Incorrect: '+1*probe_incorr'
+            RT_Incorrect: '+1*rt_incorr'
+
+    poststats:
+        thresh_type: cluster    # default = cluster
+        vox_thresh: 2.3         # default = 2.3
+        clust_thresh: 0.05      # default = 0.05
+        # also could do pretheshold_mask: /path/to/mask
+
+feat:
+    infsf: ${funcdir}/fsfs/ztest.fsf
+    regdir: ${base}/reg

@@ -4,7 +4,6 @@ This script uses nipype for normalization
 """
 
 import os, sys
-sys.path.append('/Users/zarrar/Code/nipype') # replace with dynamic path
 sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
 
 import numpy as np
@@ -906,7 +905,7 @@ def register(
     subject_list, 
     inputs, outputs, workingdir, output_type,
     standard, fnirt, interp, search,  
-    name="linear_registration_func2standard"):
+    name="registration_func2standard"):
         
     #####
     # Setup workflow

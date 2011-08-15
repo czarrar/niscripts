@@ -1,0 +1,33 @@
+inputdir: 
+    all: /mnt/nfs/psych/distwm01/analysis/subjects/${subject}/wm/analysis/task_hrf.reml
+outputdir: /mnt/nfs/psych/distwm01/analysis/group/task_hrf.mema
+
+stats:
+    model_type: single
+    contrasts:
+        all:
+            - Mem_Corr
+            - Delay1_Corr
+            - Delay2_None_Corr
+            - Delay2_Scenes_Corr
+            - Delay2_Faces_Corr
+            - Probe_Corr
+            - RT_Corr
+            - Delay1_vs_None_Corr
+            - Scenes_vs_None_Corr
+            - Faces_vs_None_Corr
+            - Faces_vs_Scenes_Corr
+            - Mem_Corr_vs_Incorr
+            - Delay1_Corr_vs_Incorr
+            - None_Corr_vs_Incorr
+            - Scenes_Corr_vs_Incorr
+            - Faces_Corr_vs_Incorr
+    model_outliers: True
+    HKtest: True
+    jobs: 4
+    max_zeros: 0.2
+    verb: 1
+    # mask is auto calculated
+
+post-stats:
+    me: 1

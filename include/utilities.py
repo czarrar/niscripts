@@ -3,6 +3,33 @@
 import nipype.interfaces.utility as util # utility
 import nipype.pipeline.engine as pe # pypeline engine
 
+class SimpleOutputConnector(object):
+    """Regular Node (non Map Node version)"""
+    def __init__(self, workflow, outnode):
+        self.workflow = workflow
+        self.outnode = outnode
+        return
+    
+    def __call__(self, *args, **kwrds):
+        return self.connect(*args, **kwrds)
+    
+    def connect(self, procnode, procfield, outfield, outnode=None, to_map=True, **rename_kwrds):
+        rename_kwrds.setdefault('format_string', outfield)
+        rename_kwrds.setdefault('keep_ext', True)
+        rename = util.Rename(**rename_kwrds)
+        if outnode is None:
+            outnode = self.outnode
+        renamenode = pe.Node(interface=rename, 
+                             name="rename_%s" % outfield)            
+        self.workflow.connect([
+            (procnode, renamenode, [(procfield, "in_file")]), 
+            (renamenode, outnode, [("out_file", outfield)])
+        ])
+        return renamenode
+    
+
+
+
 class OutputConnector(object):
     def __init__(self, workflow, outnode):
         self.workflow = workflow
