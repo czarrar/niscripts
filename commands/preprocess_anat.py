@@ -24,6 +24,56 @@ import e_afni, misc, usage # my own extra stuff
 from utilities import SimpleOutputConnector
 from execute import Process
 
+def run_freesurfer_fun(subjects_dir, subject_id, directive, t1_files=[]):
+    import os
+    import os.path as op
+    import nipype.interfaces.freesurfer as fs
+    from execute import Process
+    from glob import glob
+    
+    subdir = op.join(subjects_dir, subject_id)
+    recon = fs.ReconAll(directive='autorecon1', subjects_dir=subjects_dir, 
+                        subject_id=subject_id)
+    
+    rawfile = op.join(subdir, "mri", "orig", "001.mgz")
+    if t1_files:
+        if op.isfile(rawfile):
+            print 'T1 files specified but not to be included since they already exist in output'
+        else:
+            recon.inputs.T1_files = t1_files
+    
+    to_run = False
+    filechoices = {
+        'autorecon1': op.join(subdir, "mri", "brainmask.mgz"),
+        'autorecon2': op.join(subdir, "surf", "?h.inflated"),
+        'autorecon3': op.join(subdir, "mri", "aparc+aseg.mgz")
+    }
+    
+    try:
+        fpath = filechoices[directive]
+    except KeyError:
+        raise Exception("Unrecognized directive %s" % directive)
+    
+    ran = False
+    gpath = glob(fpath)
+    if len(gpath) > 0:
+        print 'Freesurfer output for directive %s already exists' % directive
+    else:
+        recon.inputs.directive = directive
+        p = Process(recon.cmdline, to_print=True)
+        if p.retcode != 0:
+            raise Exception("Error running '%s': \n%s" % (recon.cmdline, p.stderr))
+        ran = True
+    
+    return (subject_id, ran)
+
+
+run_freesurfer = util.Function(input_names=["subjects_dir", "subject_id", "directive", 
+                                            "t1_files"], 
+                               output_names=["subject_id", "ran"], 
+                               function=run_freesurfer_fun)
+
+
 def get_overlay_args(fname):
     """Args for the overlay1 option of slicer"""
     return (fname, 1, 1)
@@ -162,18 +212,28 @@ def create_anatomical_preprocessing_workflow(freesurfer_dir, name="anatomical_pr
     #
     #skull_strip = pe.Node(interface=e_afni.ThreedSkullStrip(), name='skull_strip') 
     
-    # Skull Strip with Freesurfer
-    skull_strip = pe.Node(interface=fs.ReconAll(directive='autorecon1', subjects_dir=freesurfer_dir), name="skull_strip")
+    # First call a function that may or may not run autorecon1
+    skull_strip = pe.Node(run_freesurfer, name="skull_strip")
+    skull_strip.inputs.directive = 'autorecon1'
+    skull_strip.inputs.subjects_dir = freesurfer_dir
     preproc.connect([
         (inputnode, skull_strip, [('struct', 'T1_files'),
                                   ('subject_id', 'subject_id'),
                                   ('freesurfer_dir', 'subjects_dir')])
     ])
     
+    # Now get inputs
+    getfree = pe.Node(io.FreeSurferSource(subjects_dir=freesurfer_dir),
+                      name="getfree")
+    preproc.connect([
+        (inputnode, getfree, [('freesurfer_dir', 'subjects_dir'),
+                              ('subject_id', 'subject_id')])
+    ])
+    
     # Convert to nifti
     ## orig
     convert_orig = pe.Node(fs.MRIConvert(out_type="niigz", subjects_dir=freesurfer_dir), name="convert_orig")
-    preproc.connect(skull_strip, 'orig', convert_orig, 'in_file')
+    preproc.connect(getfree, 'orig', convert_orig, 'in_file')
     preproc.connect([
         (inputnode, convert_orig, [('orientation', 'out_orientation'),
                                    ('freesurfer_dir', 'subjects_dir')])
@@ -181,7 +241,7 @@ def create_anatomical_preprocessing_workflow(freesurfer_dir, name="anatomical_pr
     renamer(convert_orig, 'out_file', 'orig')
     ## head
     convert_head = pe.Node(fs.MRIConvert(out_type="niigz", subjects_dir=freesurfer_dir), name="convert_head")
-    preproc.connect(skull_strip, 'T1', convert_head, 'in_file')
+    preproc.connect(getfree, 'T1', convert_head, 'in_file')
     preproc.connect([
         (inputnode, convert_head, [('orientation', 'out_orientation'),
                                    ('freesurfer_dir', 'subjects_dir')])
@@ -189,7 +249,7 @@ def create_anatomical_preprocessing_workflow(freesurfer_dir, name="anatomical_pr
     renamer(convert_head, 'out_file', 'head')
     ## brain
     convert_brain = pe.Node(fs.MRIConvert(out_type="niigz", subjects_dir=freesurfer_dir), name="convert_brain")
-    preproc.connect(skull_strip, 'brain', convert_brain, 'in_file')
+    preproc.connect(getfree, 'brain', convert_brain, 'in_file')
     preproc.connect([
         (inputnode, convert_brain, [('orientation', 'out_orientation'),
                                     ('freesurfer_dir', 'subjects_dir')])
