@@ -162,7 +162,7 @@ def create_anatomical_preprocessing_workflow(name="anatomical_preprocessing"):
     #skull_strip = pe.Node(interface=e_afni.ThreedSkullStrip(), name='skull_strip') 
     
     # Skull Strip with Freesurfer
-    skull_strip = pe.Node(interface=fs.ReconAll(direcive='autorecon1'), name="skull_strip")
+    skull_strip = pe.Node(interface=fs.ReconAll(directive='autorecon1'), name="skull_strip")
     preproc.connect([
         (inputnode, skull_strip, [('struct', 'T1_files'),
                                   ('subject_id', 'subject_id'),
