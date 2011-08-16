@@ -226,8 +226,8 @@ def create_anatomical_preprocessing_workflow(freesurfer_dir, name="anatomical_pr
     getfree = pe.Node(nio.FreeSurferSource(subjects_dir=freesurfer_dir),
                       name="getfree")
     preproc.connect([
-        (inputnode, getfree, [('freesurfer_dir', 'subjects_dir'),
-                              ('subject_id', 'subject_id')])
+        (inputnode, getfree, [('freesurfer_dir', 'subjects_dir')]),
+        (skull_strip, getfree, [('subject_id', 'subject_id')])
     ])
     
     # Convert to nifti
