@@ -37,10 +37,11 @@ def anatomical_preprocessing(
     # Setup workflow
     #####
     
-    preproc = create_anatomical_preprocessing_workflow(name=name, freesurfer_dir=freesurfer_dir)
+    preproc = create_anatomical_preprocessing_workflow(name=name)
     
     # get input / set certain inputs
     inputnode = preproc.get_node("inputspec")
+    inputnode.inputs.freesurfer_dir = freesurfer_dir
     inputnode.inputs.orientation = orientation
     
     
@@ -90,7 +91,7 @@ def anatomical_preprocessing(
     return preproc
 
 
-def create_anatomical_preprocessing_workflow(freesurfer_dir, name="anatomical_preprocessing"):
+def create_anatomical_preprocessing_workflow(name="anatomical_preprocessing"):
     """Prepares anatomical image for fMRI analysis. This includes:
     
     1. Intensity Normalization (w/freesurfer)
@@ -161,29 +162,37 @@ def create_anatomical_preprocessing_workflow(freesurfer_dir, name="anatomical_pr
     #skull_strip = pe.Node(interface=e_afni.ThreedSkullStrip(), name='skull_strip') 
     
     # Skull Strip with Freesurfer
-    skull_strip = pe.Node(interface=fs.ReconAll(directive='autorecon1', 
-                                                subjects_dir=freesurfer_dir), 
-                          name="skull_strip")
+    skull_strip = pe.Node(interface=fs.ReconAll(directive='autorecon1'), name="skull_strip")
     preproc.connect([
         (inputnode, skull_strip, [('struct', 'T1_files'),
-                                  ('subject_id', 'subject_id')])
+                                  ('subject_id', 'subject_id'),
+                                  ('freesurfer_dir', 'subjects_dir')])
     ])
     
     # Convert to nifti
     ## orig
     convert_orig = pe.Node(fs.MRIConvert(out_type="niigz"), name="convert_orig")
     preproc.connect(skull_strip, 'orig', convert_orig, 'in_file')
-    preproc.connect(inputnode, 'orientation', convert_orig, 'out_orientation')
+    preproc.connect([
+        (inputnode, convert_orig, [('orientation', 'out_orientation'),
+                                   ('freesurfer_dir', 'subjects_dir')])
+    ])
     renamer(convert_orig, 'out_file', 'orig')
     ## head
     convert_head = pe.Node(fs.MRIConvert(out_type="niigz"), name="convert_head")
     preproc.connect(skull_strip, 'T1', convert_head, 'in_file')
-    preproc.connect(inputnode, 'orientation', convert_head, 'out_orientation')
+    preproc.connect([
+        (inputnode, convert_head, [('orientation', 'out_orientation'),
+                                   ('freesurfer_dir', 'subjects_dir')])
+    ])
     renamer(convert_head, 'out_file', 'head')
     ## brain
     convert_brain = pe.Node(fs.MRIConvert(out_type="niigz"), name="convert_brain")
     preproc.connect(skull_strip, 'brain', convert_brain, 'in_file')
-    preproc.connect(inputnode, 'orientation', convert_brain, 'out_orientation')
+    preproc.connect([
+        (inputnode, convert_brain, [('orientation', 'out_orientation'),
+                                    ('freesurfer_dir', 'subjects_dir')])
+    ])
     renamer(convert_brain, 'out_file', 'brain')
     
     # Create brain mask
