@@ -223,7 +223,7 @@ def create_anatomical_preprocessing_workflow(freesurfer_dir, name="anatomical_pr
     ])
     
     # Now get inputs
-    getfree = pe.Node(io.FreeSurferSource(subjects_dir=freesurfer_dir),
+    getfree = pe.Node(nio.FreeSurferSource(subjects_dir=freesurfer_dir),
                       name="getfree")
     preproc.connect([
         (inputnode, getfree, [('freesurfer_dir', 'subjects_dir'),
