@@ -37,7 +37,7 @@ def anatomical_preprocessing(
     # Setup workflow
     #####
     
-    preproc = create_anatomical_preprocessing_workflow(name=name)
+    preproc = create_anatomical_preprocessing_workflow(freesurfer_dir, name=name)
     
     # get input / set certain inputs
     inputnode = preproc.get_node("inputspec")
@@ -91,7 +91,7 @@ def anatomical_preprocessing(
     return preproc
 
 
-def create_anatomical_preprocessing_workflow(name="anatomical_preprocessing"):
+def create_anatomical_preprocessing_workflow(freesurfer_dir, name="anatomical_preprocessing"):
     """Prepares anatomical image for fMRI analysis. This includes:
     
     1. Intensity Normalization (w/freesurfer)
@@ -171,7 +171,7 @@ def create_anatomical_preprocessing_workflow(name="anatomical_preprocessing"):
     
     # Convert to nifti
     ## orig
-    convert_orig = pe.Node(fs.MRIConvert(out_type="niigz"), name="convert_orig")
+    convert_orig = pe.Node(fs.MRIConvert(out_type="niigz", subjects_dir=freesurfer_dir), name="convert_orig")
     preproc.connect(skull_strip, 'orig', convert_orig, 'in_file')
     preproc.connect([
         (inputnode, convert_orig, [('orientation', 'out_orientation'),
@@ -179,7 +179,7 @@ def create_anatomical_preprocessing_workflow(name="anatomical_preprocessing"):
     ])
     renamer(convert_orig, 'out_file', 'orig')
     ## head
-    convert_head = pe.Node(fs.MRIConvert(out_type="niigz"), name="convert_head")
+    convert_head = pe.Node(fs.MRIConvert(out_type="niigz", subjects_dir=freesurfer_dir), name="convert_head")
     preproc.connect(skull_strip, 'T1', convert_head, 'in_file')
     preproc.connect([
         (inputnode, convert_head, [('orientation', 'out_orientation'),
@@ -187,7 +187,7 @@ def create_anatomical_preprocessing_workflow(name="anatomical_preprocessing"):
     ])
     renamer(convert_head, 'out_file', 'head')
     ## brain
-    convert_brain = pe.Node(fs.MRIConvert(out_type="niigz"), name="convert_brain")
+    convert_brain = pe.Node(fs.MRIConvert(out_type="niigz", subjects_dir=freesurfer_dir), name="convert_brain")
     preproc.connect(skull_strip, 'brain', convert_brain, 'in_file')
     preproc.connect([
         (inputnode, convert_brain, [('orientation', 'out_orientation'),
