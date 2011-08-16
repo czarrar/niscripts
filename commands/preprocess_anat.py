@@ -41,7 +41,6 @@ def anatomical_preprocessing(
     
     # get input / set certain inputs
     inputnode = preproc.get_node("inputspec")
-    inputnode.inputs.freesurfer_dir = freesurfer_dir
     inputnode.inputs.orientation = orientation
     
     
@@ -62,6 +61,7 @@ def anatomical_preprocessing(
     # Link inputs
     preproc.connect([
         (subinfo, datasource, [('subject_id', 'subject_id')]),
+        (subinfo, inputnode, [('subject_id', 'subject_id')]),
         (datasource, inputnode, [('struct', 'struct')])
     ])
     
@@ -162,7 +162,7 @@ def create_anatomical_preprocessing_workflow(freesurfer_dir, name="anatomical_pr
     #skull_strip = pe.Node(interface=e_afni.ThreedSkullStrip(), name='skull_strip') 
     
     # Skull Strip with Freesurfer
-    skull_strip = pe.Node(interface=fs.ReconAll(directive='autorecon1'), name="skull_strip")
+    skull_strip = pe.Node(interface=fs.ReconAll(directive='autorecon1', subjects_dir=freesurfer_dir), name="skull_strip")
     preproc.connect([
         (inputnode, skull_strip, [('struct', 'T1_files'),
                                   ('subject_id', 'subject_id'),
