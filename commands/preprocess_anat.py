@@ -40,7 +40,7 @@ def run_freesurfer_fun(subjects_dir, subject_id, directive, t1_files=[]):
         if op.isfile(rawfile):
             print 'T1 files specified but not to be included since they already exist in output'
         else:
-            recon.inputs.T1_files = t1_files
+            recon.inputs.t1_files = t1_files
     
     to_run = False
     filechoices = {
@@ -217,7 +217,7 @@ def create_anatomical_preprocessing_workflow(freesurfer_dir, name="anatomical_pr
     skull_strip.inputs.directive = 'autorecon1'
     skull_strip.inputs.subjects_dir = freesurfer_dir
     preproc.connect([
-        (inputnode, skull_strip, [('struct', 'T1_files'),
+        (inputnode, skull_strip, [('struct', 't1_files'),
                                   ('subject_id', 'subject_id'),
                                   ('freesurfer_dir', 'subjects_dir')])
     ])
