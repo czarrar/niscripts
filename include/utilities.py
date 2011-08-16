@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import re
 import nipype.interfaces.utility as util # utility
 import nipype.pipeline.engine as pe # pypeline engine
 
@@ -14,7 +15,8 @@ class SimpleOutputConnector(object):
         return self.connect(*args, **kwrds)
     
     def connect(self, procnode, procfield, outfield, outnode=None, to_map=True, **rename_kwrds):
-        rename_kwrds.setdefault('format_string', outfield)
+        default_format_string = re.sub("_pic$", "", outfield)
+        rename_kwrds.setdefault('format_string', default_format_string)
         rename_kwrds.setdefault('keep_ext', True)
         rename = util.Rename(**rename_kwrds)
         if outnode is None:
