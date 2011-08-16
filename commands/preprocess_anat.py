@@ -37,12 +37,10 @@ def anatomical_preprocessing(
     # Setup workflow
     #####
     
-    preproc = create_anatomical_preprocessing_workflow(name=name)
+    preproc = create_anatomical_preprocessing_workflow(name=name, freesurfer_dir=freesurfer_dir)
     
     # get input / set certain inputs
     inputnode = preproc.get_node("inputspec")
-    inputnode.inputs.freesurfer_dir = freesurfer_dir
-    print freesurfer_dir
     inputnode.inputs.orientation = orientation
     
     
@@ -92,7 +90,7 @@ def anatomical_preprocessing(
     return preproc
 
 
-def create_anatomical_preprocessing_workflow(name="anatomical_preprocessing"):
+def create_anatomical_preprocessing_workflow(freesurfer_dir, name="anatomical_preprocessing"):
     """Prepares anatomical image for fMRI analysis. This includes:
     
     1. Intensity Normalization (w/freesurfer)
@@ -163,11 +161,12 @@ def create_anatomical_preprocessing_workflow(name="anatomical_preprocessing"):
     #skull_strip = pe.Node(interface=e_afni.ThreedSkullStrip(), name='skull_strip') 
     
     # Skull Strip with Freesurfer
-    skull_strip = pe.Node(interface=fs.ReconAll(directive='autorecon1'), name="skull_strip")
+    skull_strip = pe.Node(interface=fs.ReconAll(directive='autorecon1', 
+                                                subjects_dir=freesurfer_dir), 
+                          name="skull_strip")
     preproc.connect([
         (inputnode, skull_strip, [('struct', 'T1_files'),
-                                  ('subject_id', 'subject_id'),
-                                  ('freesurfer_dir', 'subjects_dir')])
+                                  ('subject_id', 'subject_id')])
     ])
     
     # Convert to nifti
