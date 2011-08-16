@@ -22,7 +22,7 @@ sys.path.append(op.join(os.environ.get("NISCRIPTS"), "include"))
 
 import e_afni, misc, usage # my own extra stuff
 from utilities import SimpleOutputConnector
-
+from execute import Process
 
 def get_overlay_args(fname):
     """Args for the overlay1 option of slicer"""
@@ -79,8 +79,10 @@ def anatomical_preprocessing(
     # replace subject_id stuff with anat
     datasink.inputs.regexp_substitutions = (r"_subject_id_(\w|\d)+", outputs.struct)
     
-    ## connect
+    # subject_id
     preproc.connect(subinfo, 'subject_id', datasink, 'container')
+    
+    ## connect
     outputnode = preproc.get_node("outputspec")
     output_fields = outputnode.outputs.get()
     for field in output_fields:
@@ -210,6 +212,14 @@ def create_anatomical_preprocessing_workflow(name="anatomical_preprocessing"):
     return preproc
 
 
+def fix_output_permissions(outputs, subject_list):
+    outputs = [ op.join(outputs.basedir, s, outputs.struct) for s in subject_list ]
+    for output in outputs:
+        p = Process("chmod -R 775 %s" % output, to_print=True)
+        if p.retcode != 0:
+            print 'Error: chmod -R 775 %s' % output
+    return
+
 class AnatPreprocParser(usage.NiParser):
     def _create_parser(self, *args, **kwrds):
         """Create command-line interface"""
@@ -229,6 +239,7 @@ class AnatPreprocParser(usage.NiParser):
 def main(arglist):
     pp = AnatPreprocParser()
     pp(anatomical_preprocessing, arglist)
+    fix_output_permissions(pp.args.outputs, pp.args.subject_list)
     
 
 def test_wf():

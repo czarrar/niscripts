@@ -119,6 +119,7 @@ class NiParser(object):
     
     def run(self, procfun, arglist):
         args = self.parser.parse_args(arglist)
+        self.args = args
         kwrds = vars(args)
         plugin = kwrds.pop('plugin')
         plugin_args = kwrds.pop('plugin_args')
