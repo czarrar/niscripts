@@ -181,3 +181,4 @@ class CombineFuncs(SubjectBase):
     #    self.nevs = len(self.evs_outfiles)
     #    
     #    return
+
