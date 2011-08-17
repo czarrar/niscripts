@@ -4,6 +4,14 @@ import re
 import nipype.interfaces.utility as util # utility
 import nipype.pipeline.engine as pe # pypeline engine
 
+def sink_outputs(workflow, outputnode, datasinknode, name_prefix=""):
+    if name_prefix != "" and not name_prefix.endswith("_"):
+        name_prefix += "_"
+    outfields = outputnode.outputs.get()
+    for field in outfields:
+        workflow.connect(outputnode, field, datasinknode, "@%s%s" % (name_prefix, field))
+
+
 class SimpleOutputConnector(object):
     """Regular Node (non Map Node version)"""
     def __init__(self, workflow, outnode):
@@ -81,3 +89,51 @@ def get_mapnode_substitutions(workflow, output_node, nruns, unmap=[]):
             substitutions.append(("_%s%d"%(node, r), ""))
     return substitutions
 
+def run_freesurfer_fun(subjects_dir, subject_id, directive, t1_files=[]):
+    import os
+    import os.path as op
+    import nipype.interfaces.freesurfer as fs
+    from execute import Process
+    from glob import glob
+    
+    subdir = op.join(subjects_dir, subject_id)
+    recon = fs.ReconAll(directive='autorecon1', subjects_dir=subjects_dir, 
+                        subject_id=subject_id)
+    
+    rawfile = op.join(subdir, "mri", "orig", "001.mgz")
+    if t1_files:
+        if op.isfile(rawfile):
+            print 'T1 files specified but not to be included since they already exist in output'
+        else:
+            recon.inputs.t1_files = t1_files
+    
+    to_run = False
+    filechoices = {
+        'autorecon1': op.join(subdir, "mri", "brainmask.mgz"),
+        'autorecon2': op.join(subdir, "surf", "?h.inflated"),
+        'autorecon3': op.join(subdir, "mri", "aparc+aseg.mgz")
+    }
+    
+    try:
+        fpath = filechoices[directive]
+    except KeyError:
+        raise Exception("Unrecognized directive %s" % directive)
+    
+    ran = False
+    gpath = glob(fpath)
+    if len(gpath) > 0:
+        print 'Freesurfer output for directive %s already exists' % directive
+    else:
+        recon.inputs.directive = directive
+        p = Process(recon.cmdline, to_print=True)
+        if p.retcode != 0:
+            raise Exception("Error running '%s': \n%s" % (recon.cmdline, p.stderr))
+        ran = True
+    
+    return (subject_id, ran)
+
+
+run_freesurfer = util.Function(input_names=["subjects_dir", "subject_id", "directive", 
+                                            "t1_files"], 
+                               output_names=["subject_id", "ran"], 
+                               function=run_freesurfer_fun)
