@@ -21,57 +21,8 @@ import sys
 sys.path.append(op.join(os.environ.get("NISCRIPTS"), "include"))
 
 import e_afni, misc, usage # my own extra stuff
-from utilities import SimpleOutputConnector
+from utilities import SimpleOutputConnector, run_freesurfer
 from execute import Process
-
-def run_freesurfer_fun(subjects_dir, subject_id, directive, t1_files=[]):
-    import os
-    import os.path as op
-    import nipype.interfaces.freesurfer as fs
-    from execute import Process
-    from glob import glob
-    
-    subdir = op.join(subjects_dir, subject_id)
-    recon = fs.ReconAll(directive='autorecon1', subjects_dir=subjects_dir, 
-                        subject_id=subject_id)
-    
-    rawfile = op.join(subdir, "mri", "orig", "001.mgz")
-    if t1_files:
-        if op.isfile(rawfile):
-            print 'T1 files specified but not to be included since they already exist in output'
-        else:
-            recon.inputs.t1_files = t1_files
-    
-    to_run = False
-    filechoices = {
-        'autorecon1': op.join(subdir, "mri", "brainmask.mgz"),
-        'autorecon2': op.join(subdir, "surf", "?h.inflated"),
-        'autorecon3': op.join(subdir, "mri", "aparc+aseg.mgz")
-    }
-    
-    try:
-        fpath = filechoices[directive]
-    except KeyError:
-        raise Exception("Unrecognized directive %s" % directive)
-    
-    ran = False
-    gpath = glob(fpath)
-    if len(gpath) > 0:
-        print 'Freesurfer output for directive %s already exists' % directive
-    else:
-        recon.inputs.directive = directive
-        p = Process(recon.cmdline, to_print=True)
-        if p.retcode != 0:
-            raise Exception("Error running '%s': \n%s" % (recon.cmdline, p.stderr))
-        ran = True
-    
-    return (subject_id, ran)
-
-
-run_freesurfer = util.Function(input_names=["subjects_dir", "subject_id", "directive", 
-                                            "t1_files"], 
-                               output_names=["subject_id", "ran"], 
-                               function=run_freesurfer_fun)
 
 
 def get_overlay_args(fname):
@@ -81,18 +32,22 @@ def get_overlay_args(fname):
 def anatomical_preprocessing(
     subject_list, 
     inputs, outputs, workingdir, output_type,
-    freesurfer_dir, orientation, name="anatomical_preprocessing"):
+    run, freesurfer_dir, orientation, name="anatomical_preprocessing"):
     
     #####
     # Setup workflow
     #####
     
-    preproc = create_anatomical_preprocessing_workflow(freesurfer_dir, name=name)
-    
-    # get input / set certain inputs
-    inputnode = preproc.get_node("inputspec")
-    inputnode.inputs.orientation = orientation
-    inputnode.inputs.freesurfer_dir = freesurfer_dir
+    if run == "bet":
+        preproc = create_ap_bet_workflow(freesurfer_dir, name=name + "_withbet")
+        # get input / set certain inputs
+        inputnode = preproc.get_node("inputspec")
+    elif run == "freesurfer":
+        preproc = create_ap_freesurfer_workflow(freesurfer_dir, name=name + "_withfreesurfer")
+        # get input / set certain inputs
+        inputnode = preproc.get_node("inputspec")
+        inputnode.inputs.orientation = orientation
+        inputnode.inputs.freesurfer_dir = freesurfer_dir
     
     
     ######
@@ -142,7 +97,89 @@ def anatomical_preprocessing(
     return preproc
 
 
-def create_anatomical_preprocessing_workflow(freesurfer_dir, name="anatomical_preprocessing"):
+def create_ap_bet_workflow(name="preproc_anat_bet"):
+    
+    #####
+    # Setup workflow
+    #####
+    
+    preproc = pe.Workflow(name=name)
+    
+    
+    #####
+    # Setup input node
+    #####
+    
+    input_fields = [
+        "struct",
+        "orientation"
+    ]
+    inputnode = pe.Node(interface=util.IdentityInterface(fields=input_fields), 
+                            name="inputspec")
+    
+    # defaults
+    inputnode.inputs.orientation = "RPI"    # fsl's standard brain
+    
+    
+    #####
+    # Setup output node
+    #####
+    
+    # Outputs
+    output_fields = [
+        "orig",
+        "head",
+        "brain",
+        "brain_mask",
+        "head_axial_pic",
+        "brain_mask_axial_pic",
+        "brain_mask_sagittal_pic"        
+    ]
+    outputnode = pe.Node(util.IdentityInterface(fields=output_fields),
+                        name="outputspec")
+    
+    # renaming
+    renamer = SimpleOutputConnector(preproc, outputnode)
+    
+    # Deoblique (so image plays well with AFNI)
+    deoblique = pe.Node(interface=afni.ThreedWarp(deoblique=True), name='deoblique')
+    preproc.connect(inputnode, 'struct', deoblique, 'in_file')
+    renamer(inputnode, 'struct', 'orig')
+    
+    # Reorient (so image plays well with registration)
+    reorient = pe.Node(interface=afni.Threedresample(), name='reorient')
+    preproc.connect(deoblique, 'out_file', reorient, 'in_file')
+    preproc.connect(inputnode, 'orientation', reorient, 'orientation')
+    renamer(reorient, 'out_file', 'head')
+    
+    # Skull Strip
+    skull_strip = pe.Node(interface=fsl.BET(), name='skull_strip')
+    preproc.connect(reorient, 'out_file', skull_strip, 'in_file')
+    renamer(skull_strip, 'out_file', 'brain')
+    renamer(skull_strip, 'mask', 'brain_mask')
+    
+    # Pic of head
+    slicer_head = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
+                            name='slicer_head')
+    preproc.connect(reorient, 'out_file', slicer_head, 'in_file')
+    renamer(slicer_head, 'out_file', 'head_axial_pic')
+    
+    # Pic of brain mask overlaid on head (axial)
+    slicer_mask1 = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), name='slicer_mask1')
+    preproc.connect(reorient, 'out_file', slicer_mask1, 'in_file')
+    preproc.connect(skull_strip, ('mask', get_overlay_args), slicer_mask1, 'overlay1')
+    renamer(slicer_mask1, 'out_file', 'brain_mask_axial_pic')
+    
+    # Pic of brain mask overlaid on head (sagittal)
+    slicer_mask2 = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="sagittal"), name='slicer_mask2')
+    preproc.connect(reorient, 'out_file', slicer_mask2, 'in_file')
+    preproc.connect(skull_strip, ('mask', get_overlay_args), slicer_mask2, 'overlay1')
+    renamer(slicer_mask2, 'out_file', 'brain_mask_sagittal_pic')
+    
+    return preproc
+
+
+def create_ap_freesurfer_workflow(freesurfer_dir, name="preproc_anat_freesurfer"):
     """Prepares anatomical image for fMRI analysis. This includes:
     
     1. Intensity Normalization (w/freesurfer)
@@ -200,17 +237,6 @@ def create_anatomical_preprocessing_workflow(freesurfer_dir, name="anatomical_pr
     ######
     # Commands
     ######
-    
-    # TODO: check if need any of this below
-    ## Deoblique (so image plays well with AFNI)
-    #deoblique = pe.Node(interface=afni.ThreedWarp(deoblique=True), name='deoblique')
-    #preproc.connect(inputnode, 'struct', deoblique, 'in_file')
-    #
-    ## Reorient (so image plays well with registration)
-    #reorient = pe.Node(interface=afni.Threedresample(orientation='RPI'), name='reorient')
-    #preproc.connect(deoblique, 'out_file', reorient, 'in_file')
-    #
-    #skull_strip = pe.Node(interface=e_afni.ThreedSkullStrip(), name='skull_strip') 
     
     # First call a function that may or may not run autorecon1
     skull_strip = pe.Node(run_freesurfer, name="skull_strip")
@@ -298,17 +324,28 @@ class AnatPreprocParser(usage.NiParser):
                 Run preprocessing for each participant's structual images.
             """
         )
+        
         group = parser.add_argument_group('Anatomical Preprocessing Options')
         group.add_argument('--struct', nargs=2, action=usage.store_io, required=True)
-        group.add_argument('--freesurfer-dir', action=usage.store_directory, required=True)
+        group.add_argument('--run', choices=['bet', 'freesurfer'], required=True)
         group.add_argument('--orientation', default='RPI')
+        group.add_argument('--freesurfer-dir', action=usage.store_directory, 
+                            help="required if using --run freesurfer")
+        
         # 3dinfo /Users/Shared/fsl/data/standard/MNI152_T1_2mm.nii.gz | grep orient | sed -e s/.*-orient\ // -e s/]// # to get orientation from standard brain
         return parser
+    
+    def _post_compile(self):
+        """Check that freesurfer_dir is set if run=freesurfer"""
+        super(AnatPreprocParser, self)._post_compile()
+        if self.args.run == 'freesurfer' and not hasattr(self.args, 'freesurfer_dir'):
+            self.parser.error("You must specify --freesurfer-dir if --run=freesurfer")
+        return
     
 
 def main(arglist):
     pp = AnatPreprocParser()
-    pp(anatomical_preprocessing, arglist)
+    pp.run(anatomical_preprocessing, arglist)
     fix_output_permissions(pp.args.outputs, pp.args.subject_list)
     
 
