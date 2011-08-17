@@ -100,6 +100,13 @@ class NiArgumentParser(argparse.ArgumentParser):
 class NiParser(object):
     def __init__(self, *args, **kwrds):
         self.parser = self._create_parser(*args, **kwrds)
+        # below created/set by compile
+        self.args = None
+        self.kwrds = None
+        self.plugin = None
+        self.plugin_args = None
+        self._is_compiled = False
+        # below created by run
         self.workflow = None
     
     def __call__(self, *args, **kwrds):
@@ -117,15 +124,46 @@ class NiParser(object):
         group.add_argument('--plugin', nargs="+", action=store_plugin, required=True)
         return parser
     
-    def run(self, procfun, arglist):
+    def _pre_compile(self):
+        return
+    
+    def _post_compile(self):
+        return
+    
+    def compile(self, arglist):
+        self._pre_compile()
         args = self.parser.parse_args(arglist)
         self.args = args
+        
         kwrds = vars(args)
-        plugin = kwrds.pop('plugin')
-        plugin_args = kwrds.pop('plugin_args')
+        self.plugin = kwrds.pop('plugin')
+        self.plugin_args = kwrds.pop('plugin_args')
         kwrds["inputs"] = Bunch(**kwrds["inputs"])
         kwrds["outputs"] = Bunch(**kwrds["outputs"])
-        workflow = procfun(**kwrds)
-        self.workflow = workflow
-        return workflow.run(plugin=plugin, plugin_args=plugin_args)
+        self.kwrds = kwrds
         
+        self._post_compile()
+        
+        self._is_compiled = True
+        return
+    
+    def _pre_run(self):
+        return
+    
+    def _post_run(self):
+        return
+    
+    def run(self, procfun, arglist=None):
+        if arglist:
+            self.compile(arglist)
+        if not self._is_compiled:
+            raise Exception('Called run for NiParser without calling compile or giving arglist')
+        
+        self._pre_run()
+        self.workflow = procfun(**kwrds)
+        res = self.workflow.run(plugin=self.plugin, plugin_args=self.plugin_args)
+        self._post_run()
+        
+        return res
+    
+
