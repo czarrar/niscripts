@@ -6,7 +6,7 @@ import nipype.interfaces.utility as util # utility
 import nipype.pipeline.engine as pe # pypeline engine
 from nipype.interfaces.base import Undefined
 
-import os, argparse sys
+import os, argparse, sys
 import os.path as op
 import numpy as np
 
@@ -48,11 +48,11 @@ class ReconAllParser(usage.NiParser):
         
         group = parser.add_argument_group('Recon All Options')
         group.add_argument('-d', '--directive', choices=['all', 'autorecon1', 'autorecon2', 'autorecon2-cp', 'autorecon2-wm', 'autorecon2-inflate1', 'autorecon2-perhemi', 'autorecon3', 'localGI', 'qcache'], required=True)
-        groups.add_argument('--subjects-dir', action=store_directory, required=True)
-        groups.add_argument('-i', '--inputs', nargs='+', dest="T1_files")
-        groups.add_argument('--args')
-        groups.add_argument('--flags')
-        groups.add_argument('--hemi', choices=['lh', 'rh'])
+        group.add_argument('--subjects-dir', action=usage.store_directory, required=True)
+        group.add_argument('-i', '--inputs', nargs='+', dest="T1_files")
+        group.add_argument('--args')
+        group.add_argument('--flags')
+        group.add_argument('--hemi', choices=['lh', 'rh'])
         
         return parser
     
