@@ -125,10 +125,10 @@ class NiParser(object):
         return parser
     
     def _pre_compile(self):
-        return
+        pass
     
     def _post_compile(self):
-        return
+        pass
     
     def compile(self, arglist):
         self._pre_compile()
@@ -154,7 +154,7 @@ class NiParser(object):
         return
     
     def run(self, procfun, arglist=None):
-        if arglist:
+        if arglist is not None:
             self.compile(arglist)
         if not self._is_compiled:
             raise Exception('Called run for NiParser without calling compile or giving arglist')
