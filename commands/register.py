@@ -196,7 +196,7 @@ def create_nonlin_reg_workflow(
         (fnirt, regpics, [('warped_file', 'in_file')]),
         (inputnode, regpics, [('ref_file', 'ref_file')])
     ])
-    renamer(regpics, 'out_file', 'in2ref_png', format_string="%(a)s_%(b)s_fnirt")
+    renamer(regpics, 'out_file', 'in2ref_png', format_string="%(a)s2%(b)s_fnirt")
     
     ## pics (using slicer)
     ### input over ref
@@ -705,6 +705,7 @@ def special_output_workflow(
     # Outputs
     output_fields = [
         "func",
+        "example_func", 
         "standard",
         "highres2standard_mat"
     ]
@@ -720,6 +721,7 @@ def special_output_workflow(
     
     # func
     renamer.connect(inputnode, 'func', 'func')
+    renamer.connect(inputnode, 'func', 'example_func')
     # standard
     renamer.connect(inputnode, 'standard', 'standard')
     # mat
@@ -880,8 +882,8 @@ def create_func2standard_workflow(
     special = special_output_workflow(fnirt=fnirt)
     workflows.func.append(special)
     normalize.connect([
-        (inputnode, special, [('standard', 'inputspec.standard'),
-                              ('func', 'inputspec.func')]),
+        (inputnode, special, [('standard', 'inputspec.standard'), 
+                              ('func', 'inputspec.func')]), 
         (highres2standard, special, [('outputspec.in2ref_mat', 'inputspec.highres2standard_mat')])
     ])
     if fnirt:
@@ -1045,6 +1047,28 @@ class RegParser(usage.NiParser):
         group.add_argument("--fnirt", nargs="+", action=store_fnirt, default=False)
         group.add_argument("--standard", default=fsl.Info.standard_image("MNI152_T1_2mm_brain.nii.gz"))
         return parser
+    
+    def _post_run(self):
+        """Fix permissions of output"""
+        outputs = self.args.outputs
+        subject_list = self.args.subject_list
+        outputs1 = [ op.join(outputs.basedir, s, outputs.func) for s in subject_list ]
+        outputs2 = [ op.join(outputs.basedir, s, outputs.highres) for s in subject_list ]
+        outputs = outputs1 + outputs2
+        for output in outputs:
+            p = Process("chmod -R 775 %s" % output, to_print=True)
+            if p.retcode != 0:
+                print 'Error: chmod -R 775 %s' % output
+        os.symlink(
+            op.join(outputs.basedir, s, outputs.func, "func2highres.mat"),
+            op.join(outputs.basedir, s, outputs.func, "example_func2highres.mat")
+        )
+        os.symlink(
+            op.join(outputs.basedir, s, outputs.func, "func2standard.mat"),
+            op.join(outputs.basedir, s, outputs.func, "example_func2standard.mat")
+        )
+        return
+    
     
 
 def main(arglist):

@@ -460,7 +460,7 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
     wf.connect(meants_wm, ('out_file', tolist), concatnode, 'in3')
     ## plot
     tsplot = pe.Node(interface=fsl.PlotTimeSeries(title='Nuisance Time-Series', 
-                                                  labels=['global', 'csf', 'wm'])
+                                                  labels=['global', 'csf', 'wm']), 
                      name="04_tsplot")
     wf.connect(concatnode, 'out', tsplot, 'in_file')
     renamer_func.connect(tsplot, 'out_file', 'nuisance_tsplot_pic')
@@ -469,9 +469,9 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
 
 
 def nuisance_evs(
-    name="nuisance_evs", 
     subject_list, inputs, outputs, 
-    orientation, fwhm):
+    orientation, fwhm, 
+    name="nuisance_evs"):
     """Wrapper...
     """
     
@@ -535,13 +535,13 @@ def nuisance_evs(
 class NuisanceEVsParser(usage.NiParser):
     def _create_parser(self, *args, **kwrds):
         """Create command-line interface"""
-        parser = super(AnatPreprocParser, self)._create_parser(
+        parser = super(NuisanceEVsParser, self)._create_parser(
             description="""
-                Run preprocessing for each participant's structual images.
+                Create nuisance covariates (wm, csf, and global signal)
             """
         )
         
-        group = parser.add_argument_group('Anatomical Preprocessing Options')
+        group = parser.add_argument_group('Nuisance EV Creation Options')
         group.add_argument('--func', action=usage.store_input, check_file=True, required=True)
         group.add_argument('--func-mask', action=usage.store_input, check_file=True, required=True)
         group.add_argument('--reg-dir', action=usage.store_input, check_dir=True, required=True)
