@@ -3,10 +3,11 @@ from copy import deepcopy
 from analysis.feat import (CombineSubject, FsfSubject, FsfInfo, FeatSubject)
 from analysis.afni import (DeconSubject, RemlSubject)
 
-def fromYamlSubject(config, run_keys, verbosity=0, dry_run=False, log=None, **user_template_vars):
+def fromYamlSubject(inputs, run_keys, verbosity=0, dry_run=False, log=None, **user_template_vars):
     """
     Runs both CombineFuncs and FsfSubject
     """
+    config = inputs.config
     if isinstance(config, str):
         if not op.isfile(config):
             raise Exception("Cannot find config file %s" % config)
