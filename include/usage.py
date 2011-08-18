@@ -160,7 +160,7 @@ class NiParser(object):
             raise Exception('Called run for NiParser without calling compile or giving arglist')
         
         self._pre_run()
-        self.workflow = procfun(**kwrds)
+        self.workflow = procfun(**self.kwrds)
         res = self.workflow.run(plugin=self.plugin, plugin_args=self.plugin_args)
         self._post_run()
         
