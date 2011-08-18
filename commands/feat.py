@@ -5,73 +5,64 @@
 import argparse, os, sys
 sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
 
-from usage import NiArgumentParser, store_filename, store_input
+import usage
 from analysis import fromYamlSubject, FeatSubject
 from zlogger import (LoggerError, LoggerCritical)
 
-def feat(
-    ):
+def feat(name, workingdir, subject_list, **kwards):
     
     wf = pe.Workflow(name=name)
+    wf.base_dir = workingdir
     
     subinfo = pe.Node(interface=util.IdentityInterface(fields=['subject_id']), name='subinfo', 
                         iterables=('subject_id', subject_list))
     
-    featsubject = FeatSubject(config_file=config_file, debug=True)
-    for k in run_keys:
-        setattr(featsubject.inputs, k, True)
+    featsubject = FeatSubject()
+    for k in kwards:
+        setattr(featsubject.inputs, k, v)
     fsnode = pe.Node(interface=featsubject, name="featpy")
     
     wf.connect(subinfo, 'subject_id', fsnode, 'subject')
     
     return wf
-    
+
 
 #####
 # Process user arguments
 #####
 
-def create_parser():
-    parser = NiArgumentParser(fromfile_prefix_chars='@', 
-                description="FSL subject level statistical analysis (creates model)")
+class FeatParser(usage.NiParser):
+    def _create_parser(self, *args, **kwrds):
+        """Create command-line interface"""
+        parser = usage.NiArgumentParser(fromfile_prefix_chars="@", 
+                                  argument_default=argparse.SUPPRESS,
+                                  description="""Wrapper around feat_subject_worker.py that parallelizes processing of different subjects.""")
+        parser._add_inputs = False
+        parser._add_outputs = False
+        
+        group = parser.add_argument_group('General Options')
+        group.add_argument('-s', '--subjects', nargs="+", dest="subject_list", required=True)
+        group.add_argument('--workingdir', action=usage.store_directory, required=True)
+        group.add_argument('--plugin', nargs="+", action=usage.store_plugin, required=True)
+        group.add_argument('--name')
+        
+        group = parser.add_argument_group('feat.py Options')
+        group.add_argument('-c', '--config', type=usage.store_filename, required=True)
+        group.add_argument("--combine", action="store_true")
+        group.add_argument("--fsf", action="store_true")
+        group.add_argument("--feat", action="store_true")
+        group.add_argument("--regress", action="store_true")
+        group.add_argument("--verbose", action="store_true")
+        group.add_argument("--debug", action="store_true")
+        group.add_argument("--dry-run", action="store_true")
+        
+        return parser
     
-    group = parser.add_argument_group('Required')
-    group.add_argument('-s', '--subjects', nargs="+", required=True)
-    group.add_argument('-c', '--config', type=store_input, check_file=True, required=True)
-    
-    group = parser.add_argument_group('Optional')
-    group.add_argument("--combine", action="append_const", const="combine", dest="run_keys")
-    group.add_argument("--fsf", action="append_const", const="fsf", dest="run_keys")
-    group.add_argument("--feat", action="append_const", const="feat", dest="run_keys")
-    group.add_argument("--regress", action="append_const", const="regress", dest="run_keys")
-    group.add_argument("--verbose", action="store_const", const=1, dest="verbosity", default=0)
-    group.add_argument("--debug", action="store_const", const=2, dest="verbosity", default=0)
-    group.add_argument("--dry-run", action="store_true", default=False)
-    group.add_argument("--log", type=store_filename, default=None, metavar="FILE")
-    
-    return parser
-
-def test_wf(dry_run=True):
-    if dry_run:
-        arglist = "-c %s/tests/feat_subject.yaml --dry-run --debug -s tb3417" % os.getenv("NISCRIPTS")
-    else:
-        arglist = "-c %s/tests/feat_subject.yaml--debug -s tb3417" % os.getenv("NISCRIPTS")
-    return main(arglist.split())
 
 def main(arglist):
-    # Parse
-    parser = create_parser()
-    args = parser.parse_args(arglist)
-    
-    if args.run_keys is None:
-        args.run_keys = ["combine", "fsf", "feat", "regress"]
-    subjects = kwargs.pop("subjects"); del kwargs["outputs"]
-    for subject in subjects:
-        try:
-            fromYamlSubject(**vars(args), subject=subject)
-        except (LoggerError, LoggerCritical) as err:
-            pass
-
+    pp = FeatParser()
+    pp.run(feat, arglist)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+
