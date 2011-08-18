@@ -4,6 +4,7 @@ This script uses nipype for normalization
 """
 
 import os, sys
+import os.path as op
 sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
 
 import numpy as np
