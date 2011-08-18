@@ -23,6 +23,7 @@ def create_parser():
     group.add_argument("--combine", action="append_const", const="combine", dest="run_keys")
     group.add_argument("--fsf", action="append_const", const="fsf", dest="run_keys")
     group.add_argument("--feat", action="append_const", const="feat", dest="run_keys")
+    group.add_argument("--regress", action="append_const", const="regress", dest="run_keys")
     group.add_argument("--verbose", action="store_const", const=1, dest="verbosity", default=0)
     group.add_argument("--debug", action="store_const", const=2, dest="verbosity", default=0)
     group.add_argument("--dry-run", action="store_true", default=False)
@@ -42,7 +43,7 @@ def main(arglist):
     parser = create_parser()
     args = parser.parse_args(arglist)
     if args.run_keys is None:
-        args.run_keys = ["combine", "fsf", "feat"]
+        args.run_keys = ["combine", "fsf", "feat", "regress"]
     subject = kwargs.pop("subject"); del kwargs["outputs"]
     try:
         fromYamlSubject(**vars(args),  subject=subject)

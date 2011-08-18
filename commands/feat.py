@@ -6,8 +6,26 @@ import argparse, os, sys
 sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
 
 from usage import NiArgumentParser, store_filename, store_input
-from analysis import fromYamlSubject
+from analysis import fromYamlSubject, FeatSubject
 from zlogger import (LoggerError, LoggerCritical)
+
+def feat(
+    ):
+    
+    wf = pe.Workflow(name=name)
+    
+    subinfo = pe.Node(interface=util.IdentityInterface(fields=['subject_id']), name='subinfo', 
+                        iterables=('subject_id', subject_list))
+    
+    featsubject = FeatSubject(config_file=config_file, debug=True)
+    for k in run_keys:
+        setattr(featsubject.inputs, k, True)
+    fsnode = pe.Node(interface=featsubject, name="featpy")
+    
+    wf.connect(subinfo, 'subject_id', fsnode, 'subject')
+    
+    return wf
+    
 
 #####
 # Process user arguments
@@ -18,13 +36,14 @@ def create_parser():
                 description="FSL subject level statistical analysis (creates model)")
     
     group = parser.add_argument_group('Required')
-    group.add_argument('-s', '--subject', required=True)
+    group.add_argument('-s', '--subjects', nargs="+", required=True)
     group.add_argument('-c', '--config', type=store_input, check_file=True, required=True)
     
     group = parser.add_argument_group('Optional')
     group.add_argument("--combine", action="append_const", const="combine", dest="run_keys")
     group.add_argument("--fsf", action="append_const", const="fsf", dest="run_keys")
     group.add_argument("--feat", action="append_const", const="feat", dest="run_keys")
+    group.add_argument("--regress", action="append_const", const="regress", dest="run_keys")
     group.add_argument("--verbose", action="store_const", const=1, dest="verbosity", default=0)
     group.add_argument("--debug", action="store_const", const=2, dest="verbosity", default=0)
     group.add_argument("--dry-run", action="store_true", default=False)
@@ -43,13 +62,15 @@ def main(arglist):
     # Parse
     parser = create_parser()
     args = parser.parse_args(arglist)
+    
     if args.run_keys is None:
-        args.run_keys = ["combine", "fsf", "feat"]
-    subject = kwargs.pop("subject"); del kwargs["outputs"]
-    try:
-        fromYamlSubject(**vars(args),  subject=subject)
-    except (LoggerError, LoggerCritical) as err:
-        pass
+        args.run_keys = ["combine", "fsf", "feat", "regress"]
+    subjects = kwargs.pop("subjects"); del kwargs["outputs"]
+    for subject in subjects:
+        try:
+            fromYamlSubject(**vars(args), subject=subject)
+        except (LoggerError, LoggerCritical) as err:
+            pass
 
 
 if __name__ == "__main__":

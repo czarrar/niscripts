@@ -658,3 +658,30 @@ class FeatSubject(SubjectBase):
         
         return
 
+class RegressSubject(SubjectBase):
+    
+    _logname = "regress_subject"
+    
+    def __init__(self, *args, **kwargs):
+        super(FeatSubject, self).__init__(*args, **kwargs)
+    
+    def fromDict(self, config_dict):
+        check_req(config_dict, ["design_file", "in_file", "out_file"])
+        self.cmd_opts = self.setVars(config_dict)
+    
+    def setVars(self, config_dict):
+        choices = ["in_file", "out_file", "mask"]
+        for k in choices:
+            if k in config_dict:
+                config_dict[k] = self._substitute(config_dict[k])
+        return config_dict
+    
+    def run(self):
+        self.log.info("Setting up command")
+        filt = fsl.FilterRegressor(**cmd_opts)
+        cmd = filt.cmdline
+        
+        self.log.info("Running fsl_regfilt")
+        self.log.command(cmd)
+    
+

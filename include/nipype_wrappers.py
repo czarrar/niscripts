@@ -1,13 +1,6 @@
 import os, yaml
 import os.path as op
-from nipype.interfaces.base import (
-    traits,
-    TraitedSpec,
-    CommandLineInputSpec,
-    CommandLine,
-    isdefined,
-    File
-)
+from nipype.interfaces.base import (traits, TraitedSpec, CommandLineInputSpec, CommandLine, isdefined, File)
 
 from nipype.utils.filemanip import split_filename
 from analysis.base import SubjectBase
@@ -27,6 +20,8 @@ class FeatSubjectInputSpec(CommandLineInputSpec):
                       argstr = "--fsf")
     feat = traits.Bool(desc = "Run the analysis", 
                        argstr = "--feat")
+    regress = traits.Bool(desc = "Regress out stuff using fsl_regfilt", 
+                          argstr = "--regress")
     verbose = traits.Bool(desc = "More output", 
                        argstr = "--verbose")
     debug = traits.Bool(desc = "Lots of output", 
@@ -41,6 +36,7 @@ class FeatSubjectOutputSpec(TraitedSpec):
     fsf = File(desc="Design file for FEAT analysis")
     mat = File(desc="Mat file generated from fsf file")
     feat = traits.Directory(desc="Output directory of feat analysis")
+    regfilt = File(desc="Residuals (with mean) from --regress")
 
 class FeatSubject(CommandLine):
     input_spec = FeatSubjectInputSpec
@@ -68,6 +64,9 @@ class FeatSubject(CommandLine):
             outputs['fsf'] = sub._substitute(config_dict['combine']['data']['outfunc'])
             outputs['mat'] = op.splitext(outputs['fsf'])[0] + ".mat"
             outputs['feat'] = sub._substitute(config_dict['combine']['data']['outdir'])
+        
+        if 'regress' in config_dict:
+            outputs['regfilt'] = sub._substitute(config_dict['combine']['data']['out_file'])
         
         return outputs
     

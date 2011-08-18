@@ -469,7 +469,8 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
 
 
 def nuisance_evs(
-    subject_list, inputs, outputs, 
+    subject_list, 
+    inputs, outputs, workingdir, output_type, 
     orientation, fwhm, 
     name="nuisance_evs"):
     """Wrapper...
@@ -480,7 +481,7 @@ def nuisance_evs(
     #####
     
     wf = create_nuisance_evs_workflow(inputs.freesurfer_dir, fwhm, name=name)
-    
+    wf.base_dir = workingdir
     
     ######
     # Setup data source
@@ -547,6 +548,8 @@ class NuisanceEVsParser(usage.NiParser):
         group.add_argument('--reg-dir', action=usage.store_input, check_dir=True, required=True)
         group.add_argument('--freesurfer-dir', action=usage.store_input, check_dir=True, 
                            required=True)
+        group.add_argument('--segment', action=usage.store_output, required=True)
+        group.add_argument('--nuisance', action=usage.store_output, required=True)
         group.add_argument('--fwhm', type=float, required=True)
         group.add_argument('--orientation', default='RPI')
         

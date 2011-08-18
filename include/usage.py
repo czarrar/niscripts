@@ -58,6 +58,9 @@ class store_plugin(argparse.Action):
         if values[0] == "MultiProc":
             nvalues = 2
             namespace.plugin_args = {'n_procs': int(values[1])}
+        elif values[0] == "SGE":
+            nvalues = 2
+            namespace.plugin_args = {'qsub_args': str(values[1])}
         else:
             nvalues = 1
             namespace.plugin_args = {}
@@ -72,12 +75,16 @@ class store_plugin(argparse.Action):
 
 class NiArgumentParser(argparse.ArgumentParser):
     __line2args = re.compile("(?P<opt>[\w\-]+)[:]\ *(?P<arg>.*)")
+    _add_inputs = True
+    _add_outputs = True
     
     def parse_args(self, args, namespace=None, **kwrds):
         if namespace is None:
             namespace = argparse.Namespace()
-        namespace.inputs = {}
-        namespace.outputs = {}
+        if self._add_inputs:
+            namespace.inputs = {}
+        if self._add_outputs:
+            namespace.outputs = {}
         return super(NiArgumentParser, self).parse_args(args, namespace, **kwrds)
     
     def convert_arg_line_to_args(self, arg_line):
@@ -130,16 +137,18 @@ class NiParser(object):
     def _post_compile(self):
         pass
     
-    def compile(self, arglist):
+    def compile(self, arglist, namespace=None):
         self._pre_compile()
-        args = self.parser.parse_args(arglist)
+        args = self.parser.parse_args(arglist, namespace=namespace)
         self.args = args
         
         kwrds = vars(args)
         self.plugin = kwrds.pop('plugin')
         self.plugin_args = kwrds.pop('plugin_args')
-        kwrds["inputs"] = Bunch(**kwrds["inputs"])
-        kwrds["outputs"] = Bunch(**kwrds["outputs"])
+        if 'inputs' in kwrds:
+            kwrds["inputs"] = Bunch(**kwrds["inputs"])
+        if 'outputs' in kwrds:
+            kwrds["outputs"] = Bunch(**kwrds["outputs"])
         self.kwrds = kwrds
         
         self._post_compile()

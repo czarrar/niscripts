@@ -48,7 +48,7 @@ def anatomical_preprocessing(
         inputnode = preproc.get_node("inputspec")
         inputnode.inputs.orientation = orientation
         inputnode.inputs.freesurfer_dir = freesurfer_dir
-    
+    preproc.base_dir = workingdir
     
     ######
     # Setup data source
