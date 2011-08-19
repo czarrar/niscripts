@@ -1060,17 +1060,18 @@ class RegParser(usage.NiParser):
             p = Process("chmod -R 775 %s" % output, to_print=True)
             if p.retcode != 0:
                 print 'Error: chmod -R 775 %s' % output
+        for output in outputs1:
             os.symlink(
-                op.join(output.basedir, s, output.func, "func2highres.mat"),
-                op.join(output.basedir, s, output.func, "example_func2highres.mat")
+                op.join(output, "func2highres.mat"),
+                op.join(output, "example_func2highres.mat")
             )
             os.symlink(
-                op.join(output.basedir, s, output.func, "func2standard.mat"),
-                op.join(output.basedir, s, output.func, "example_func2standard.mat")
+                op.join(output, "func2standard.mat"),
+                op.join(output, "example_func2standard.mat")
             )
         return
     
-    
+
 
 def main(arglist):
     pp = RegParser()
