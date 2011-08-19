@@ -24,16 +24,7 @@
     		{% endif %}
     		<hr />
     	</div>
-
-        <div class="span-17 colborder" id="content">
-          {% for subject,subject_content in subjects.iteritems() %}
-            <h3 class="loud" id="{{ subject }}">Subject: {{ subject }}</h3>
-            {% block content scoped %}
-              <p>{{ subject_content }}</p>
-            {% endblock content %}
-          {% endfor %}
-        </div>
-
+    	
     	<div class="span-6 last" id="sidebar">
   	    <div id="page-links">
           <h3 class="caps">Page Links</h3>
@@ -44,6 +35,15 @@
           </div>
   	    </div>
     	</div>
+
+      <div class="span-17 colborder" id="content">
+        {% for subject,subject_content in subjects.iteritems() %}
+          <h3 class="loud" id="{{ subject }}">Subject: {{ subject }}</h3>
+          {% block content scoped %}
+            <p>{{ subject_content }}</p>
+          {% endblock content %}
+        {% endfor %}
+      </div>
 
     	<div class="span-24">
     		A Z Enterprise
