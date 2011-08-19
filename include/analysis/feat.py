@@ -46,10 +46,10 @@ class CombineSubject(SubjectBase):
         verbosity : 0=minimal, 1=verbose, 2=debug
         template_vars: template variables for paths
         """
-        self.log.debug("Starting CombineSubject")
         super(CombineSubject, self).__init__(*args, **kwargs)
         self._isset_data = False
         self._isset_decon = False
+        self.log.debug("Starting CombineSubject")
     
     def fromDict(self, config):
         self.check_req(config, ["data", "decon"])
