@@ -37,7 +37,7 @@
     	</div>
 
       <div class="span-17 colborder" id="content">
-        {% for subject,subject_content in subjects.iteritems() %}
+        {% for subject,subject_content in subjects %}
           <h3 class="loud" id="{{ subject }}">Subject: {{ subject }}</h3>
           {% block content scoped %}
             <p>{{ subject_content }}</p>
