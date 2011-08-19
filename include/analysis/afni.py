@@ -469,6 +469,7 @@ class BetaSeriesSubject(SubjectBase):
     
     def __init__(self, *args, **kwargs):
         super(BetaSeriesSubject, self).__init__(*args, **kwargs)
+        self.log.info("Starting Creation of Beta-Series")
         
         self.evs = OrderedDict()
         isset_names = ['data', 'evs']

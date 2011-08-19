@@ -2,7 +2,7 @@ import os.path as op
 import yaml
 from copy import deepcopy
 from analysis.feat import (CombineSubject, FsfSubject, FsfInfo, FeatSubject)
-from analysis.afni import (DeconSubject, RemlSubject)
+from analysis.afni import (DeconSubject, RemlSubject, BetaSeriesSubject)
 
 def fromYamlSubject(inputs, run_keys, verbosity=0, dry_run=False, log=None, **user_template_vars):
     """
