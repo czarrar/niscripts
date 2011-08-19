@@ -456,7 +456,7 @@ class RemlSubject(SubjectBase):
 # class for beta-series correlations?    
 class BetaSeriesSubject(SubjectBase):
     
-    _logname = "reml_subject"
+    _logname = "betaseries_subject"
     
     def __init__(self, *args, **kwargs):
         super(BetaSeriesSubject, self).__init__(*args, **kwargs)
@@ -484,8 +484,8 @@ class BetaSeriesSubject(SubjectBase):
             label_inds = np.array([ i for i,x in enumerate(all_labels) if x.find(name) == 0 ])
             for start in xrange(step):
                 filt_label_inds = [ str(x) for x in label_inds[range(start, label_inds.shape[0], step)] ]
-                self.log.command("3dcalc -a stats/betas.nii.gz'[%s]' -expr a -prefix betaseries/%s_ev%i.nii.gz" % (",".join(filt_label_inds), name, start+1))
-                self.log.command("buc2func.R betaseries/%s_ev%i.nii.gz betaseries/%s_ev%i.nii.gz" % (name, start+1, name, start+1))
+                self.log.command("3dcalc -a stats/betas.nii.gz'[%s]' -expr a -prefix betaseries/%s_ev%i.nii.gz" % (",".join(filt_label_inds), name, start+1), cwd=self.indir)
+                self.log.command("buc2func.R betaseries/%s_ev%i.nii.gz betaseries/%s_ev%i.nii.gz" % (name, start+1, name, start+1), cwd=self.indir)
         
     
     def setData(self, indir):
@@ -493,6 +493,9 @@ class BetaSeriesSubject(SubjectBase):
         indir = self._substitute(indir)
         if not op.isdir(indir):
             self.log.error("Directory '%s' does not exist" % indir)
+        if not op.isdir(op.join(indir, "betaseries")):
+            self.log.info("...creating betaseries directory")
+            os.mkdir(op.join(indir, "betaseries"))
         self._isset['data'] = True
         return
     

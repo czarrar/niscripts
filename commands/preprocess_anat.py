@@ -275,7 +275,7 @@ def create_ap_freesurfer_workflow(freesurfer_dir, name="preproc_anat_freesurfer"
     renamer(convert_head, 'out_file', 'head')
     ## brain
     convert_brain = pe.Node(fs.MRIConvert(out_type="niigz", subjects_dir=freesurfer_dir), name="convert_brain")
-    preproc.connect(getfree, 'brain', convert_brain, 'in_file')
+    preproc.connect(getfree, 'brainmask', convert_brain, 'in_file')
     preproc.connect([
         (inputnode, convert_brain, [('orientation', 'out_orientation'),
                                     ('freesurfer_dir', 'subjects_dir')])
@@ -340,6 +340,17 @@ class AnatPreprocParser(usage.NiParser):
         super(AnatPreprocParser, self)._post_compile()
         if self.args.run == 'freesurfer' and not hasattr(self.args, 'freesurfer_dir'):
             self.parser.error("You must specify --freesurfer-dir if --run=freesurfer")
+        return
+    
+    def _post_run(self):
+        """Fix permissions of output"""
+        outputs = self.args.outputs
+        subject_list = self.args.subject_list
+        outputs = [ op.join(outputs.basedir, s, outputs.struct) for s in subject_list ]
+        for output in outputs:
+            p = Process("chmod -R 775 %s" % output, to_print=True)
+            if p.retcode != 0:
+                print 'Error: chmod -R 775 %s' % output
         return
     
 

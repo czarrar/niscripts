@@ -616,6 +616,18 @@ class FuncPreprocParser(usage.NiParser):
         group.add_argument("--tpattern", choices=["alt+z", "alt+z2", "alt-z", "seq+z", "seq-z"])
         return parser
     
+    def _post_run(self):
+        """Fix permissions of output"""
+        outputs = self.args.outputs
+        subject_list = self.args.subject_list
+        outputs = [ op.join(outputs.basedir, s, outputs.func) for s in subject_list ]
+        for output in outputs:
+            p = Process("chmod -R 775 %s" % output, to_print=True)
+            if p.retcode != 0:
+                print 'Error: chmod -R 775 %s' % output
+        return
+    
+    
 
 def main(arglist):
     pp = FuncPreprocParser()

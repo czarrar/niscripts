@@ -15,6 +15,8 @@ from zlogger import (LoggerError, LoggerCritical)
 def create_parser():
     parser = NiArgumentParser(fromfile_prefix_chars='@', 
                 description="AFNI subject level statistical analysis")
+    parser._add_inputs = False
+    parser._add_outputs = False
     
     group = parser.add_argument_group('Required')
     group.add_argument('-s', '--subjects', nargs="+", required=True)
@@ -42,9 +44,9 @@ def main(arglist):
     parser = create_parser()
     args = parser.parse_args(arglist)
     if args.run_keys is None:
-        args.run_keys = ["decon", "reml"]
+        args.run_keys = ["decon", "reml", "betaSeries"]
     kwargs = vars(args)
-    subjects = kwargs.pop("subjects"); del kwargs["inputs"]; del kwargs["outputs"]
+    subjects = kwargs.pop("subjects")
     for subject in subjects:
         try:
             fromYamlSubject(subject=subject, **kwargs)
