@@ -3,7 +3,7 @@
 import argparse, os, sys
 sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
 
-from usage import NiArgumentParser, store_filename
+from usage import NiArgumentParser, store_filename, store_input
 from analysis import fromYamlSubject
 from zlogger import (LoggerError, LoggerCritical)
 
@@ -15,12 +15,11 @@ from zlogger import (LoggerError, LoggerCritical)
 def create_parser():
     parser = NiArgumentParser(fromfile_prefix_chars='@', 
                 description="AFNI subject level statistical analysis")
-    parser._add_inputs = False
     parser._add_outputs = False
     
     group = parser.add_argument_group('Required')
     group.add_argument('-s', '--subjects', nargs="+", required=True)
-    group.add_argument('-c', '--config', type=argparse.FileType('r'), required=True, metavar="FILE")
+    group.add_argument('-c', '--config', action=store_input, required=True, metavar="FILE")
     
     group = parser.add_argument_group('Optional')
     group.add_argument("--decon", action="append_const", const="decon", dest="run_keys")
@@ -50,7 +49,7 @@ def main(arglist):
     subjects = kwargs.pop("subjects")
     for subject in subjects:
         try:
-            fromYamlSubject(**kwargs, subject=subject)
+            fromYamlSubject(subject=subject, **kwargs)
         except (LoggerError, LoggerCritical) as err:
             pass
 
