@@ -1,4 +1,4 @@
-import os, sys
+import os, re, sys
 import os.path as op
 from glob import glob
 from jinja2 import Environment, PackageLoader
