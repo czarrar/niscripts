@@ -3,6 +3,7 @@ import os.path as op
 from analysis.base import SubjectBase
 from collections import OrderedDict
 import numpy as np
+from subprocess import Popen, PIPE
 
 def check_label(label):
     """Display warning if label is greater than 26 characters"""
@@ -122,7 +123,11 @@ class DeconSubject(SubjectBase):
             self.log.drycommand(" \\\n".join(self.cmd_opts))
         else:
             self.log.info("Executing command")
-            self.log.command(" ".join(self.cmd_opts), shell=True)
+            self.log.drycommand(" ".join(self.cmd_opts))
+            p = Popen(" ".join(self.cmd_opts), shell=True)  # ghetto fix
+            p.communicate()
+            if p.returncode != 0:
+                self.log.error("Error running 3dDeconvolve")
         return
     
     def setData(self, infiles, outmat, outpic, runfile=None, mkdir=None, overwrite=False):
