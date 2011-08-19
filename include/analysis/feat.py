@@ -141,14 +141,14 @@ class CombineSubject(SubjectBase):
                 self.log.error("You need to specify outconfound file to run 3dDeconvolve")
             if outfunc:
                 decon_opts.append("-errts %s" % outfunc)
+            else:
+                decon_opts.append("-x1D_stop")
             if outfunc and op.isfile(outfunc):
                 if overwrite:
                     self.log.warning("removing output '%s'" % outfunc)
                     os.remove(outfunc)
                 else:
                     self.log.error("Output '%s' already exists...not overwriting" % outfunc)
-            else:
-                decon_opts.append("-x1D_stop")
         elif inconfound:
             self.log.error("Cannot specify inconfound without polort or censortr option")
         
