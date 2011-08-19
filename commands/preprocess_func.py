@@ -23,6 +23,7 @@ sys.path.append(op.join(os.environ.get("NISCRIPTS"), "include"))
 
 import misc, usage # my own extra stuff
 from utilities import *
+from execute import Process
 
 from nipype.workflows.fsl import create_susan_smooth
 
