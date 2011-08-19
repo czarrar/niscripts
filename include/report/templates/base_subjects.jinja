@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+  <head>
+    {% block head %}
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <title>report - {{ title }}</title>
+
+    <!-- Framework CSS -->
+    <link rel="stylesheet" href="{{ niscripts }}/etc/css/blueprint/screen.css" type="text/css" media="screen, projection" />
+    <link rel="stylesheet" href="{{ niscripts }}/etc/css/blueprint/print.css" type="text/css" media="print" />
+    <!--[if IE]><link rel="stylesheet" href="{{ niscripts }}/blueprint/ie.css" type="text/css" media="screen, projection" /><![endif]-->
+    {% endblock head %}
+  </head>
+  <body >
+    <div class="container">
+    	<div class="span-24" id="header">
+    		<h1>Report Page - {{ title }}</h1>
+    		{% if links %}
+    		  <hr />|
+      		{% for name,link in links.iteritems() %}
+      		    <a href="{{ link }}">{{ name }}</a> | 
+      		{% endfor %}
+    		{% endif %}
+    		<hr />
+    	</div>
+
+        <div class="span-17 colborder" id="content">
+          {% for subject,subject_content in subjects.iteritems() %}
+            <h3 class="loud" id="{{ subject }}">Subject: {{ subject }}</h3>
+            {% block content scoped %}
+              <p>{{ subject_content }}</p>
+            {% endblock content %}
+          {% endfor %}
+        </div>
+
+    	<div class="span-6 last" id="sidebar">
+  	    <div id="page-links">
+          <h3 class="caps">Page Links</h3>
+          <div class="box">
+            {% for subject in subjects %}
+              <a href="#{{ subject }}">{{ subject }}</a>
+      	    {% endfor %}
+          </div>
+  	    </div>
+    	</div>
+
+    	<div class="span-24">
+    		A Z Enterprise
+    	</div>
+    </div>
+  </body>
+</html>

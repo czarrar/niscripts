@@ -1,0 +1,14 @@
+{% extends "base_subjects.jinja" %}
+{% block content %}
+  {% for run,run_content in subject_content.iteritems() %}
+    <div class="prepend-1 border">
+      <h4>Run {{ run }}</h4>
+      <p>
+        <em>Max Absolute Motion:</em> {{ run_content.abs }}mm 
+        <em>Max Relative Motion:</em> {{ run_content.rel }}mm
+        <br />
+        <img src="run_content.disp" alt="displacement">
+      </p>
+    </div>
+  {% endfor %}
+{% endblock %}
