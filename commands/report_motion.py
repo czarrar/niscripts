@@ -18,7 +18,7 @@ def create_parser():
     parser._add_outputs = False
     
     group = parser.add_argument_group('Required "Options"')
-    group.add_argument('-b', '--base-dir', action=usage.store_directory, required=True)
+    group.add_argument('-b', '--base-dir', required=True)
     group.add_argument('-s', '--subjects', nargs="+", required=True)
     group.add_argument('-r', '--run-dirs', required=True)
     group.add_argument('-o', '--output', required=True)
@@ -32,8 +32,9 @@ def create_parser():
 def main(arglist):
     parser = create_parser()
     args = parser.parse_args(arglist)
+    if not op.isdir(args.base_dir):
+        parser.error("Base directory '%s' does not exist" % args.base_dir)s
     sinfo = dict([ (s, op.join(args.base_dir, s, args.run_dirs)) for s in args.subjects ])
-    print sinfo
     
     try:
         reporter = MotionReporter(args.verbosity)

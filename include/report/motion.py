@@ -91,7 +91,6 @@ class MotionReporter(object):
         self.log.info("Setting Data")
         for subject,indir in subject_indirs.iteritems():
             indirs = glob(indir)
-            print indirs
             if len(indirs) == 0:
                 self.log.error("Couldn't find '%s' for %s" % (indir, subject))
             self.addSubject(subject, indirs)
