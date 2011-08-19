@@ -26,7 +26,6 @@ class MotionReporter(object):
         self.log.info("Starting Motion Reporter")
         
         self.env = Environment(loader=PackageLoader('report', 'templates'))
-        self.env.globals['OrderedDict'] = 
         self.subjects = []
         self.report = None
         
