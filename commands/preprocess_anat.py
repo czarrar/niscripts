@@ -32,7 +32,7 @@ def get_overlay_args(fname):
 def anatomical_preprocessing(
     subject_list, 
     inputs, outputs, workingdir, output_type,
-    run, freesurfer_dir, orientation, name="anatomical_preprocessing"):
+    run, orientation, freesurfer_dir=None, name="anatomical_preprocessing"):
     
     #####
     # Setup workflow
