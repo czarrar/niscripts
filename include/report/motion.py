@@ -35,7 +35,7 @@ class MotionReporter(object):
         self.log.info("Compiling Report Page")
         if not self.subjects:
             self.log.fatal("Subjects not set!")
-        if report:
+        if self.report:
             self.log.warn("Report was already set")
         context = {'title': 'Motion', 'subjects': self.subjects}
         self.report = self._render('motion', **context)
