@@ -156,7 +156,7 @@ def create_ap_bet_workflow(name="preproc_anat_bet"):
     skull_strip = pe.Node(interface=fsl.BET(), name='skull_strip')
     preproc.connect(reorient, 'out_file', skull_strip, 'in_file')
     renamer(skull_strip, 'out_file', 'brain')
-    renamer(skull_strip, 'mask', 'brain_mask')
+    renamer(skull_strip, 'mask_file', 'brain_mask')
     
     # Pic of head
     slicer_head = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
