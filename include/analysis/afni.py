@@ -1,4 +1,4 @@
-import os, re
+import os, re, shutil
 import os.path as op
 from analysis.base import SubjectBase
 from collections import OrderedDict
