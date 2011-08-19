@@ -57,9 +57,9 @@ class Adapter(logging.LoggerAdapter):
         super(Adapter, self).__init__(logger, extra, **kwargs)
         self.allow_exceptions = allow_exceptions
     
-    def command(self, cmd, cwd=None, *args, **kwargs):
+    def command(self, cmd, cwd=None, shell=False *args, **kwargs):
         self.log(logging.COMMAND, cmd, *args, **kwargs)
-        p = Process(cmd, to_print=False, cwd=cwd)
+        p = Process(cmd, to_print=False, cwd=cwd, shell=shell)
         self.log(logging.COMMAND_STDOUT, p.stdout)
         self.log(logging.COMMAND_STDERR, p.stderr)
         if self.allow_exceptions and p.retcode != 0:
