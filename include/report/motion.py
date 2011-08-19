@@ -13,7 +13,7 @@ class MotionReporter(object):
     _motion_disp_fname = "motion_disp.png"
     
     def __init__(self, verbosity, log=None):
-        super(MotionReport, self).__init__()
+        super(MotionReporter, self).__init__()
         
         if verbosity == 0:
             self.loglevel = zlogger.logging.IMPORTANT
