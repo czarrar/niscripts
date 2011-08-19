@@ -683,7 +683,7 @@ class FeatSubject(SubjectBase):
         
         # Soft link regdir
         self.log.info("Soft linking registration directory")
-        os.symlink(self.regdir, op.join("outputdir", "reg"))
+        os.symlink(self.regdir, op.join(outputdir, "reg"))
         
         return
     
