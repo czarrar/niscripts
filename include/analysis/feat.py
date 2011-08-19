@@ -102,7 +102,7 @@ class CombineSubject(SubjectBase):
                 if op.isfile(meanfunc):
                     self.log.warning("Removing meanfunc %s" % meanfunc)
                     os.remove(meanfunc)
-                cmd = "fslmaths %s -Tmean %s " % (self.decon_outfunc, meanfunc)
+                cmd = "fslmaths %s -Tmean %s " % (self.outfunc, meanfunc)
                 self.log.command(cmd, cwd=op.dirname(self.decon_outfunc))
                 tmpfunc = op.join(op.dirname(self.decon_outfunc), "tmp.nii.gz")
                 if op.isfile(tmpfunc):
