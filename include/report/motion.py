@@ -26,7 +26,8 @@ class MotionReporter(object):
         self.log.info("Starting Motion Reporter")
         
         self.env = Environment(loader=PackageLoader('report', 'templates'))
-        self.subjects = {}
+        self.env.globals['OrderedDict'] = 
+        self.subjects = []
         self.report = None
         
         return
@@ -84,7 +85,7 @@ class MotionReporter(object):
             rinfo['disp'] = fdisp
             # save
             sinfo[run+1] = rinfo
-        self.subjects[subject] = sinfo        
+        self.subjects.append(('subject', sinfo))
         return
     
     def setData(self, subject_indirs, outfile):

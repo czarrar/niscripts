@@ -3,6 +3,7 @@
 import argparse, os, sys
 import os.path as op
 from glob import glob
+from collections import OrderedDict
 
 sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
 import usage
@@ -34,7 +35,7 @@ def main(arglist):
     args = parser.parse_args(arglist)
     if not op.isdir(args.base_dir):
         parser.error("Base directory '%s' does not exist" % args.base_dir)
-    sinfo = dict([ (s, op.join(args.base_dir, s, args.run_dirs)) for s in args.subjects ])
+    sinfo = OrderedDict([ (s, op.join(args.base_dir, s, args.run_dirs)) for s in args.subjects ])
     
     try:
         reporter = MotionReporter(args.verbosity)
