@@ -7,7 +7,7 @@ def fromYamlSubject(inputs, run_keys, verbosity=0, dry_run=False, log=None, **us
     """
     Runs both CombineFuncs and FsfSubject
     """
-    config = inputs.config
+    config = inputs['config']
     if isinstance(config, str):
         if not op.isfile(config):
             raise Exception("Cannot find config file %s" % config)
