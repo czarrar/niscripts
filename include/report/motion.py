@@ -72,7 +72,7 @@ class MotionReporter(object):
             fmax = op.join(indir, self._motion_max_fname)
             if not op.isfile(fmax):
                 self.log.error("Max motion file '%s' does not exist" % fmax)
-            f = file(infile, 'r')
+            f = file(fmax, 'r')
             lines = f.readlines()
             f.close()
             rinfo['abs'] = lines[1].strip()
