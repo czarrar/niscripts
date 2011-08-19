@@ -14,6 +14,7 @@ from zlogger import (LoggerError, LoggerCritical)
 def create_parser():
     parser = NiArgumentParser(fromfile_prefix_chars='@', 
                 description="FSL subject level statistical analysis (creates model)")
+    parser._add_outputs = False
     
     group = parser.add_argument_group('Required')
     group.add_argument('-s', '--subject', required=True)
@@ -44,7 +45,6 @@ def main(arglist):
     args = parser.parse_args(arglist)
     if args.run_keys is None:
         args.run_keys = ["combine", "fsf", "feat", "regress"]
-    subject = kwargs.pop("subject"); del kwargs["outputs"]
     try:
         fromYamlSubject(subject=subject, **vars(args))
     except (LoggerError, LoggerCritical) as err:
