@@ -75,15 +75,15 @@ class MotionReporter(object):
             f = file(fmax, 'r')
             lines = f.readlines()
             f.close()
-            rinfo['abs'] = lines[1].strip()
-            rinfo['rel'] = lines[3].strip()
+            rinfo['abs'] = "%.2f" % float(lines[1].strip())
+            rinfo['rel'] = "%.2f" % float(lines[3].strip())
             # disp pic
             fdisp = op.join(indir, self._motion_disp_fname)
             if not op.isfile(fdisp):
                 self.log.error("Displacment picture '%s' does not exist" % fdisp)
             rinfo['disp'] = fdisp
             # save
-            sinfo[run] = rinfo
+            sinfo[run+1] = rinfo
         self.subjects[subject] = sinfo        
         return
     
