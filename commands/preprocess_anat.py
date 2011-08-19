@@ -69,7 +69,7 @@ def anatomical_preprocessing(
         (subinfo, datasource, [('subject_id', 'subject_id')]),
         (datasource, inputnode, [('struct', 'struct')])
     ])
-    if run == "freesurfer_dir":
+    if run == "freesurfer":
         preproc.connect([
             (subinfo, inputnode, [('subject_id', 'subject_id')])
         ])
