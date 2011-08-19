@@ -654,7 +654,7 @@ class FsfInfo(object):
         return
     
     def getOutput(self):
-        res = [ re.search("set\ fmri\(.*?\)\ (.*)", l) for l in fsf if l.find("outputdir") != -1 ]
+        res = [ re.search("set\ fmri\(.*?\)\ (.*)", l) for l in self.fsf if l.find("outputdir") != -1 ]
         return res.groups()[0].strip('"')
 
 class FeatSubject(SubjectBase):
