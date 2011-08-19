@@ -263,7 +263,11 @@ class FsfSubject(SubjectBase):
         f.write(sfsf)
         f.close()
         if check:
-            self.log.command("feat_model %s" % op.splitext(self.outfsf)[0])
+            if 'confoundev_file' in self.fsf_context:
+                conf = " " + self.fsf_context['confoundev_file']
+            else:
+                conf = ""
+            self.log.command("feat_model %s%s" % (op.splitext(self.outfsf)[0], conf))
         return
     
     def compile(self, redo=False):
