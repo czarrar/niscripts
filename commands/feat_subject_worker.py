@@ -17,7 +17,7 @@ def create_parser():
     
     group = parser.add_argument_group('Required')
     group.add_argument('-s', '--subject', required=True)
-    group.add_argument('-c', '--config', type=store_input, check_file=True, required=True)
+    group.add_argument('-c', '--config', action=store_input, check_file=True, required=True)
     
     group = parser.add_argument_group('Optional')
     group.add_argument("--combine", action="append_const", const="combine", dest="run_keys")
@@ -46,7 +46,7 @@ def main(arglist):
         args.run_keys = ["combine", "fsf", "feat", "regress"]
     subject = kwargs.pop("subject"); del kwargs["outputs"]
     try:
-        fromYamlSubject(**vars(args),  subject=subject)
+        fromYamlSubject(subject=subject, **vars(args))
     except (LoggerError, LoggerCritical) as err:
         pass
 
