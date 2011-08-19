@@ -64,7 +64,7 @@ class MotionReporter(object):
         self.log.debug("...adding subject %s" % subject)
         sinfo = {}
         for run,indir in enumerate(indirs):
-            if not op.path(indir):
+            if not op.isdir(indir):
                 self.log.error("Input directory '%s' does not exist" % indir)
             # new dict
             rinfo = {}
