@@ -33,7 +33,7 @@ def main(arglist):
     parser = create_parser()
     args = parser.parse_args(arglist)
     if not op.isdir(args.base_dir):
-        parser.error("Base directory '%s' does not exist" % args.base_dir)s
+        parser.error("Base directory '%s' does not exist" % args.base_dir)
     sinfo = dict([ (s, op.join(args.base_dir, s, args.run_dirs)) for s in args.subjects ])
     
     try:
