@@ -167,13 +167,13 @@ def create_ap_bet_workflow(name="preproc_anat_bet"):
     # Pic of brain mask overlaid on head (axial)
     slicer_mask1 = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), name='slicer_mask1')
     preproc.connect(reorient, 'out_file', slicer_mask1, 'in_file')
-    preproc.connect(skull_strip, ('mask', get_overlay_args), slicer_mask1, 'overlay1')
+    preproc.connect(skull_strip, ('mask_file', get_overlay_args), slicer_mask1, 'overlay1')
     renamer(slicer_mask1, 'out_file', 'brain_mask_axial_pic')
     
     # Pic of brain mask overlaid on head (sagittal)
     slicer_mask2 = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="sagittal"), name='slicer_mask2')
     preproc.connect(reorient, 'out_file', slicer_mask2, 'in_file')
-    preproc.connect(skull_strip, ('mask', get_overlay_args), slicer_mask2, 'overlay1')
+    preproc.connect(skull_strip, ('mask_file', get_overlay_args), slicer_mask2, 'overlay1')
     renamer(slicer_mask2, 'out_file', 'brain_mask_sagittal_pic')
     
     return preproc
