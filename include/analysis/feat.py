@@ -1,6 +1,6 @@
 # TODO: split this stuff up
 
-import os, nibabel, re, yaml, tempfile
+import os, nibabel, re, yaml, tempfile, shutil
 import os.path as op
 from string import Template
 from collections import OrderedDict
@@ -94,6 +94,18 @@ class CombineSubject(SubjectBase):
                 x = x3
             np.savetxt(self.outconfound, x, fmt="%.9f")
             os.remove(self.decon_outmat)
+            
+            # add back mean
+            if self.decon_outfunc:
+                self.log.info("Adding mean to residuals")
+                meanfunc = op.join(op.dirname(self.decon_outfunc), "func_mean.nii.gz")
+                cmd = "3dTstat -mean -prefix %s %s" % (meanfunc, self.decon_outfunc)
+                self.log.command(cmd, cwd=op.dirname(self.decon_outfunc))
+                tmpfunc = op.join(op.dirname(self.decon_outfunc), "tmp.nii.gz")
+                cmd = "3dcalc -a %s -b %s -expr 'a+b' -prefix %s" % (self.decon_outfunc, meanfunc, tmpfunc)
+                self.log.command(cmd, cwd=op.dirname(self.decon_outfunc))
+                self.log.info("Moving %s => %s" % (tmpfunc, self.decon_outfunc))
+                shutil.move(tmpfunc, self.decon_outfunc)
         
         return
     
@@ -141,8 +153,12 @@ class CombineSubject(SubjectBase):
                 self.log.error("You need to specify outconfound file to run 3dDeconvolve")
             if outfunc:
                 decon_opts.append("-errts %s" % outfunc)
+                decon_opts.append("-nocout")
+                decon_opts.append("-nobucket")
+                self.decon_outfunc = outfunc
             else:
                 decon_opts.append("-x1D_stop")
+                self.decon_outfunc = None
             if outfunc and op.isfile(outfunc):
                 if overwrite:
                     self.log.warning("removing output '%s'" % outfunc)
