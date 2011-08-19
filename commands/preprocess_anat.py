@@ -275,7 +275,10 @@ def create_ap_freesurfer_workflow(freesurfer_dir, name="preproc_anat_freesurfer"
         (inputnode, convert_head, [('orientation', 'out_orientation'),
                                    ('freesurfer_dir', 'subjects_dir')])
     ])
-    renamer(convert_head, 'out_file', 'head')
+    reorient_head = pe.Node(interface=afni.Threedresample(), name='reorient_head')
+    preproc.connect(convert_head, 'out_file', reorient_head, 'in_file')
+    preproc.connect(inputnode, 'orientation', reorient_head, 'orientation')
+    renamer(reorient_head, 'out_file', 'head')
     ## brain
     convert_brain = pe.Node(fs.MRIConvert(out_type="niigz", subjects_dir=freesurfer_dir), name="convert_brain")
     preproc.connect(getfree, 'brainmask', convert_brain, 'in_file')
@@ -283,7 +286,10 @@ def create_ap_freesurfer_workflow(freesurfer_dir, name="preproc_anat_freesurfer"
         (inputnode, convert_brain, [('orientation', 'out_orientation'),
                                     ('freesurfer_dir', 'subjects_dir')])
     ])
-    renamer(convert_brain, 'out_file', 'brain')
+    reorient_brain = pe.Node(interface=afni.Threedresample(), name='reorient_brain')
+    preproc.connect(convert_brain, 'out_file', reorient_brain, 'in_file')
+    preproc.connect(inputnode, 'orientation', reorient_brain, 'orientation')
+    renamer(reorient_brain, 'out_file', 'brain')
     
     # Create brain mask
     brain_mask = pe.Node(interface=fsl.ImageMaths(op_string='-bin'), name='brain_mask')
