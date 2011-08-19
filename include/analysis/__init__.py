@@ -22,6 +22,7 @@ def fromYamlSubject(inputs, run_keys, verbosity=0, dry_run=False, log=None, **us
         opts = config_dict.pop(k, None)
         if opts:
             class_name = "".join([ x.capitalize() for x in k.split("_") ]) + "Subject"
+            print class_name
             c = eval(class_name)(verbosity, deepcopy(template_vars), dry_run, log)
             c.fromDict(opts)
             c.run()
