@@ -39,7 +39,7 @@ def anatomical_preprocessing(
     #####
     
     if run == "bet":
-        preproc = create_ap_bet_workflow(freesurfer_dir, name=name + "_withbet")
+        preproc = create_ap_bet_workflow(name=name + "_withbet")
         # get input / set certain inputs
         inputnode = preproc.get_node("inputspec")
     elif run == "freesurfer":
