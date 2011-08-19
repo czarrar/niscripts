@@ -470,8 +470,24 @@ class BetaSeriesSubject(SubjectBase):
     def __init__(self, *args, **kwargs):
         super(BetaSeriesSubject, self).__init__(*args, **kwargs)
         
+        self.evs = OrderedDict()
         isset_names = ['data', 'evs']
         self._isset = dict.fromkeys(isset_names, False)
+    
+    def fromDict(self, config):
+        self.check_req(config, ["data", "evs"])
+        
+        data = config.pop("data")
+        self.check_req(data, ["indir"])
+        self.setData(**data)
+        
+        evs = config.pop("evs")
+        self.setEvs(*evs)
+        
+        for k in config:
+            self.log.error("Unknown option '%s' given" % k)
+        
+        return
     
     def compile(self):
         self.log.info("Compiling")
@@ -496,11 +512,7 @@ class BetaSeriesSubject(SubjectBase):
                 self.log.command("3dcalc -a stats/betas.nii.gz'[%s]' -expr a -prefix betaseries/%s_ev%i.nii.gz" % (",".join(filt_label_inds), name, start+1), cwd=self.indir)
                 self.log.command("buc2func.R betaseries/%s_ev%i.nii.gz betaseries/%s_ev%i.nii.gz" % (name, start+1, name, start+1), cwd=self.indir)
         
-        
         # applywarp -i ${rundir}/${inf} -r ${regdir}/standard.nii.gz -o ${rundir}/${outf} -w ${regdir}/highres2standard_warp.nii.gz --premat=${regdir}/example_func2highres.mat --interp=spline -v
-    
-    # reg
-    
     def setData(self, indir, regdir=""):
         self.log.info("Setting data")
         
@@ -521,10 +533,19 @@ class BetaSeriesSubject(SubjectBase):
         self._isset['data'] = True
         return
     
-    def setEvs(self, **evs):
-        self.log.info("Setting EVs")
-        self.evs = evs
+    def addEV(self, name, steps):
+        if name in self.evs:
+            self.log.error("Duplicate EV %s" % name)
+        self.evs[name] = steps
+        
         self._isset['evs'] = True
+        return
+    
+    def setEvs(self, *evs):
+        self.log.info("Setting EVs")
+        for ev in evs:
+            name,step = ev.items()[0]
+            self.addEV(name, step)
         return
     
 
