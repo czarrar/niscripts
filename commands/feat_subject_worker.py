@@ -46,7 +46,7 @@ def main(arglist):
     if args.run_keys is None:
         args.run_keys = ["combine", "fsf", "feat", "regress"]
     try:
-        fromYamlSubject(subject=subject, **vars(args))
+        fromYamlSubject(**vars(args))
     except (LoggerError, LoggerCritical) as err:
         pass
 
