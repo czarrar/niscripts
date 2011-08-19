@@ -496,15 +496,28 @@ class BetaSeriesSubject(SubjectBase):
                 self.log.command("3dcalc -a stats/betas.nii.gz'[%s]' -expr a -prefix betaseries/%s_ev%i.nii.gz" % (",".join(filt_label_inds), name, start+1), cwd=self.indir)
                 self.log.command("buc2func.R betaseries/%s_ev%i.nii.gz betaseries/%s_ev%i.nii.gz" % (name, start+1, name, start+1), cwd=self.indir)
         
+        
+        # applywarp -i ${rundir}/${inf} -r ${regdir}/standard.nii.gz -o ${rundir}/${outf} -w ${regdir}/highres2standard_warp.nii.gz --premat=${regdir}/example_func2highres.mat --interp=spline -v
     
-    def setData(self, indir):
+    # reg
+    
+    def setData(self, indir, regdir=""):
         self.log.info("Setting data")
+        
         indir = self._substitute(indir)
+        regdir = self._substitute(regdir)
+        
         if not op.isdir(indir):
             self.log.error("Directory '%s' does not exist" % indir)
         if not op.isdir(op.join(indir, "betaseries")):
             self.log.info("...creating betaseries directory")
             os.mkdir(op.join(indir, "betaseries"))
+        if regdir and not op.isdir(regdir):
+            self.log.error("Reg directory '%s' does not exist" % regdir)
+            
+        self.indir = indir
+        self.regdir = regdir
+        
         self._isset['data'] = True
         return
     

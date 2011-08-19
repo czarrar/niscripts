@@ -24,7 +24,7 @@ def create_parser():
     group = parser.add_argument_group('Optional')
     group.add_argument("--decon", action="append_const", const="decon", dest="run_keys")
     group.add_argument("--reml", action="append_const", const="reml", dest="run_keys")
-    group.add_argument("--betaSeries", action="append_const", const="betaSeries", dest="run_keys")
+    group.add_argument("--beta-series", action="append_const", const="betaSeries", dest="run_keys")
     group.add_argument("--verbose", action="store_const", const=1, dest="verbosity", default=0)
     group.add_argument("--debug", action="store_const", const=2, dest="verbosity", default=0)
     group.add_argument("--dry-run", action="store_true", default=False)
@@ -44,7 +44,7 @@ def main(arglist):
     parser = create_parser()
     args = parser.parse_args(arglist)
     if args.run_keys is None:
-        args.run_keys = ["decon", "reml", "betaSeries"]
+        args.run_keys = ["decon", "reml", "beta_series"]
     kwargs = vars(args)
     subjects = kwargs.pop("subjects")
     for subject in subjects:
