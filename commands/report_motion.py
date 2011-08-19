@@ -33,6 +33,7 @@ def main(arglist):
     parser = create_parser()
     args = parser.parse_args(arglist)
     sinfo = dict([ (s, op.join(args.base_dir, s, args.run_dirs)) for s in args.subjects ])
+    print sinfo
     
     try:
         reporter = MotionReporter(args.verbosity)
