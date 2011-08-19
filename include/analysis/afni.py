@@ -122,7 +122,7 @@ class DeconSubject(SubjectBase):
             self.log.drycommand(" \\\n".join(self.cmd_opts))
         else:
             self.log.info("Executing command")
-            self.log.command(" ".join(self.cmd_opts))
+            self.log.command(" ".join(self.cmd_opts), shell=True)
         return
     
     def setData(self, infiles, outmat, outpic, runfile=None, mkdir=None, overwrite=False):

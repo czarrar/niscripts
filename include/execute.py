@@ -51,7 +51,7 @@ class Process(object):
     _stderr = PIPE
     _retcode = None
 
-    def __init__(self, cmd, stdin=None, stdout=None, cwd=None, to_print=False):
+    def __init__(self, cmd, stdin=None, stdout=None, cwd=None, to_print=False, shell=False):
         """
         @param cmd: A string or list containing the command to be executed.
         @type cmd: str, list
@@ -69,6 +69,7 @@ class Process(object):
             cwd = os.path.expanduser(cwd)
         self._cwd = cwd
         self._print = to_print
+        self._shell = shell
         self._refreshProcess()
     
     def __call__(self):
@@ -116,7 +117,8 @@ class Process(object):
                                   stdin = self._stdin,
                                   stdout = self._stdout,
                                   stderr = self._stderr,
-                                  cwd = self._cwd)
+                                  cwd = self._cwd,
+                                  shell = self._shell)
         except OSError, e:
             raise InvalidCommand(" ".join(self._command))
 
