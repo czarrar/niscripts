@@ -411,7 +411,11 @@ class RemlSubject(SubjectBase):
             self.log.drycommand("\\\n".join(self.cmd_opts))
         else:
             self.log.info("Running stats")
-            self.log.command(" ".join(self.cmd_opts), cwd=self.outdir)
+            self.log.drycommand(" ".join(self.cmd_opts))
+            p = Popen(" ".join(self.cmd_opts), shell=True, cwd=self.outdir)  # ghetto fix
+            p.communicate()
+            if p.returncode != 0:
+                self.log.error("Error running 3dREMLfit")
             f = file(op.join(self.outdir, "logs", "reml.cmd"), 'w')
             f.write("\\\n".join(self.cmd_opts))
             f.close()
