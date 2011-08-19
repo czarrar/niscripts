@@ -8,6 +8,7 @@ sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
 import usage
 from usage import NiArgumentParser
 from report import MotionReporter
+from zlogger import (LoggerError, LoggerCritical)
 
 def create_parser():
     parser = NiArgumentParser(fromfile_prefix_chars="@", 
@@ -33,9 +34,12 @@ def main(arglist):
     args = parser.parse_args(arglist)
     sinfo = dict([ (s, op.join(args.base_dir, s, args.run_dirs)) for s in args.subjects ])
     
-    reporter = MotionReporter(args.verbosity)
-    reporter.setData(sinfo, args.output)
-    reporter.run()
+    try:
+        reporter = MotionReporter(args.verbosity)
+        reporter.setData(sinfo, args.output)
+        reporter.run()
+    except (LoggerError, LoggerCritical):
+        parser.error("Quiting")
     
     return
 
