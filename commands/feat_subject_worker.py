@@ -12,7 +12,7 @@ from zlogger import (LoggerError, LoggerCritical)
 #####
 
 def create_parser():
-    parser = NiArgumentParser(fromfile_prefix_chars='@', 
+    parser = NiArgumentParser(fromfile_prefix_chars='@', argument_default=argparse.SUPPRESS, 
                 description="FSL subject level statistical analysis (creates model)")
     parser._add_outputs = False
     
