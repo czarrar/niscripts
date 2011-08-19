@@ -67,9 +67,12 @@ def anatomical_preprocessing(
     # Link inputs
     preproc.connect([
         (subinfo, datasource, [('subject_id', 'subject_id')]),
-        (subinfo, inputnode, [('subject_id', 'subject_id')]),
         (datasource, inputnode, [('struct', 'struct')])
     ])
+    if run == "freesurfer_dir":
+        preproc.connect([
+            (subinfo, inputnode, [('subject_id', 'subject_id')])
+        ])
     
     
     ###### 
