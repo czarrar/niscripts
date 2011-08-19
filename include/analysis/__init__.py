@@ -1,3 +1,4 @@
+import os.path as op
 import yaml
 from copy import deepcopy
 from analysis.feat import (CombineSubject, FsfSubject, FsfInfo, FeatSubject)
