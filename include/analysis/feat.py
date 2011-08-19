@@ -630,7 +630,7 @@ class FeatSubject(SubjectBase):
         super(FeatSubject, self).__init__(*args, **kwargs)
     
     def fromDict(self, config_dict):
-        check_req(config_dict, ["infsf"])
+        self.check_req(config_dict, ["infsf"])
         self.setData(**config_dict)
     
     def run(self):
@@ -672,7 +672,7 @@ class RegressSubject(SubjectBase):
         super(FeatSubject, self).__init__(*args, **kwargs)
     
     def fromDict(self, config_dict):
-        check_req(config_dict, ["design_file", "in_file", "out_file"])
+        self.check_req(config_dict, ["design_file", "in_file", "out_file"])
         self.cmd_opts = self.setVars(config_dict)
     
     def setVars(self, config_dict):
