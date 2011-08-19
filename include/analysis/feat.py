@@ -99,9 +99,15 @@ class CombineSubject(SubjectBase):
             if self.decon_outfunc:
                 self.log.info("Adding mean to residuals")
                 meanfunc = op.join(op.dirname(self.decon_outfunc), "func_mean.nii.gz")
+                if op.isfile(meanfunc):
+                    self.log.warn("Removing meanfunc %s" % meanfunc)
+                    os.remove(meanfunc)
                 cmd = "3dTstat -mean -prefix %s %s" % (meanfunc, self.decon_outfunc)
                 self.log.command(cmd, cwd=op.dirname(self.decon_outfunc))
                 tmpfunc = op.join(op.dirname(self.decon_outfunc), "tmp.nii.gz")
+                if op.isfile(tmpfunc):
+                    self.log.warn("Removing meanfunc %s" % tmpfunc)
+                    os.remove(tmpfunc)
                 cmd = "3dcalc -a %s -b %s -expr 'a+b' -prefix %s" % (self.decon_outfunc, meanfunc, tmpfunc)
                 self.log.command(cmd, cwd=op.dirname(self.decon_outfunc))
                 self.log.info("Moving %s => %s" % (tmpfunc, self.decon_outfunc))
