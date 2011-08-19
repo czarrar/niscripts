@@ -412,7 +412,7 @@ class RemlSubject(SubjectBase):
         else:
             self.log.info("Running stats")
             self.log.command(" ".join(self.cmd_opts), cwd=self.outdir)
-            f = open(op.join(self.outdir, "logs", "reml.cmd"), 'r')
+            f = file(op.join(self.outdir, "logs", "reml.cmd"), 'w')
             f.write("\\\n".join(self.cmd_opts))
             f.close()
     
