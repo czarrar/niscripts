@@ -402,6 +402,10 @@ class FsfSubject(SubjectBase):
                 self.log.warning("Output directory already exists, will overwrite")
             else:
                 self.log.warning("Output directory already exists, instead of overwriting will create a new output directory")
+        dir_outdir = op.dirname(outdir)
+        if not op.isdir(dir_outdir):
+            self.log.info("Creating directory '%s' for feat output" % dir_outdir)
+            os.mkdir(dir_outdir)
         
         dir_outfsf = op.dirname(outfsf)
         if not op.isdir(dir_outfsf):
@@ -424,9 +428,11 @@ class FsfSubject(SubjectBase):
             self.fsf_context['confoundev_yn'] = False
         self.fsf_context['confoundev_file'] = confoundev_file
         
-        for ev_name,ev_opts in evs.iteritems():
+        for ev in evs:
+            ev_name,ev_opts = ev.items()[0]
             self.addEV(ev_name, **ev_opts)
-        for con_name,con_val in contrasts.iteritems():
+        for contrast in contrasts:
+            con_name,con_val = contrast.items()[0]
             self.addContrast(con_name, con_val)
         
         self._isset['stats'] = True
