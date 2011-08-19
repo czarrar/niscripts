@@ -29,7 +29,7 @@
   	    <div id="page-links">
           <h3 class="caps">Page Links</h3>
           <div class="box">
-            {% for subject in subjects %}
+            {% for subject,subject_content in subjects %}
               <a href="#{{ subject }}">{{ subject }}</a>
       	    {% endfor %}
           </div>

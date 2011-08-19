@@ -84,7 +84,7 @@ class MotionReporter(object):
             rinfo['disp'] = fdisp
             # save
             sinfo[run+1] = rinfo
-        self.subjects.append(('subject', sinfo))
+        self.subjects.append((subject, sinfo))
         return
     
     def setData(self, subject_indirs, outfile):
