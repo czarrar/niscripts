@@ -13,13 +13,13 @@ from zlogger import (LoggerError, LoggerCritical)
 #####
 
 def create_parser():
-    parser = NiArgumentParser(fromfile_prefix_chars='@', 
+    parser = NiArgumentParser(fromfile_prefix_chars='@', argument_default=argparse.SUPPRESS, 
                 description="AFNI subject level statistical analysis")
     parser._add_outputs = False
     
     group = parser.add_argument_group('Required')
     group.add_argument('-s', '--subjects', nargs="+", required=True)
-    group.add_argument('-c', '--config', action=store_input, required=True, metavar="FILE")
+    group.add_argument('-c', '--config', action=store_input, check_file=True, required=True, metavar="FILE")
     
     group = parser.add_argument_group('Optional')
     group.add_argument("--decon", action="append_const", const="decon", dest="run_keys")
