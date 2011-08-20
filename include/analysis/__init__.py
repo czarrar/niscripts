@@ -18,6 +18,8 @@ def fromYamlSubject(inputs, run_keys, verbosity=0, dry_run=False, log=None, **us
     template_vars = config_dict.pop("vars", {})
     template_vars.update(user_template_vars)
     
+    print run_keys
+    
     for k in run_keys:
         opts = config_dict.pop(k, None)
         if opts:
