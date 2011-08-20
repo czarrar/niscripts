@@ -126,8 +126,8 @@ class ResDeconSubject(SubjectBase):
             self.check_req(motion, ["infiles", "outfile"])
             self.setMotion(**motion)
         
-        decon = config.pop("decon", {})
-        self.setDecon(**decon)
+        options = config.pop("options")
+        self.setOptions(**options)
         
         return
     
