@@ -205,6 +205,7 @@ class SubjectBase(object):
         f = file(outfile, 'w')
         p = Process("cat %s" % " ".join(new_infiles), stdout=f, to_print=True)
         print p.stderr
+        self.outmotion = outfile
         
         return
     

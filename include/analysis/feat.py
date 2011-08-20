@@ -752,7 +752,7 @@ class FeatSubject(SubjectBase):
         # Get outputdir
         self.log.debug("Getting output directory")
         fsfinfo = FsfInfo(self.infsf)
-        outputdir = fsfinfo.getOutput()
+        outputdir = fsfinfo.getOutput()[0]
         
         # Soft link regdir
         self.log.info("Soft linking registration directory")
