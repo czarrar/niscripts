@@ -163,12 +163,11 @@ class ResDeconSubject(SubjectBase):
             
             self.log.debug("Merging original functional data")
             tmpfunc = op.join(op.dirname(self.outfunc), "tmp.nii.gz")
-            cmd = "fslmerge -t %s %s" % (tmpfunc, " ".join(self.infiles))
-            self.log.command(cmd, cwd=op.dirname(self.outfunc))
             if op.isfile(tmpfunc):
                 self.log.warning("Removing tmpfunc %s" % tmpfunc)
                 os.remove(tmpfunc)
-            os.remove(tmpfunc)
+            cmd = "fslmerge -t %s %s" % (tmpfunc, " ".join(self.infiles))
+            self.log.command(cmd, cwd=op.dirname(self.outfunc))
             
             self.log.debug("Getting mean")
             meanfunc = op.join(op.dirname(self.outfunc), "func_mean.nii.gz")
