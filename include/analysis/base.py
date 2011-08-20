@@ -147,6 +147,8 @@ class SubjectBase(object):
             f = file(runfile, 'r')
             runs = f.readlines()
             runs = [ l.strip() for l in runs if l.strip() ]
+            if len(runs) == 0:
+                self.log.error("Empty run file '%s'" % runfile)
         else:
             runs = None
         
@@ -161,15 +163,44 @@ class SubjectBase(object):
             new_infiles.extend(self._getInputsWorker(infiles, 'file'))
         
         # Make a directory
-        if isinstance(mkdir, str):
-            mkdir = [mkdir]
-        for m in mkdir:
-            m = self._substitute(m)
-            if m and not op.isdir(m):
-                self.log.info("Making directory: %s" % m)
-                os.mkdir(m)
+        if mkdir:
+            if isinstance(mkdir, str):
+                mkdir = [mkdir]
+            for m in mkdir:
+                m = self._substitute(m)
+                if m and not op.isdir(m):
+                    self.log.info("Making directory: %s" % m)
+                    os.mkdir(m)
         
+        self.runs = runs
         return new_infiles
     
-
+    def setMotion(self, infiles, outfile, mkdir=None):
+        # Set infiles
+        new_infiles = []
+        if self.runs:
+            for r in self.runs:
+                self.addTemplateContext('run', r)
+                new_infiles.extend(self._getInputsWorker(infiles, 'file'))
+            self.addTemplateContext('run', None)
+        else:
+            new_infiles.extend(self._getInputsWorker(infiles, 'file'))
+        
+        # Make a directory
+        if mkdir:
+            if isinstance(mkdir, str):
+                mkdir = [mkdir]
+            for m in mkdir:
+                m = self._substitute(m)
+                if m and not op.isdir(m):
+                    self.log.info("Making directory: %s" % m)
+                    os.mkdir(m)
+        
+        self.log.info("Creating new combined motion file '%s'" % outfile)
+        f = file(outfile, 'w')
+        p = Process("cat %s" % " ".join(new_infiles), stdout=f, to_print=True)
+        print tmp.stderr
+        
+        return
+    
 

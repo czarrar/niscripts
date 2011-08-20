@@ -22,6 +22,8 @@ def create_parser():
     
     group = parser.add_argument_group('Optional')
     group.add_argument("--combine", action="append_const", const="combine", dest="run_keys")
+    group.add_argument("--res_decon", action="append_const", const="res_decon", 
+                        dest="run_keys")
     group.add_argument("--fsf", action="append_const", const="fsf", dest="run_keys")
     group.add_argument("--feat", action="append_const", const="feat", dest="run_keys")
     group.add_argument("--regress", action="append_const", const="regress", dest="run_keys")
@@ -44,7 +46,7 @@ def main(arglist):
     parser = create_parser()
     args = parser.parse_args(arglist)
     if args.run_keys is None:
-        args.run_keys = ["combine", "fsf", "feat", "regress"]
+        args.run_keys = ["res_decon", "fsf", "feat", "regress"]
     try:
         fromYamlSubject(**vars(args))
     except (LoggerError, LoggerCritical) as err:

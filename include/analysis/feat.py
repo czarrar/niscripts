@@ -58,8 +58,10 @@ class CombineSubject(SubjectBase):
         self.check_req(data, ["infiles", "outfunc"])
         self.setData(**data)
         
-        decon = config.pop("decon", {})
-        self.setDecon(**decon)
+        motion = config.pop("motion", None)
+        if motion:
+            self.check_req(motion, ["infiles", "outfile"])
+            self.setMotion(**motion)
         
         return
     
@@ -74,48 +76,8 @@ class CombineSubject(SubjectBase):
         cmd = "fslmerge -t %s %s" % (self.outfunc, " ".join(self.infiles))
         self.log.command(cmd, cwd=op.dirname(self.outfunc))
         
-        # 3dDeconvolve
-        if self.decon_opts:
-            if not self.outconfound:
-                self.log.error("Must specify outconfound file if doing 3dDeconvole")
-            # deconvolve
-            self.decon_opts.insert(0, "-input %s" % " ".join(self.infiles))
-            self.decon_opts.insert(0, "3dDeconvolve")
-            self.log.command(" ".join(self.decon_opts), cwd=op.dirname(self.decon_outmat))
-            # confound file
-            x = np.loadtxt(self.decon_outmat)
-            if self.inconfound:
-                x2 = np.loadtxt(self.inconfound)
-                if x.shape[0] != x2.shape[0]:
-                    self.log.error("inconfound '%s' and 3dDeconvolve output '%s' do not have same number of rows" % (self.inconfound, self.decon_outmat))
-                x3 = np.zeros((x.shape[0], x.shape[1]+x2.shape[1]))
-                x3[:,0:x.shape[1]] = x
-                x3[:,x.shape[1]:] = x2
-                x = x3
-            np.savetxt(self.outconfound, x, fmt="%.9f")
-            os.remove(self.decon_outmat)
-            
-            # add back mean
-            if self.decon_outfunc:
-                self.log.info("Adding mean to residuals")
-                meanfunc = op.join(op.dirname(self.decon_outfunc), "func_mean.nii.gz")
-                if op.isfile(meanfunc):
-                    self.log.warning("Removing meanfunc %s" % meanfunc)
-                    os.remove(meanfunc)
-                cmd = "fslmaths %s -Tmean %s " % (self.outfunc, meanfunc)
-                self.log.command(cmd, cwd=op.dirname(self.decon_outfunc))
-                tmpfunc = op.join(op.dirname(self.decon_outfunc), "tmp.nii.gz")
-                if op.isfile(tmpfunc):
-                    self.log.warning("Removing meanfunc %s" % tmpfunc)
-                    os.remove(tmpfunc)
-                cmd = "3dcalc -a %s -b %s -expr 'a+b' -prefix %s" % (self.decon_outfunc, meanfunc, tmpfunc)
-                self.log.command(cmd, cwd=op.dirname(self.decon_outfunc))
-                self.log.info("Moving %s => %s" % (tmpfunc, self.decon_outfunc))
-                shutil.move(tmpfunc, self.decon_outfunc)
-        
         return
     
-        
     def setData(self, infiles, outfunc, runfile=None, mkdir=None, overwrite=False):
         """Set inputs and outputs of functional data"""
         self.log.debug("Setting Data")
@@ -136,51 +98,162 @@ class CombineSubject(SubjectBase):
         
         return
     
-    def setDecon(self, polort=None, inconfound="", outconfound="", outfunc="", tr=None, overwrite=False):
-        """docstring for setDecon"""
-        self.log.debug("Setting 3dDeconvolve")
-        decon_opts = []     # add -input later
+
+class ResDeconSubject(SubjectBase):
+    _logname = "res_decon_subject"
+    
+    def __init__(self, *args, **kwargs):
+        """
+        Parameters
+        ----------
+        verbosity : 0=minimal, 1=verbose, 2=debug
+        template_vars: template variables for paths
+        """
+        super(ResDeconSubject, self).__init__(*args, **kwargs)
+        self._isset_data = False
+        self._isset_options = False
+        self.log.debug("Starting ResDeconSubject")
+    
+    def fromDict(self, config):
+        self.check_req(config, ["data", "options"])
         
-        inconfound = self._substitute(inconfound)
-        outconfound = self._substitute(outconfound)
+        data = config.pop("data")
+        self.check_req(data, ["infiles"])
+        self.setData(**data)
+        
+        motion = config.pop("motion", None)
+        if motion:
+            self.check_req(motion, ["infiles", "outfile"])
+            self.setMotion(**motion)
+        
+        decon = config.pop("decon", {})
+        self.setDecon(**decon)
+        
+        return
+    
+    def compile(self):
+        return
+    
+    def run(self):
+        self.compile()
+        
+        if not self._isset_data or not self._isset_options:
+            self.log.critical("Must specify data or options")
+        
+        # decon
+        if self.decon_opts:
+            if self.outfunc:
+                cwd = op.dirname(self.outfunc)
+            elif self.outmat:
+                cwd = op.dirname(self.outmat)
+            self.log.command(" ".join(self.decon_opts), cwd=cwd)
+        else:
+            raise Exception("todo")
+        
+        # confound file
+        if self.outconfound:
+            x = np.loadtxt(self.outmat)
+            np.savetxt(self.outconfound, x, fmt="%.9f")
+        if self.outmat_istmp:
+            os.remove(self.outmat)
+        
+        # add back mean
+        if self.outfunc:
+            self.log.info("Adding mean to residuals")
+            meanfunc = op.join(op.dirname(self.outfunc), "func_mean.nii.gz")
+            if op.isfile(meanfunc):
+                self.log.warning("Removing meanfunc %s" % meanfunc)
+                os.remove(meanfunc)
+            cmd = "fslmaths %s -Tmean %s " % (self.outfunc, meanfunc)
+            self.log.command(cmd, cwd=op.dirname(self.outfunc))
+            tmpfunc = op.join(op.dirname(self.outfunc), "tmp.nii.gz")
+            if op.isfile(tmpfunc):
+                self.log.warning("Removing meanfunc %s" % tmpfunc)
+                os.remove(tmpfunc)
+            cmd = "3dcalc -a %s -b %s -expr 'a+b' -prefix %s" % (self.outfunc, meanfunc, tmpfunc)
+            self.log.command(cmd, cwd=op.dirname(self.outfunc))
+            self.log.info("Moving %s => %s" % (tmpfunc, self.outfunc))
+            shutil.move(tmpfunc, self.outfunc)
+        
+        return
+    
+    def setData(self, infiles, outfunc="", outmat="", outconfound="", runfile=None, mkdir=None, 
+                overwrite=False):
+        """Set inputs and outputs of functional data"""
+        self.log.debug("Setting Data")
+        
+        self.infiles = super(CombineSubject, self).getInputs(infiles, runfile, mkdir)
+        
+        # Set outfunc
         outfunc = self._substitute(outfunc)
-        
-        if polort:
-            decon_opts.append("-polort %s" % polort)
-        if decon_opts:
-            if tr:
-                decon_opts.append("-force_TR %f" % float(tr))
-            outmat = tempfile.mktemp(".1D")
-            decon_opts.append("-x1D %s" % outmat)
-            self.decon_outmat = outmat
-            if inconfound and not op.isfile(inconfound):
-                self.log.error("Cannot find inconfound file '%s'" % inconfound)
-            if not outconfound:
-                self.log.error("You need to specify outconfound file to run 3dDeconvolve")
-            if outfunc:
-                decon_opts.append("-errts %s" % outfunc)
-                decon_opts.append("-nocout")
-                decon_opts.append("-nobucket")
-                self.decon_outfunc = outfunc
+        if outfunc and op.isfile(outfunc):
+            if overwrite:
+                self.log.warning("removing output '%s'" % outfunc)
+                os.remove(outfunc)
             else:
-                decon_opts.append("-x1D_stop")
-                self.decon_outfunc = None
-            if outfunc and op.isfile(outfunc):
-                if overwrite:
-                    self.log.warning("removing output '%s'" % outfunc)
-                    os.remove(outfunc)
-                else:
-                    self.log.error("Output '%s' already exists...not overwriting" % outfunc)
-        elif inconfound:
-            self.log.error("Cannot specify inconfound without polort or censortr option")
+                self.log.error("Output '%s' already exists...not overwriting" % outfunc)
+        self.outfunc = outfunc
         
-        self.inconfound = inconfound
-        self.outconfound = outconfound
+        # Set outmat
+        outmat = self._substitute(outmat)
+        if outmat and op.isfile(outmat):
+            if overwrite:
+                self.log.warning("removing output '%s'" % outmat)
+                os.remove(outmat)
+            else:
+                self.log.error("Output '%s' already exists...not overwriting" % outmat)
+        self.outmat = outmat
+        
+        # Outconfound
+        self.outconfound = self._substitute(outconfound)
+        if not outmat and outconfound:
+            self.outmat_istmp = True
+            self.outmat = tempfile.mktemp(".1D")
+        else:
+            self.outmat_istmp = False
+        
+        # check
+        if not outfunc and not outmat:
+            self.log.critical("Must specify either outfunc or outmat")
+        
+        self._isset_data = True
+        return
+    
+    def setOptions(**kwargs):
+        if not self._isset_data:
+            self.log.fatal("Must set data before options")
+        
+        decon_opts = []
+        
+        # Have Anything?
+        if kwargs == {}:
+            self.decon_opts = decon_opts
+            return
+        
+        # Defaults
+        kwargs.setdefault('-input', " ".join(self.infiles))
+        
+        if self.outmat:
+            kwargs.setdefault('x1D', self.outmat)
+        
+        if self.outfunc:
+            kwargs.setdefault('errts', self.outfunc)
+            kwargs.setdefault('nocout', True)
+            kwargs.setdefault('nobucket', True)
+        else:
+            kwargs.setdefault('x1D_stop', True)
+        
+        # Set user kwargs
+        decon_opts.append("3dDeconvolve")
+        for k,v in kwargs.iteritems():
+            if isinstance(v, bool) and v == True:
+                decon_opts.append("-%s" % k)
+            else:
+                decon_opts.append("-%s %s" % (k,v))
+        
         self.decon_opts = decon_opts
-        self.tr = tr
         
-        self._isset_decon = True
-        
+        self._isset_options = True
         return
     
 
@@ -452,7 +525,7 @@ class FsfSubject(SubjectBase):
         self._isset['data'] = True
         return
     
-    def setStats(self, prewhiten=True, confoundev_file="", evs={}, contrasts={}):
+    def setStats(self, prewhiten=True, confoundev_file="", evs=[], contrasts=[]):
         self.fsf_context['prewhiten'] = prewhiten
         
         if confoundev_file:

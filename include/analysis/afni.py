@@ -40,6 +40,11 @@ class DeconSubject(SubjectBase):
         self.check_req(data, ["infiles", "outmat", "outpic"])
         self.setData(**data)
         
+        motion = config.pop("motion", None)
+        if motion:
+            self.check_req(motion, ["infiles", "outfile"])
+            self.setMotion(**motion)
+        
         options = config.pop("options", {})
         self.setOptions(**options)
         
