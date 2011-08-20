@@ -129,6 +129,7 @@ class NiParser(object):
         group.add_argument('--output-type', default="NIFTI_GZ", choices=['NIFTI', 'NIFTI_GZ'])
         group.add_argument('--name')
         group.add_argument('--plugin', nargs="+", action=store_plugin, required=True)
+        group.add_argument('--log-dir', dest="log_dir")
         return parser
     
     def _pre_compile(self):
@@ -145,6 +146,9 @@ class NiParser(object):
         kwrds = vars(args)
         self.plugin = kwrds.pop('plugin')
         self.plugin_args = kwrds.pop('plugin_args')
+        self.log_dir = kwrds.pop('log_dir', None)
+        if self.log_dir:
+            self.log_dir = os.path.abspath(os.expanduser(self.log_dir))
         if 'inputs' in kwrds:
             kwrds["inputs"] = Bunch(**kwrds["inputs"])
         if 'outputs' in kwrds:
@@ -170,6 +174,8 @@ class NiParser(object):
         
         self._pre_run()
         self.workflow = procfun(**self.kwrds)
+        if self.log_dir:
+            self.workflow['config']['log_directory'] = self.log_dir
         res = self.workflow.run(plugin=self.plugin, plugin_args=self.plugin_args)
         self._post_run()
         
