@@ -219,7 +219,7 @@ class ResDeconSubject(SubjectBase):
         self._isset_data = True
         return
     
-    def setOptions(**kwargs):
+    def setOptions(self, **kwargs):
         if not self._isset_data:
             self.log.fatal("Must set data before options")
         
