@@ -182,7 +182,7 @@ class ResDeconSubject(SubjectBase):
         """Set inputs and outputs of functional data"""
         self.log.debug("Setting Data")
         
-        self.infiles = super(CombineSubject, self).getInputs(infiles, runfile, mkdir)
+        self.infiles = super(ResDeconSubject, self).getInputs(infiles, runfile, mkdir)
         
         # Set outfunc
         outfunc = self._substitute(outfunc)
