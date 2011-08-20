@@ -160,15 +160,27 @@ class ResDeconSubject(SubjectBase):
         # add back mean
         if self.outfunc:
             self.log.info("Adding mean to residuals")
+            
+            self.log.debug("Merging original functional data")
+            tmpfunc = op.join(op.dirname(self.outfunc, "tmp.nii.gz"))
+            cmd = "fslmerge -t %s %s" % " ".join(self.infiles)
+            if op.isfile(tmpfunc):
+                self.log.warning("Removing tmpfunc %s" % tmpfunc)
+                os.remove(tmpfunc)
+            os.remove(tmpfunc)
+            
+            self.log.debug("Getting mean")
             meanfunc = op.join(op.dirname(self.outfunc), "func_mean.nii.gz")
             if op.isfile(meanfunc):
                 self.log.warning("Removing meanfunc %s" % meanfunc)
                 os.remove(meanfunc)
             cmd = "fslmaths %s -Tmean %s " % (self.outfunc, meanfunc)
             self.log.command(cmd, cwd=op.dirname(self.outfunc))
+            
+            self.log.debug("Adding mean")
             tmpfunc = op.join(op.dirname(self.outfunc), "tmp.nii.gz")
             if op.isfile(tmpfunc):
-                self.log.warning("Removing meanfunc %s" % tmpfunc)
+                self.log.warning("Removing tmpfunc %s" % tmpfunc)
                 os.remove(tmpfunc)
             cmd = "3dcalc -a %s -b %s -expr 'a+b' -prefix %s" % (self.outfunc, meanfunc, tmpfunc)
             self.log.command(cmd, cwd=op.dirname(self.outfunc))
