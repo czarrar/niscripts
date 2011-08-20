@@ -163,7 +163,7 @@ class ResDeconSubject(SubjectBase):
             
             self.log.debug("Merging original functional data")
             tmpfunc = op.join(op.dirname(self.outfunc), "tmp.nii.gz")
-            cmd = "fslmerge -t %s %s" % " ".join(self.infiles)
+            cmd = "fslmerge -t %s %s" % (tmpfunc, " ".join(self.infiles))
             if op.isfile(tmpfunc):
                 self.log.warning("Removing tmpfunc %s" % tmpfunc)
                 os.remove(tmpfunc)
