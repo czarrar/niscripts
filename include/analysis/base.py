@@ -3,6 +3,10 @@ import os.path as op
 from glob import glob
 from string import Template
 
+import sys
+sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
+from execute import Process
+
 def list_jinja2_vars(fprefix):
     """Utility function for testing purposes"""
     full_fname = op.join(os.getenv("NISCRIPTS"), "include", "feat", "templates", 
