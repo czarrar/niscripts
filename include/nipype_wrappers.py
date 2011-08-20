@@ -16,6 +16,8 @@ class FeatSubjectInputSpec(CommandLineInputSpec):
                             mandatory = True)
     combine = traits.Bool(desc = "Combine the inputs before creating the fsf", 
                           argstr = "--combine")
+    decon = traits.Bool(desc = "Run AFNI's 3dDeconvolve beforehand", 
+                          argstr = "--res-decon")
     fsf = traits.Bool(desc = "Create the fsf design file before running the analysis", 
                       argstr = "--fsf")
     feat = traits.Bool(desc = "Run the analysis", 
@@ -28,10 +30,14 @@ class FeatSubjectInputSpec(CommandLineInputSpec):
                        argstr = "--debug")
     dry_run = traits.Bool(desc = "Don't execute anything just a dry-run.", 
                        argstr = "--dry-run")
+    log_dir = traits.Directory(desc = "Log directory", 
+                       argstr = "--log-dir")
 
 
 class FeatSubjectOutputSpec(TraitedSpec):
     func = File(desc="Output from combining multiple functional runs")
+    decon_res = File(desc="Output from 3dDeconvolve")
+    decon_mat = File(desc="Output from 3dDeconvolve")
     confound = File(desc="Confound matrix to regress out")
     fsf = File(desc="Design file for FEAT analysis")
     mat = File(desc="Mat file generated from fsf file")
@@ -56,9 +62,14 @@ class FeatSubject(CommandLine):
         
         if 'combine' in config_dict:
             outputs['func'] = sub._substitute(config_dict['combine']['data']['outfunc'])
-            if 'decon' in config_dict['combine']:
-                outputs['confound'] = sub._substitute(
-                                        config_dict['combine']['decon']['outconfound'])
+        
+        if 'res_decon' in config_dict:
+            if 'outfunc' in config_dict['res_decon']['data']:
+                outputs['decon_res'] = sub._substitute(
+                                            config_dict['res_decon']['data']['outfunc'])
+            if 'outmat' in config_dict['res_decon']['data']:
+                outputs['decon_mat'] = sub._substitute(
+                                            config_dict['res_decon']['data']['outmat'])
         
         if 'fsf' in config_dict:
             outputs['fsf'] = sub._substitute(config_dict['combine']['data']['outfunc'])

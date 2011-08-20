@@ -49,12 +49,14 @@ class FeatParser(usage.NiParser):
         group = parser.add_argument_group('feat.py Options')
         group.add_argument('-c', '--config', type=usage.store_filename, required=True)
         group.add_argument("--combine", action="store_true")
+        group.add_argument("--res-decon", action="store_true")
         group.add_argument("--fsf", action="store_true")
         group.add_argument("--feat", action="store_true")
         group.add_argument("--regress", action="store_true")
         group.add_argument("--verbose", action="store_true")
         group.add_argument("--debug", action="store_true")
         group.add_argument("--dry-run", action="store_true")
+        group.add_argument('--log-dir')
         
         return parser
     
