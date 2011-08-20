@@ -204,7 +204,7 @@ class SubjectBase(object):
         self.log.info("Creating new combined motion file '%s'" % outfile)
         f = file(outfile, 'w')
         p = Process("cat %s" % " ".join(new_infiles), stdout=f, to_print=True)
-        print tmp.stderr
+        print p.stderr
         
         return
     
