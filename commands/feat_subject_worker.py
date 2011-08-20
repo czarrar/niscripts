@@ -22,7 +22,7 @@ def create_parser():
     
     group = parser.add_argument_group('Optional')
     group.add_argument("--combine", action="append_const", const="combine", dest="run_keys")
-    group.add_argument("--res_decon", action="append_const", const="res_decon", 
+    group.add_argument("--res-decon", action="append_const", const="res_decon", 
                         dest="run_keys")
     group.add_argument("--fsf", action="append_const", const="fsf", dest="run_keys")
     group.add_argument("--feat", action="append_const", const="feat", dest="run_keys")
