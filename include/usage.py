@@ -1,5 +1,4 @@
 import argparse, os, re
-import os.path as op
 from nipype.interfaces.base import Bunch
 
 #####
@@ -149,7 +148,7 @@ class NiParser(object):
         self.plugin_args = kwrds.pop('plugin_args')
         self.log_dir = kwrds.pop('log_dir', None)
         if self.log_dir:
-            self.log_dir = os.path.abspath(os.expanduser(self.log_dir))
+            self.log_dir = os.path.abspath(os.path.expanduser(self.log_dir))
         if 'inputs' in kwrds:
             kwrds["inputs"] = Bunch(**kwrds["inputs"])
         if 'outputs' in kwrds:
@@ -176,7 +175,7 @@ class NiParser(object):
         self._pre_run()
         self.workflow = procfun(**self.kwrds)
         if self.log_dir:
-            if not op.isdir(self.log_dir):
+            if not os.path.isdir(self.log_dir):
                 os.mkdir(self.log_dir)
             self.workflow['config']['log_directory'] = self.log_dir
         res = self.workflow.run(plugin=self.plugin, plugin_args=self.plugin_args)
