@@ -154,7 +154,8 @@ def functional_preprocessing(
     
     # Location of input data
     datasource = pe.Node(interface=nio.DataGrabber(infields=['subject_id'], 
-                                                    outfields=['func']), 
+                                                    outfields=['func'],
+                                                    sort_filelist=True), 
                          name='datasource')
     datasource.inputs.base_directory=os.path.abspath(inputs.basedir)
     datasource.inputs.template = os.path.join("%s", inputs.func)
