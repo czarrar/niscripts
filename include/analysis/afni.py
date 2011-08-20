@@ -503,15 +503,17 @@ class BetaSeriesSubject(SubjectBase):
     def run(self):
         self.compile()
         # Save beta-series for EVs
-        ## TODO: maybe want to chekc 
+        p = self.log.command("3dAttribute BRICK_LABS stats/betas.nii.gz", cwd=self.indir)
+        all_labels = p.stdout.split("~")[0:-1]
+        evi = 0
         for name,step in self.evs.iteritems():
-            p = self.log.command("3dAttribute BRICK_LABS stats/betas.nii.gz", cwd=self.indir)
-            all_labels = p.stdout.split("~")[0:-1]
+            evi += 1
             label_inds = np.array([ i for i,x in enumerate(all_labels) if x.find(name) == 0 ])
             for start in xrange(step):
                 filt_label_inds = [ str(x) for x in label_inds[range(start, label_inds.shape[0], step)] ]
-                self.log.command("3dcalc -a stats/betas.nii.gz'[%s]' -expr a -prefix betaseries/%s_ev%i.nii.gz" % (",".join(filt_label_inds), name, start+1), cwd=self.indir)
-                self.log.command("buc2func.R betaseries/%s_ev%i.nii.gz betaseries/%s_ev%i.nii.gz" % (name, start+1, name, start+1), cwd=self.indir)
+                fname = "ev%02i_%s_num%i.nii.gz" % (evi, name, start+1)
+                self.log.command("3dcalc -a stats/betas.nii.gz'[%s]' -expr a -prefix betaseries/%s" % (",".join(filt_label_inds), fname), cwd=self.indir)
+                self.log.command("buc2func.R betaseries/%s betaseries/%s" % (fname, fname), cwd=self.indir)
         
         # applywarp -i ${rundir}/${inf} -r ${regdir}/standard.nii.gz -o ${rundir}/${outf} -w ${regdir}/highres2standard_warp.nii.gz --premat=${regdir}/example_func2highres.mat --interp=spline -v
     def setData(self, indir, regdir=""):
