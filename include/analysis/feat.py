@@ -174,7 +174,7 @@ class ResDeconSubject(SubjectBase):
             if op.isfile(meanfunc):
                 self.log.warning("Removing meanfunc %s" % meanfunc)
                 os.remove(meanfunc)
-            cmd = "fslmaths %s -Tmean %s " % (self.outfunc, meanfunc)
+            cmd = "fslmaths %s -Tmean %s " % (tmpfunc, meanfunc)
             self.log.command(cmd, cwd=op.dirname(self.outfunc))
             
             self.log.debug("Adding mean")
