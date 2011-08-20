@@ -231,7 +231,7 @@ class ResDeconSubject(SubjectBase):
             return
         
         # Defaults
-        kwargs.setdefault('-input', " ".join(self.infiles))
+        kwargs.setdefault('input', " ".join(self.infiles))
         
         if self.outmat:
             kwargs.setdefault('x1D', self.outmat)
