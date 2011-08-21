@@ -1,0 +1,46 @@
+vars:
+    base: /mnt/nfs/psych/distwm01
+    raw: ${base}/data/nifti
+    data: ${base}/analysis/subjects
+    freesurfer: ${base}/analysis/freesurfer
+    workingdir: ${base}/analysis/nipype
+
+highres:
+    program: preprocess_anat
+    help: setup high-resolution anatomical image
+    basedir: ${raw} ${data}
+    struct: "* highres"
+    freesurfer-dir: ${freesurfer}
+    workingdir: ${workingdir}
+    run: freesurfer
+
+coplanar:
+    program: preprocess_anat
+    help: setup co-planar anatomical image
+    basedir: ${raw} ${data}
+    struct: "* coplanar"
+    freesurfer-dir: ${freesurfer}
+    workingdir: ${workingdir}
+    run: bet
+
+rest:
+    program: preprocess_func
+    help: preprocess resting-state data
+    basedir: ${raw} ${data}
+    func: "* rest"
+    timeshift: True
+    tpattern: alt+z
+    motion-nstages: 3
+    fwhm: 5
+    hpfilter: 128
+
+register:
+    program: register
+    help: register data from functional => standard space
+    basedir: ${data} ${data}
+    func: rest/example_func.nii.gz wm/reg
+    coplanar: coplanar/brain.nii.gz
+    highres: highres/brain.nii.gz highres/reg
+    fnirt: highres/head.nii.gz
+    workingdir: ${workingdir}
+

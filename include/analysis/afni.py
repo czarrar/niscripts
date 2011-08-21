@@ -4,6 +4,7 @@ from analysis.base import SubjectBase
 from collections import OrderedDict
 import numpy as np
 from subprocess import Popen, PIPE
+from copy import deepcopy
 
 def check_label(label):
     """Display warning if label is greater than 26 characters"""
@@ -557,13 +558,124 @@ class BetaSeriesSubject(SubjectBase):
         return
     
 
+class RegisterBetaSeriesSubject(SubjectBase):
     
+    _logname = "registerbetaseries_subject"
+    _std = "standard.nii.gz"
+    _warp = "highres2standard_warp.nii.gz"
+    _mat = "example_func2highres.mat"
     
+    def __init__(self, *args, **kwargs):
+        super(RegisterBetaSeriesSubject, self).__init__(*args, **kwargs)
+        self.log.info("Starting Creation of Beta-Series")        
+        isset_names = ['data', 'options']
+        self._isset = dict.fromkeys(isset_names, False)
+    
+    def fromDict(self, config):
+        self.log.debug("beginning setup")
         
+        self.check_req(config, ["data"])
+        
+        data = config.pop("data")
+        self.check_req(data, ["indir", "regdir"])
+        self.setData(**data)
+        
+        options = config.pop("options", {})
+        self.setOptions(**options)
+        
+        for k in config:
+            self.log.error("Unknown option '%s' given" % k)
+        
+        return
     
+    def compile(self):
+        self.log.info("Compiling")
+        # Check
+        for name,isset in self._isset.iteritems():
+            if not isset:
+                self.log.error("Have not set %s" % name)
+        # Commands
+        commands = []
+        if self.bsdir == self.outdir:
+            raise Exception("todo")
+        for infname in self.bsfnames:
+            cmd = ["applywarp"]
+            cmd.append("-i %s" % op.join(self.bsdir, infname))
+            cmd.append("--premat=%s" % op.join(self.regdir, self._mat))
+            cmd.append("-w %s" % op.join(self.regdir, self._warp))
+            cmd.append("-r %s" % op.join(self.regdir, self._std))
+            cmd.append("-o %s" % op.join(self.outdir, infname))
+            cmd.extend(self.cmd_opts)
+            commands.append(cmd) 
+        self.commands = commands
+        return       
+    
+    def run(self):
+        self.compile()
+        self.log.info("Running")
+        for cmd in self.commands:
+            if self.dry_run:
+                self.log.drycommand(cmd)
+            else:
+                self.log.command(cmd)
+        return
+    
+    def setData(self, indir, regdir, overwrite=False):
+        self.log.info("Setting data")
+        
+        indir = self._substitute(indir)
+        regdir = self._substitute(regdir)
+        bsdir = op.join(indir, "betaseries")
+        outdir = op.join(indir, "betaseries2standard")
+        
+        
+        if not op.isdir(indir):
+            self.log.error("Directory '%s' does not exist" % indir)
+        if not op.isdir(regdir):
+            self.log.error("Reg directory '%s' does not exist" % regdir)
+        if not op.isdir(bsdir) or len(os.listdir(bsdir)) == 0:
+            self.log.error("You must first extract out the different beta-series")
+        if op.isdir(outdir) and len(os.listdir(outdir)) > 0:
+            if overwrite:
+                self.log.warning("Removing registration of beta-series directory")
+                shutil.rmtree(outdir)
+            else:
+                self.log.error("Registration of beta-series has been done")
+        else:
+            os.mkdir(outdir)
+        
+        self.indir = indir
+        self.regdir = regdir
+        self.bsdir = bsdir
+        self.outdir = outdir
+        
+        bsfnames = os.listdir(self.bsdir)
+        bsfnames.sort()
+        self.bsfnames = bsfnames
+        
+        self._isset['data'] = True
+        return
+    
+    def setOptions(self, **kwargs):
+        self.log.info("Setting Options")
+        
+        cmd_opts = []
+        for k,v in kwargs.iteritems():
+            if len(k) == 1:
+                pre = "-"
+            else:
+                pre = "--"
+            if isinstance(k, bool) and v == True:
+                cmd_opts.append("%s%s" % (pre, k))
+            else:
+                cmd_opts.append("%s%s=%s" % (pre, k, v))
+        self.cmd_opts = cmd_opts
+        
+        self._isset['options'] = True
+        return
+    
+    
+
 # # -> reg folder linked
 # self.log.info("...soft linking reg directory")
 # os.symlink(self.regdir, op.join(self.outdir, "reg"))
-
-
-    
