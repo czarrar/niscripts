@@ -8,6 +8,7 @@ sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
 import usage
 from analysis import fromYamlSubject, FeatSubject
 from zlogger import (LoggerError, LoggerCritical)
+import nipype.pipeline.engine as pe # pypeline engine
 
 def feat(workingdir, subject_list, name="featpy", **kwards):
     
