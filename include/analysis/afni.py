@@ -665,7 +665,7 @@ class RegisterBetaSeriesSubject(SubjectBase):
                 pre = "-"
             else:
                 pre = "--"
-            if isinstance(k, bool) and v == True:
+            if isinstance(v, bool) and v == True:
                 cmd_opts.append("%s%s" % (pre, k))
             else:
                 cmd_opts.append("%s%s=%s" % (pre, k, v))
