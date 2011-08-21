@@ -184,7 +184,7 @@ class NiParser(object):
             crashdir = os.path.abspath(os.path.expanduser(self.crash_dir))
             if not os.path.isdir(crashdir):
                 os.makedirs(crashdir)
-            workflow.config = dict(crashdump_dir=crashdir) 
+            self.workflow.config = dict(crashdump_dir=crashdir) 
         res = self.workflow.run(plugin=self.plugin, plugin_args=self.plugin_args)
         self._post_run()
         
