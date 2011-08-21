@@ -190,7 +190,7 @@ class NiWrapper(SubjectBase):
             # New command
             cmd = "qsub %s -o %s %s" % (self.sge_opts, output, script)
         # Execute
-        p = Popen(cmd, shell=True, cwd=os.getcwd())
+        p = Popen(cmd, shell=True, cwd=os.getcwd(), stdout=sys.stdout, stderr=sys.stderr)
         p.communicate()
         if p.returncode != 0:
             self.log.error("Error running '%s'" % cmd)
