@@ -130,6 +130,7 @@ class NiParser(object):
         group.add_argument('--name')
         group.add_argument('--plugin', nargs="+", action=store_plugin, default="Linear")
         group.add_argument('--log-dir', dest="log_dir")
+        group.add_argument('--crash-dir', dest="crash_dir")
         return parser
     
     def _pre_compile(self):
@@ -147,6 +148,7 @@ class NiParser(object):
         self.plugin = kwrds.pop('plugin')
         self.plugin_args = kwrds.pop('plugin_args', {})
         self.log_dir = kwrds.pop('log_dir', None)
+        self.crash_dir = kwrds.pop('crash_dir', None)
         if self.log_dir:
             self.log_dir = os.path.abspath(os.path.expanduser(self.log_dir))
         if 'inputs' in kwrds:
@@ -178,6 +180,11 @@ class NiParser(object):
             if not os.path.isdir(self.log_dir):
                 os.mkdir(self.log_dir)
             self.workflow['config']['log_directory'] = self.log_dir
+        if self.crash_dir:
+            crashdir = os.path.abspath(os.path.expanduser(self.crash_dir))
+            if not os.path.isdir(crashdir):
+                os.makedirs(crashdir)
+            workflow.config = dict(crashdump_dir=crashdir) 
         res = self.workflow.run(plugin=self.plugin, plugin_args=self.plugin_args)
         self._post_run()
         

@@ -14,6 +14,10 @@ def die(msg):
     SystemExit(2)
 
 class NiWrapper(SubjectBase):
+    _niscripts = [
+        "preprocess_anat.py", "preprocess_func.py", "register.py", "nuisance_evs.py"
+    ]
+    
     def __init__(self, config_file):
         # Load config
         if not op.isfile(config_file):
@@ -137,6 +141,8 @@ class NiWrapper(SubjectBase):
                     cmd.append("%s%s" % (pre, ko))
                 else:
                     cmd.append("%s%s %s" % (pre, ko, self._substitute(str(vo))))
+            if prog in self._niscripts:
+                cmd.append("--crash-dir %s" % op.join(self.logdir, "crashes"))
             commands[k] = "%s %s" % (prog, " ".join(cmd))
         self._commands = commands
         return commands
