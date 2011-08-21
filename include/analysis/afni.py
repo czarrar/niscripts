@@ -606,7 +606,7 @@ class RegisterBetaSeriesSubject(SubjectBase):
             cmd.append("-r %s" % op.join(self.regdir, self._std))
             cmd.append("-o %s" % op.join(self.outdir, infname))
             cmd.extend(self.cmd_opts)
-            commands.append(cmd) 
+            commands.append(" ".join(cmd)) 
         self.commands = commands
         return       
     
