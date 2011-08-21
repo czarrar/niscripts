@@ -9,7 +9,7 @@ import usage
 from analysis import fromYamlSubject, FeatSubject
 from zlogger import (LoggerError, LoggerCritical)
 
-def feat(name, workingdir, subject_list, **kwards):
+def feat(workingdir, subject_list, name="featpy", **kwards):
     
     wf = pe.Workflow(name=name)
     wf.base_dir = workingdir
