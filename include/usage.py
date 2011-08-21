@@ -145,7 +145,7 @@ class NiParser(object):
         
         kwrds = vars(args)
         self.plugin = kwrds.pop('plugin')
-        self.plugin_args = kwrds.pop('plugin_args')
+        self.plugin_args = kwrds.pop('plugin_args', {})
         self.log_dir = kwrds.pop('log_dir', None)
         if self.log_dir:
             self.log_dir = os.path.abspath(os.path.expanduser(self.log_dir))
