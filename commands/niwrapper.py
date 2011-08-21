@@ -186,8 +186,8 @@ class NiWrapper(SubjectBase):
         if not self._is_parsed:
             raise Exception("Have not parsed anything yet")
         if self.sge:
-            script = op.join(self.sge_scripts, "%s_%s.bash")
-            output = op.join(self.sge_stdout, "%s_%s.txt")
+            script = op.join(self.sge_scripts, "%s_%s.bash" % (subject, label))
+            output = op.join(self.sge_stdout, "%s_%s.txt" % (subject, label))
             # Create a new file
             f = file(script, 'w')
             f.write("#!/usr/bin/env bash\n")
