@@ -156,7 +156,7 @@ class NiWrapper(SubjectBase):
         if self.sge:
             self.log.debug("...using SGE")
             self._setup_sge()
-        for s in subject_list:
+        for s in self.subjects:
             self.log.title("Subject: %s" % s)
             for k in self.run_keys:
                 self.log.subtitle("command: %s" % k)
