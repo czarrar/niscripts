@@ -463,6 +463,7 @@ class FsfSubject(SubjectBase):
         ## con masks
         self.log.debug("get con masking")
         fsf_part = self._render('subject_contrast_masking', n=len(self.contrasts)+len(self.ftests))
+        fsf.append(fsf_part)
         ## end
         self.log.debug("get non-gui end")
         fsf_part = self._render('subject_nongui', **self.fsf_context)
