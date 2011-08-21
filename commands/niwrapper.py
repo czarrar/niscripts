@@ -57,7 +57,7 @@ class NiWrapper(SubjectBase):
             if s[0] == "@":
                 f = file(s[1:], 'r')
                 tmps = f.readlines()
-                tmps = [ l.strip() for l in tmps if l.strip() ]
+                tmps = [ l.strip() for l in tmps if l.strip() and l.strip()[0] != "#" ]
                 new_subjects.extend(tmps)
             else:
                 new_subjects.append(s)
