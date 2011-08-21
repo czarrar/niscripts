@@ -46,6 +46,17 @@ class NiWrapper(SubjectBase):
     
     def setup(self, run_keys, log_dir, subjects, sge, sge_opts, verbosity, dry_run=False, 
                      **cmds):
+        # Set subjects
+        new_subjects = []
+        for s in subjects:
+            if s[0] == "@":
+                f = file(s, 'r')
+                tmps = f.readlines()
+                tmps = [ l.strip() for l in tmps if l.strip() ]
+                new_subjects.extend(tmps)
+            new_subjects.append(s)
+        subjects = new_subjects
+        
         # Save
         self.run_keys = run_keys
         self.subjects = subjects
@@ -64,6 +75,11 @@ class NiWrapper(SubjectBase):
         fname = op.join(self.logdir, "orig_command.txt")
         f = file(fname, 'w')
         f.write(" ".join(self.argv))
+        f.close()
+        ## save subjects
+        fname = op.join(self.logdir, "subjects.txt")
+        f = file(fname, 'w')
+        f.write("\n".join(subjects))
         f.close()
         
         # Call parent
@@ -119,7 +135,7 @@ class NiWrapper(SubjectBase):
                 if isinstance(vo, bool) and vo == True:
                     cmd.append("%s%s" % (pre, ko))
                 else:
-                    cmd.append("%s%s %s" % (pre, ko, vo))
+                    cmd.append("%s%s %s" % (pre, ko, self._substitute(vo)))
             commands[k] = "%s %s" % (prog, " ".join(cmd))
         self._commands = commands
         return commands
