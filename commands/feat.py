@@ -9,6 +9,7 @@ import usage
 from analysis import fromYamlSubject, FeatSubject
 from zlogger import (LoggerError, LoggerCritical)
 import nipype.pipeline.engine as pe # pypeline engine
+import nipype.interfaces.utility as util # utility
 
 def feat(workingdir, subject_list, name="featpy", **kwards):
     
