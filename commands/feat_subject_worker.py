@@ -49,10 +49,11 @@ def main(arglist):
     if 'run_keys' not in kwargs and not kwargs['run_keys']:
         kwargs['run_keys'] = ["res_decon", "fsf", "feat", "regress"]
     subjects = kwargs.pop("subjects")
-    try:
-        fromYamlSubject(subject=subject, **kwargs)
-    except (LoggerError, LoggerCritical) as err:
-        pass
+    for subject in subjects:
+        try:
+            fromYamlSubject(subject=subject, **kwargs)
+        except (LoggerError, LoggerCritical) as err:
+            pass
 
 
 if __name__ == "__main__":
