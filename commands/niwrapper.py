@@ -73,7 +73,7 @@ class NiWrapper(SubjectBase):
         if not op.isdir(log_dir):
             os.mkdir(log_dir)
         dt = datetime.now()
-        self.logdir = op.join(log_dir, dt.strftime("%Y-%m-%d_%H:%M"))
+        self.logdir = op.join(log_dir, dt.strftime("%Y-%m-%d_%H-%M"))
         if not op.isdir(self.logdir):
             os.mkdir(self.logdir)
         log = op.join(self.logdir, "niwrapper.log")
