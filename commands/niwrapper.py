@@ -196,7 +196,7 @@ class NiWrapper(SubjectBase):
             f.write("\n")
             f.close()
             # New command
-            cmd = "qsub %s -o %s %s" % (self.sge_opts, output, script)
+            cmd = "qsub %s -o '%s' '%s'" % (self.sge_opts, output, script)
         # Execute
         self.log.drycommand(cmd)
         p = Popen(cmd, shell=True, cwd=os.getcwd(), stdout=sys.stdout, stderr=sys.stderr)
