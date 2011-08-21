@@ -74,7 +74,7 @@ class NiWrapper(SubjectBase):
         ## save command that run for this
         fname = op.join(self.logdir, "orig_command.txt")
         f = file(fname, 'w')
-        f.write(" ".join(self.argv))
+        f.write(" ".join(sys.argv))
         f.close()
         ## save subjects
         fname = op.join(self.logdir, "subjects.txt")
