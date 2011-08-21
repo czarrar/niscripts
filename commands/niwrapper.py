@@ -127,7 +127,7 @@ class NiWrapper(SubjectBase):
         for k,v in self._commands_opts.iteritems():
             cmd = []
             prog,opts = v
-            for ko,vo in opts:
+            for ko,vo in opts.iteritems():
                 if len(ko) == 1:
                     pre = "-"
                 else:
