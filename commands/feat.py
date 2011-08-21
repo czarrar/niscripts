@@ -19,7 +19,7 @@ def feat(workingdir, subject_list, name="featpy", **kwards):
     subinfo = pe.Node(interface=util.IdentityInterface(fields=['subject_id']), name='subinfo', 
                         iterables=('subject_id', subject_list))
     
-    featsubject = FeatSubject()
+    featsubject = FeatSubject(config_file = kwards.pop("config"))
     for k in kwards:
         setattr(featsubject.inputs, k, v)
     fsnode = pe.Node(interface=featsubject, name="featpy")

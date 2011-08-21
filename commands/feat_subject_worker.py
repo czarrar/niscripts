@@ -21,6 +21,7 @@ def create_parser():
     group.add_argument('-c', '--config', action=store_input, check_file=True, required=True)
     
     group = parser.add_argument_group('Optional')
+    group.add_argument("--run-keys", nargs="+")
     group.add_argument("--combine", action="append_const", const="combine", dest="run_keys")
     group.add_argument("--res-decon", action="append_const", const="res_decon", 
                         dest="run_keys")
