@@ -47,7 +47,7 @@ class FeatParser(usage.NiParser):
         group.add_argument('--name')
         
         group = parser.add_argument_group('feat.py Options')
-        group.add_argument('-c', '--config', type=usage.store_filename, required=True)
+        group.add_argument('-c', '--config', action=usage.store_filename, required=True)
         group.add_argument("--combine", action="store_true")
         group.add_argument("--res-decon", action="store_true")
         group.add_argument("--fsf", action="store_true")
