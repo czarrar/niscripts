@@ -135,7 +135,7 @@ class NiWrapper(SubjectBase):
                 if isinstance(vo, bool) and vo == True:
                     cmd.append("%s%s" % (pre, ko))
                 else:
-                    cmd.append("%s%s %s" % (pre, ko, self._substitute(vo)))
+                    cmd.append("%s%s %s" % (pre, ko, self._substitute(str(vo))))
             commands[k] = "%s %s" % (prog, " ".join(cmd))
         self._commands = commands
         return commands
