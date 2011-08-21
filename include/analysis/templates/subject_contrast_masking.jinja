@@ -1,7 +1,7 @@
 # Contrast masking - use >0 instead of thresholding?
 set fmri(conmask_zerothresh_yn) 0
 
-{% for i in range(n) %}
+{% for i in range(1,n+1) %}
     {% for j in range(n) %}
         {% if i != j %}
             # Mask real contrast/F-test {{ i }} with real contrast/F-test {{ j }}?
