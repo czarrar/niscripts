@@ -92,7 +92,7 @@ class NiWrapper(SubjectBase):
     def parse_parser(self, arglist):
         self._create_parser()
         args = self.parser.parse_args(arglist)
-        self.setup(**args)
+        self.setup(**vars(args))
         return
     
     def _create_parser(self, **kwargs):
