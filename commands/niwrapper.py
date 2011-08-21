@@ -59,7 +59,8 @@ class NiWrapper(SubjectBase):
                 tmps = f.readlines()
                 tmps = [ l.strip() for l in tmps if l.strip() ]
                 new_subjects.extend(tmps)
-            new_subjects.append(s)
+            else:
+                new_subjects.append(s)
         subjects = new_subjects
         
         # Save
