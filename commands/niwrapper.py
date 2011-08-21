@@ -22,7 +22,7 @@ class NiWrapper(SubjectBase):
         f.close()
         
         # Get context
-        template_context = self.config.pop("vars", {})
+        self.template_context = self.config.pop("vars", {})
         
         # Setup
         self._parser_help = {}
