@@ -5,6 +5,7 @@ import os.path as op
 from datetime import datetime
 from analysis.base import SubjectBase
 from subprocess import Popen
+from zlogger import (LoggerError, LoggerCritical)
 
 config_file = "niwrapper.yaml"
 

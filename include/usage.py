@@ -128,7 +128,7 @@ class NiParser(object):
         group.add_argument('--workingdir', action=store_directory, required=True)
         group.add_argument('--output-type', default="NIFTI_GZ", choices=['NIFTI', 'NIFTI_GZ'])
         group.add_argument('--name')
-        group.add_argument('--plugin', nargs="+", action=store_plugin, required=True)
+        group.add_argument('--plugin', nargs="+", action=store_plugin, default=["Linear"])
         group.add_argument('--log-dir', dest="log_dir")
         return parser
     
