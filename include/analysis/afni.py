@@ -641,7 +641,7 @@ class RegisterBetaSeriesSubject(SubjectBase):
                 shutil.rmtree(outdir)
             else:
                 self.log.error("Registration of beta-series has been done")
-        else:
+        elif not op.isdir(outdir):
             os.mkdir(outdir)
         
         self.indir = indir
