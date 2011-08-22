@@ -1,6 +1,7 @@
 import os, shutil, sys
 import os.path as op
 from jinja2 import Environment, PackageLoader
+from string import Template
 
 sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
 import zlogger
