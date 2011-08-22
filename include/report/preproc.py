@@ -35,7 +35,7 @@ class PreprocReporter(Reporter):
             f.close()
         return
     
-    def _psub(path):
+    def _psub(self, path):
         return self.relpath(self._substitute(x), self.outdir)
     
     def addSubject(self, subject, anatdirs, regdirs, funcdirs):
