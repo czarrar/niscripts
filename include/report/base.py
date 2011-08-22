@@ -12,7 +12,7 @@ class Reporter(object):
     _logname = None
     
     def __init__(self, verbosity, outdir, template_context={}, overwrite=False):
-        super(PreprocReporter, self).__init__()
+        super(Reporter, self).__init__()
         
         outdir = op.abspath(op.expanduser(outdir))
         if op.isdir(outdir):
