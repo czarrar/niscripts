@@ -8,7 +8,7 @@ from collections import OrderedDict
 sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
 import usage
 from usage import NiArgumentParser
-from report import MotionReporter
+from report import PreprocReporter
 from zlogger import (LoggerError, LoggerCritical)
 
 def create_parser():
@@ -19,10 +19,11 @@ def create_parser():
     parser._add_outputs = False
     
     group = parser.add_argument_group('Required "Options"')
-    group.add_argument('-b', '--base-dir', required=True)
     group.add_argument('-s', '--subjects', nargs="+", required=True)
-    group.add_argument('-r', '--run-dirs', required=True)
-    group.add_argument('-o', '--output', required=True)
+    group.add_argument('-a', '--anatdirs', nargs="+", required=True)
+    group.add_argument('-r', '--regdirs', nargs="+", required=True)
+    group.add_argument('-f', '--funcdirs', nargs="+", required=True)
+    group.add_argument('-o', '--outdir', required=True)
     
     group = parser.add_argument_group('Optional "Options"')
     group.add_argument("--verbose", action="store_const", const=1, dest="verbosity", default=0)
@@ -33,17 +34,12 @@ def create_parser():
 def main(arglist):
     parser = create_parser()
     args = parser.parse_args(arglist)
-    if not op.isdir(args.base_dir):
-        parser.error("Base directory '%s' does not exist" % args.base_dir)
-    sinfo = OrderedDict([ (s, op.join(args.base_dir, s, args.run_dirs)) for s in args.subjects ])
-    
     try:
-        reporter = MotionReporter(args.verbosity)
-        reporter.setData(sinfo, args.output)
+        reporter = PreprocReporter(args.verbosity, args.outdir)
+        reporter.setData(args.anatdirs, args.regdirs, args.funcdirs)
         reporter.run()
     except (LoggerError, LoggerCritical):
         parser.error("Quiting")
-    
     return
 
 if __name__ == "__main__":

@@ -317,7 +317,7 @@ def create_link_nonlin_reg_workflow(
         (warpbrain, regpics, [('out_file', 'in_file')]),
         (inputnode, regpics, [('ref_file', 'ref_file')])
     ])
-    renamer(regpics, 'out_file', 'in2ref_png', format_string="%(a)s_%(b)s_fnirt")
+    renamer(regpics, 'out_file', 'in2ref_png', format_string="%(a)s2%(b)s_fnirt")
     
     return linker
 
@@ -681,6 +681,7 @@ def special_output_workflow(
     input_fields = [
         # required
         "func",
+        "highres", 
         "standard",
         "highres2standard_mat",
         "interp",
@@ -705,8 +706,8 @@ def special_output_workflow(
     
     # Outputs
     output_fields = [
+        "highres", 
         "func",
-        "example_func", 
         "standard",
         "highres2standard_mat"
     ]
@@ -720,9 +721,10 @@ def special_output_workflow(
     # Rename output filenames
     renamer = RegOutputConnector(linker, outputnode, inputnode)
     
+    # highres
+    renamer.connect(inputnode, 'func', 'highres')
     # func
     renamer.connect(inputnode, 'func', 'func')
-    renamer.connect(inputnode, 'func', 'example_func')
     # standard
     renamer.connect(inputnode, 'standard', 'standard')
     # mat
@@ -884,7 +886,8 @@ def create_func2standard_workflow(
     workflows.func.append(special)
     normalize.connect([
         (inputnode, special, [('standard', 'inputspec.standard'), 
-                              ('func', 'inputspec.func')]), 
+                              ('func', 'inputspec.func'),
+                              ('highres', 'inputspec.highres')]), 
         (highres2standard, special, [('outputspec.in2ref_mat', 'inputspec.highres2standard_mat')])
     ])
     if fnirt:
@@ -1060,15 +1063,39 @@ class RegParser(usage.NiParser):
             p = Process("chmod -R 775 %s" % output, to_print=True)
             if p.retcode != 0:
                 print 'Error: chmod -R 775 %s' % output
-        for output in outputs1:
-            os.symlink(
-                op.join(output, "func2highres.mat"),
-                op.join(output, "example_func2highres.mat")
-            )
-            os.symlink(
-                op.join(output, "func2standard.mat"),
-                op.join(output, "example_func2standard.mat")
-            )
+        for outfunc,outanat in zip(outputs1,outputs2):
+            try:
+                os.symlink(
+                    op.join(outfunc, "func2highres.mat"),
+                    op.join(outfunc, "example_func2highres.mat")
+                )
+                os.symlink(
+                    op.join(outfunc, "func2standard.mat"),
+                    op.join(outfunc, "example_func2standard.mat")
+                )
+                p = glob(op.join(outanat, "highres.*"))[0]
+                os.symlink(
+                    p,
+                    op.join(outfunc, op.basename(p))
+                )
+                p = glob(op.join(outfunc, "func.*"))[0]
+                os.symlink(
+                    p,
+                    op.join(outfunc, "example_" + op.basename(p))
+                )
+                os.symlink(
+                    op.join(outfunc, "highres2standard.png"),
+                    op.join(outfunc, "highres2standard.png")
+                )
+                os.symlink(
+                    op.join(outfunc, "highres2standard_fnirt.png"),
+                    op.join(outfunc, "highres2standard_fnirt.png")
+                )                
+            except OSError as (errno, strerr):
+                if errno == 17:
+                    pass
+                else
+                    raise OSError(errno, strerr)
         return
     
 
