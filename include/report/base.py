@@ -1,4 +1,4 @@
-import os, shutil, sys
+import os, re, shutil, sys
 import os.path as op
 from jinja2 import Environment, PackageLoader
 from string import Template
