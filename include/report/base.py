@@ -6,6 +6,27 @@ from string import Template
 sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
 import zlogger
 
+
+def list_jinja2_vars(fprefix):
+    """Utility function for testing purposes"""
+    full_fname = op.join(os.getenv("NISCRIPTS"), "include", "feat", "templates", 
+                            fprefix + ".jinja")
+    f = file(full_fname, 'r')
+    s = f.read()
+    return list(set(re.findall("{{\ *(.*?)\ *}}", s)))
+
+def list_template_vars(string):
+    template = Template(string)
+    tmp = template.pattern.findall(template.template)
+    res = []
+    for x in tmp:
+        if x[1]:
+            res.append(x[1])
+        elif x[2]:
+            res.append(x[2])
+    return res
+
+
 class ReporterException(Exception):
     """todo"""
 
