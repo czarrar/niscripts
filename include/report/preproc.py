@@ -35,6 +35,9 @@ class PreprocReporter(Reporter):
             f.close()
         return
     
+    def _psub(path):
+        return self.relpath(self._substitute(x), self.outdir)
+    
     def addSubject(self, subject, anatdirs, regdirs, funcdirs):
         self.log.info("...subject: %s" % subject)
         if len(regdirs) != len(funcdirs):
@@ -51,19 +54,19 @@ class PreprocReporter(Reporter):
         self.log.debug("...setup")
         self.addTemplateContext('subject', subject)
         ## anat
-        anatdirs = [ (l,self._substitute(x)) for l,x in anatdirs.iteritems() ]
+        anatdirs = [ (l,self._psub(x)) for l,x in anatdirs.iteritems() ]
         [ 
             self.log.error("anatomical directory '%s' does not exist" % x)
             for l,x in anatdirs if not op.isdir(x)
         ]
         ## reg
-        regdirs = [ (l,self._substitute(x)) for l,x in regdirs.iteritems() ]
+        regdirs = [ (l,self._psub(x)) for l,x in regdirs.iteritems() ]
         [ 
             self.log.error("registration directory '%s' does not exist" % x)
             for l,x in regdirs if not op.isdir(x)
         ]
         ## func
-        tmp_funcdirs = [ (l,glob(self._substitute(x))) for l,x in funcdirs.iteritems() ]
+        tmp_funcdirs = [ (l,glob(self._psub(x))) for l,x in funcdirs.iteritems() ]
         [ 
             self.log.error("functional directory '%s' does not exist" % funcdirs[l])
             for l,x in tmp_funcdirs if len(x)==0
