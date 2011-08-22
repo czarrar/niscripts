@@ -30,21 +30,21 @@
           <h3 class="caps">Anatomical</h3>
           <div class="box">
             {% for label in anat %}
-              <a href="#{{ label }}">{{ label }}</a>
+              <a href="#anat_{{ label }}">{{ label }}</a>
               <br />
             {% endfor %}
           </div>
           <h3 class="caps">Registration</h3>
           <div class="box">
             {% for label in reg %}
-              <a href="#{{ label }}">{{ label }}</a>
+              <a href="#reg_{{ label }}">{{ label }}</a>
               <br />
             {% endfor %}
           </div>
           <h3 class="caps">Motion</h3>
           <div class="box">
             {% for label in motion %}
-              <a href="#{{ label }}">{{ label }}</a>
+              <a href="#motion_{{ label }}">{{ label }}</a>
               <br />
             {% endfor %}
           </div>
