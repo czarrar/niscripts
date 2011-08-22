@@ -112,7 +112,7 @@ class PreprocReporter(Reporter):
         # motion
         self.log.debug("...motion")
         for label,rundirs in funcdirs:
-            minfo[label] = {}
+            minfo[label] = []
             for run,rundir in enumerate(rundirs):
                 # new dict
                 rinfo = {}
