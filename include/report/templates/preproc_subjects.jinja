@@ -42,7 +42,7 @@
           <h3 class="loud" id="anat_{{ label }}">Anatomical - {{ label }}</h3>
           {% for name,location in content %}
             <h4>{{ name }}</h4>
-            <p><img src="{{ location }}" alt="{{ name }}"></p>
+            <p><img src="{{ location }}" alt="{{ name }}" width="400"></p>
           {% endfor %}
         {% endfor %}
         <hr />
@@ -50,7 +50,7 @@
           <h3 class="loud" id="anat_{{ label }}">Registration - {{ label }}</h3>
           {% for name,location in content %}
             <h4>{{ name }}</h4>
-            <p><img src="{{ location }}" alt="{{ name }}"></p>
+            <p><img src="{{ location }}" alt="{{ name }}" width="400"></p>
           {% endfor %}
         {% endfor %}
         <hr />
