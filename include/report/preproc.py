@@ -39,6 +39,8 @@ class PreprocReporter(Reporter):
         return op.relpath(self._substitute(path), self.outdir)
     
     def addSubject(self, subject, anatdirs, regdirs, funcdirs):
+        cwd = os.getcwd()
+        os.chdir(self.outdir)
         self.log.info("...subject: %s" % subject)
         if len(regdirs) != len(funcdirs):
             self.log.fatal("Number of functional and run directories must be the same")
@@ -143,6 +145,7 @@ class PreprocReporter(Reporter):
             'reg': rinfo,
             'motion': minfo
         }))
+        os.chdir(cwd)
         return
     
     def setData(self, subjects, anatdirs, regdirs, funcdirs):
