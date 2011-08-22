@@ -26,6 +26,7 @@ def create_parser():
     group.add_argument('-o', '--outdir', required=True)
     
     group = parser.add_argument_group('Optional "Options"')
+    group.add_argument("--overwrite", action="store_true", default=False)
     group.add_argument("--verbose", action="store_const", const=1, dest="verbosity", default=0)
     group.add_argument("--debug", action="store_const", const=2, dest="verbosity", default=0)
     
@@ -35,8 +36,8 @@ def main(arglist):
     parser = create_parser()
     args = parser.parse_args(arglist)
     try:
-        reporter = PreprocReporter(args.verbosity, args.outdir)
-        reporter.setData(args.anatdirs, args.regdirs, args.funcdirs)
+        reporter = PreprocReporter(args.verbosity, args.outdir, overwrite=args.overwrite)
+        reporter.setData(args.subjects, args.anatdirs, args.regdirs, args.funcdirs)
         reporter.run()
     except (LoggerError, LoggerCritical):
         parser.error("Quiting")
