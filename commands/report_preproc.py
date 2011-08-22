@@ -11,6 +11,16 @@ from usage import NiArgumentParser
 from report import PreprocReporter
 from zlogger import (LoggerError, LoggerCritical)
 
+class store_special(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        labvalues = [ tuple(x.split(":")) for x in values ]
+        for x in labvalues:
+            if len(x) == 1:
+                parser.error("Unrecognized %s. Each argument for '%s' must be a 'label:path'." 
+                                % (x, option_string))
+        setattr(namespace, self.dest, dict(labvalues))
+
+
 def create_parser():
     parser = NiArgumentParser(fromfile_prefix_chars="@", 
                               argument_default=argparse.SUPPRESS,
@@ -20,9 +30,9 @@ def create_parser():
     
     group = parser.add_argument_group('Required "Options"')
     group.add_argument('-s', '--subjects', nargs="+", required=True)
-    group.add_argument('-a', '--anatdirs', nargs="+", required=True)
-    group.add_argument('-r', '--regdirs', nargs="+", required=True)
-    group.add_argument('-f', '--funcdirs', nargs="+", required=True)
+    group.add_argument('-a', '--anatdirs', nargs="+", action=store_special, required=True)
+    group.add_argument('-r', '--regdirs', nargs="+", action=store_special, required=True)
+    group.add_argument('-f', '--funcdirs', nargs="+", action=store_special, required=True)
     group.add_argument('-o', '--outdir', required=True)
     
     group = parser.add_argument_group('Optional "Options"')

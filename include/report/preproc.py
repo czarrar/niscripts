@@ -37,9 +37,9 @@ class PreprocReporter(Reporter):
     
     def addSubject(self, subject, anatdirs, regdirs, funcdirs):
         self.log.info("...subject: %s" % subject)
-        if len(funcdirs) != len(rundirs):
+        if len(regdirs) != len(funcdirs):
             self.log.fatal("Number of functional and run directories must be the same")
-        if funcdirs.keys() != rundirs.keys():
+        if regdirs.keys() != funcdirs.keys():
             self.log.fatal("Functional directory and run directory labels must be the same")
         
         sinfo = {}
