@@ -116,7 +116,7 @@ class PreprocReporter(Reporter):
             minfo[label] = []
             for run,rundir in enumerate(rundirs):
                 # new dict
-                rinfo = {}
+                tmpinfo = {}
                 # max motion
                 fmax = op.join(rundir, self._motion_max_fname)
                 if not op.isfile(fmax):
@@ -124,15 +124,15 @@ class PreprocReporter(Reporter):
                 f = file(fmax, 'r')
                 lines = f.readlines()
                 f.close()
-                rinfo['abs'] = "%.2f" % float(lines[1].strip())
-                rinfo['rel'] = "%.2f" % float(lines[3].strip())
+                tmpinfo['abs'] = "%.2f" % float(lines[1].strip())
+                tmpinfo['rel'] = "%.2f" % float(lines[3].strip())
                 # disp pic
                 fdisp = op.join(rundir, self._motion_disp_fname)
                 if not op.isfile(fdisp):
                     self.log.error("Displacment picture '%s' does not exist" % fdisp)
-                rinfo['disp'] = fdisp
+                tmpinfo['disp'] = fdisp
                 # save
-                minfo[label].append((run+1,rinfo))
+                minfo[label].append((run+1,tmpinfo))
         
         self.log.debug("...saving")
         self.addTemplateContext('subject', None)
