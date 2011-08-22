@@ -25,7 +25,7 @@
     		<hr />
     	</div>
     	
-    	<div class="span-6 last" id="sidebar">
+    	<div class="span-6 colborder" id="sidebar">
   	    <div id="page-links">
           <h3 class="caps">Page Links</h3>
           <div class="box">
@@ -37,12 +37,12 @@
   	    </div>
     	</div>
 
-      <div class="span-17 colborder" id="content">
+      <div class="span-17 last" id="content">
         {% for label,content in anat.iteritems() %}
           <h3 class="loud" id="anat_{{ label }}">Anatomical - {{ label }}</h3>
           {% for name,location in content %}
             <h4>{{ name }}</h4>
-            <p><img src="{{ location }}" alt="{{ name }}" width="800"></p>
+            <p><img src="{{ location }}" alt="{{ name }}" width="100%"></p>
           {% endfor %}
         {% endfor %}
         <hr />
@@ -50,7 +50,7 @@
           <h3 class="loud" id="anat_{{ label }}">Registration - {{ label }}</h3>
           {% for name,location in content %}
             <h4>{{ name }}</h4>
-            <p><img src="{{ location }}" alt="{{ name }}" width="1000"></p>
+            <p><img src="{{ location }}" alt="{{ name }}" width="100%"></p>
           {% endfor %}
         {% endfor %}
         <hr />
