@@ -543,9 +543,9 @@ class NuisanceEVsParser(usage.NiParser):
         )
         
         group = parser.add_argument_group('Nuisance EV Creation Options')
-        group.add_argument('--func', action=usage.store_input, check_file=True, required=True)
-        group.add_argument('--func-mask', action=usage.store_input, check_file=True, required=True)
-        group.add_argument('--reg-dir', action=usage.store_input, check_dir=True, required=True)
+        group.add_argument('--func', action=usage.store_input, required=True)
+        group.add_argument('--func-mask', action=usage.store_input, required=True)
+        group.add_argument('--reg-dir', action=usage.store_input, required=True)
         group.add_argument('--freesurfer-dir', action=usage.store_input, check_dir=True, 
                            required=True)
         group.add_argument('--segment', action=usage.store_output, required=True)
