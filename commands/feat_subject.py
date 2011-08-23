@@ -19,7 +19,7 @@ def create_parser():
     group = parser.add_argument_group('Required')
     group.add_argument('-s', '--subjects', nargs="+", required=True)
     group.add_argument('-c', '--config', action=store_input, check_file=True, required=True)
-    group.add_argument('--var', action="append", type=append_var, dest=vars)
+    group.add_argument('--var', action="append", type=append_var, dest="vars")
     
     group = parser.add_argument_group('Optional')
     group.add_argument("--combine", action="append_const", const="combine", dest="run_keys")
