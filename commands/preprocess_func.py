@@ -371,7 +371,7 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     splitmotion = pe.Node(util.Function(input_names=["in_file", "out_prefix"],
                                         output_names=["out_files"], 
                                         function=split_motion_params), 
-                          name="combinemotion")
+                          name="splitmotion")
     preproc.connect(combinemotion, "out_file", splitmotion, "in_file")
     preproc.connect(splitmotion, ("out_files", pick_list_elem, 1), outputnode, 'motion_01')
     preproc.connect(splitmotion, ("out_files", pick_list_elem, 1), outputnode, 'motion_02')
