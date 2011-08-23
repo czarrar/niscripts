@@ -732,7 +732,7 @@ def create_highres2standard_workflow(
     #####
     
     # highres2standard: linear
-    name = "linear"
+    name = "highres2standard"
     highres2standard = create_lin_reg_workflow(name = name, 
                                                reg_type = name, 
                                                search_type = search_type)
@@ -748,7 +748,7 @@ def create_highres2standard_workflow(
     
     # highres2standard: non-linear
     if fnirt:
-        name = "nonlinear"
+        name = "fnirt_highres2standard"
         fnirt_highres2standard = create_nonlin_reg_workflow(name = name)
         workflows.highres.append(fnirt_highres2standard)
         normalize.connect([
