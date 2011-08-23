@@ -1083,7 +1083,7 @@ def register(
     ## setup
     h2s_datasink = pe.Node(interface=nio.DataSink(), name="datasink")
     h2s_datasink.inputs.base_directory = op.abspath(op.expanduser(outputs.basedir))
-    h2s.connect(subinfo, 'subject_id', datasink, 'container')
+    h2s.connect(subinfo, 'subject_id', h2s_datasink, 'container')
     h2s.inputs.regexp_substitutions = (r"_subject_id_(\w|\d)+", outputs.highres)
     ## link
     outfields = h2s_outputnode.outputs.get()
@@ -1094,7 +1094,7 @@ def register(
     ## setup
     f2s_datasink = pe.Node(interface=nio.DataSink(), name="datasink")
     f2s_datasink.inputs.base_directory = op.abspath(op.expanduser(outputs.basedir))
-    f2s.connect(subinfo, 'subject_id', datasink, 'container')
+    f2s.connect(subinfo, 'subject_id', f2s_datasink, 'container')
     f2s.inputs.regexp_substitutions = (r"_subject_id_(\w|\d)+", outputs.func)
     ## link
     outfields = f2s_outputnode.outputs.get()
