@@ -4,6 +4,8 @@ import re
 import nipype.interfaces.utility as util # utility
 import nipype.pipeline.engine as pe # pypeline engine
 
+__reExt = re.compile("[.]([a-zA-Z0-9]+)[.](gz|bz2)$|[.]([a-zA-Z0-9]+)$")
+
 def sink_outputs(workflow, outputnode, datasinknode, name_prefix=""):
     if name_prefix != "" and not name_prefix.endswith("_"):
         name_prefix += "_"
@@ -11,6 +13,11 @@ def sink_outputs(workflow, outputnode, datasinknode, name_prefix=""):
     for field in outfields:
         workflow.connect(outputnode, field, datasinknode, "@%s%s" % (name_prefix, field))
 
+def remove_ext(fname):
+    return __reExt.sub("", fname)
+
+def get_ext(fname):
+    return __reExt.search.group(fname)
 
 class SimpleOutputConnector(object):
     """Regular Node (non Map Node version)"""

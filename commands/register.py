@@ -664,95 +664,20 @@ def create_link_lin_reg_workflow(
     return linker
 
 
-def special_output_workflow(
-    name="special_output",
-    fnirt=False):
-    
-    #####
-    # Setup workflow
-    #####
-    
-    linker = pe.Workflow(name=name)
-    
+def create_highres2standard_workflow(
+    name="highres2standard",
+    search_type = "normal",
+    fnirt = False
+):
     
     #####
     # Setup input node
     #####
     
     input_fields = [
-        # required
-        "func",
-        "highres", 
-        "standard",
-        "highres2standard_mat",
-        "interp",
-        "wtype" # lin, nonlin, lin_linker, or nonlin_linker
-    ]
-    if fnirt:
-        input_fields.extend([
-            "highres2standard_warp"
-        ])
-    
-    inputnode = pe.Node(interface=util.IdentityInterface(fields=input_fields), 
-                            name="inputspec")
-    
-    # set defaults
-    inputnode.inputs.interp = "not_used"
-    inputnode.inputs.wtype = 'special_linker'
-    
-    
-    #####
-    # Setup output node
-    #####
-    
-    # Outputs
-    output_fields = [
-        "highres", 
-        "func",
-        "standard",
-        "highres2standard_mat"
-    ]
-    if fnirt:
-        output_fields.extend([
-            "highres2standard_warp"
-        ])
-    outputnode = pe.Node(util.IdentityInterface(fields=output_fields),
-                        name="outputspec")
-    
-    # Rename output filenames
-    renamer = RegOutputConnector(linker, outputnode, inputnode)
-    
-    # highres
-    renamer.connect(inputnode, 'func', 'highres')
-    # func
-    renamer.connect(inputnode, 'func', 'func')
-    # standard
-    renamer.connect(inputnode, 'standard', 'standard')
-    # mat
-    linker.connect(inputnode, "highres2standard_mat", outputnode, "highres2standard_mat")
-    # warp
-    if fnirt:
-        linker.connect(inputnode, "highres2standard_warp", outputnode, "highres2standard_warp")
-    
-    return linker
-
-
-def create_func2standard_workflow(
-    name="func2standard",
-    coplanar = False, 
-    search_type = 'normal',
-    fnirt = False):
-    
-    #####
-    # Setup input node
-    #####
-    
-    input_fields = [
-        "func",
         "highres",
         "standard",
         # optional
-        "coplanar",
         "interp"
     ]
     if fnirt:
@@ -769,6 +694,31 @@ def create_func2standard_workflow(
     
     # set defaults
     inputnode.inputs.interp = 'trilinear'
+
+
+    #####
+    # Setup output node
+    #####
+    
+    output_files = [
+        "highres", 
+        "highres2standard", 
+        "highres2standard_mat", 
+        "standard2highres_mat",
+        "highres2standard_pic"
+    ]
+    if fnirt:
+        output_files.extend([
+            "log_file",
+            "highres2standard_warped", 
+            "highres2standard_fieldcoeff", 
+            "highres2standard_jacobian", 
+            "highres2standard_fnirt_pic", 
+        ])
+    outputnode = pe.Node(util.IdentityInterface(fields=output_fields),
+                        name="outputspec")
+    
+    renamer = RegOutputConnector(normalize, outputnode, inputnode)
     
     
     #####
@@ -776,26 +726,30 @@ def create_func2standard_workflow(
     #####
     
     normalize = pe.Workflow(name=name)
-    workflows = Bunch(func=[], highres=[])
     
     
     #####
     # Commands
     #####
     
-    # highres2standard
-    name = "highres2standard"
+    # highres2standard: linear
+    name = "linear"
     highres2standard = create_lin_reg_workflow(name = name, 
                                                reg_type = name, 
                                                search_type = search_type)
-    workflows.highres.append(highres2standard)
     normalize.connect([
         (inputnode, highres2standard, [('highres', 'inputspec.in_file'), 
-                                       ('standard', 'inputspec.ref_file')])
-    ])
+                                       ('standard', 'inputspec.ref_file'),
+                                       (('interp', interp4flirt), 'interp')]),
+        (highres2standard, outputnode, [('outputspec.in2ref', "highres2standard"),
+                                        ('outputspec.in2ref_mat', "highres2standard_mat"),
+                                        ('outputspec.ref2in_mat', "standard2highres_mat"),
+                                        ("outputspec.in2ref_png", "highres2standard_pic")])
+    ])    
     
+    # highres2standard: non-linear
     if fnirt:
-        name = "fnirt_highres2standard"
+        name = "nonlinear"
         fnirt_highres2standard = create_nonlin_reg_workflow(name = name)
         workflows.highres.append(fnirt_highres2standard)
         normalize.connect([
@@ -803,42 +757,153 @@ def create_func2standard_workflow(
                 ('highres_head', 'inputspec.in_file'), 
                 ('standard_head', 'inputspec.ref_file'), 
                 ('standard_mask', 'inputspec.refmask_file'),
-                ('fnirt_config', 'inputspec.config_file')]),
+                ('fnirt_config', 'inputspec.config_file'),
+                (('interp', interp4fnirt), 'interp')]),
             (highres2standard, fnirt_highres2standard, [
-                ('outputspec.in2ref_mat', 'inputspec.affine_file')])
+                ('outputspec.in2ref_mat', 'inputspec.affine_file')]),
+            (fnirt_highres2standard, outputnode, [
+                ('outputspec.log_file', 'log_file'),
+                ('outputspec.in2ref_warped', 'highres2standard_warped'), 
+                ("outputspec.in2ref_fieldcoeff", "highres2standard_fieldcoeff"), 
+                ("outputspec.in2ref_jacobian", "highres2standard_jacobian"), 
+                ("outputspec.in2ref_png", "highres2standard_fnirt_pic")
+            ])
         ])
     
+    # special output
+    renamer.connect(inputnode, "highres", "highres")
+    
+    return normalize
+    
+
+def create_func2standard_workflow(
+    name="func2standard", 
+    coplanar = False, 
+    search_type = 'normal', 
+    fnirt = False):
+    
+    #####
+    # Setup input node
+    #####
+    
+    input_fields = [
+        "func", 
+        "highres2standard_mat",
+        "standard",
+        # optional
+        "interp"
+    ]
+    if fnirt:
+        input_fields.append("highres2standard_warp")
+    if coplanar:
+        input_fields.append("coplanar")
+    
+    inputnode = pe.Node(interface=util.IdentityInterface(fields=input_fields), 
+                            name="inputspec")
+    
+    # set defaults
+    inputnode.inputs.interp = 'trilinear'
+    
+    
+    #####
+    # Setup output node
+    #####
+    
+    if coplanar:
+        output_files = [
+            "func", 
+            "standard", 
+            # func => coplanar
+            "func2coplanar", 
+            "func2coplanar_mat", 
+            "coplanar2func_mat", 
+            "func2coplanar_pic", 
+            # coplanar => highres
+            "coplanar2highres", 
+            "coplanar2highres_mat", 
+            "highres2coplanar_mat", 
+            "coplanar2highres_pic"
+        ]
+    else:
+        output_files = []
+    output_files.extend([
+        # func => highres
+        "func2highres", 
+        "func2highres_mat", 
+        "highres2func_mat", 
+        "func2highres_pic", 
+        # func => standard: linear
+        "func2standard", 
+        "func2standard_mat", 
+        "standard2func_mat", 
+        "func2standard_pic", 
+    ])
+    if fnirt:
+        output_files.extend([
+            "func2standard_fnirt", 
+            "func2standard_fnirt_pic"
+        ])        
+    
+    outputnode = pe.Node(util.IdentityInterface(fields=output_fields),
+                        name="outputspec")
+    
+    renamer = RegOutputConnector(normalize, outputnode, inputnode)
+    
+    
+    #####
+    # Setup workflow
+    #####
+    
+    normalize = pe.Workflow(name=name)    
+    
+    
+    #####
+    # Commands
+    #####
+        
     if coplanar:
         # func2coplanar
         name1 = "func2coplanar"
         func2coplanar = create_lin_reg_workflow(name = name1, 
                                                 reg_type = name1, 
                                                 search_type = search_type)
-        workflows.func.append(func2coplanar)
         # coplanar2highres
         name2 = "coplanar2highres"
         coplanar2highres = create_lin_reg_workflow(name = name2,
                                                    reg_type = name2, 
                                                    search_type = search_type)
-        workflows.func.append(coplanar2highres)
         # func2highres
         name3 = "func2highres"
         func2highres = create_link_lin_reg_workflow(name = name3, 
                                                     in2x_reg_type = name1, 
                                                     x2ref_reg_type = name2)
-        workflows.func.append(func2highres)
         # link them
         normalize.connect([
             (inputnode, func2coplanar, [('func', 'inputspec.in_file'), 
-                                        ('coplanar', 'inputspec.ref_file')]),
+                                        ('coplanar', 'inputspec.ref_file'),
+                                        (('interp', interp4flirt), 'interp')]),
+            (func2coplanar, outputnode, [('outputspec.in2ref', 'func2coplanar'), 
+                                         ('outputspec.in2ref_mat', 'func2coplanar_mat'), 
+                                         ('outputspec.ref2in_mat', 'coplanar2func_mat'), 
+                                         ('outputspec.in2ref_pic', 'func2coplanar_pic')]), 
             (inputnode, coplanar2highres, [('coplanar', 'inputspec.in_file'), 
-                                           ('highres', 'inputspec.ref_file')]),
+                                           ('highres', 'inputspec.ref_file'),
+                                           (('interp', interp4flirt), 'interp')]), 
+            (coplanar2highres, outputnode, [('outputspec.in2ref', 'coplanar2highres'), 
+                                            ('outputspec.in2ref_mat', 'coplanar2highres_mat'), 
+                                            ('outputspec.ref2in_mat', 'highres2coplanar_mat'), 
+                                            ('outputspec.in2ref_pic', 'coplanar2highres_pic')]), 
             (inputnode, func2highres, [('func', 'inputspec.in_file'), 
-                                       ('highres', 'inputspec.ref_file')]),
+                                       ('highres', 'inputspec.ref_file'),
+                                       (('interp', interp4flirt), 'interp')]), 
             (func2coplanar, func2highres, [('outputspec.in2ref_mat', 
                                             'inputspec.in2x_mat_file')]), 
             (coplanar2highres, func2highres, [('outputspec.in2ref_mat', 
-                                               'inputspec.x2ref_mat_file')])
+                                               'inputspec.x2ref_mat_file')]), 
+            (func2highres, outputnode, [('outputspec.in2ref', 'func2highres'), 
+                                        ('outputspec.in2ref_mat', 'func2highres_mat'), 
+                                        ('outputspec.ref2in_mat', 'highres2func_mat'), 
+                                        ('outputspec.in2ref_pic', 'func2highres_pic')])
         ])
     else:
         # func2highres 
@@ -849,7 +914,12 @@ def create_func2standard_workflow(
         workflows.func.append(func2highres)
         normalize.connect([
             (inputnode, func2highres, [('func', 'inputspec.in_file'), 
-                                       ('highres', 'inputspec.ref_file')])
+                                       ('highres', 'inputspec.ref_file'), 
+                                       (('interp', interp4flirt), 'interp')]), 
+            (func2highres, outputnode, [('outputspec.in2ref', 'func2highres'), 
+                                        ('outputspec.in2ref_mat', 'func2highres_mat'), 
+                                        ('outputspec.ref2in_mat', 'highres2func_mat'), 
+                                        ('outputspec.in2ref_pic', 'func2highres_pic')]),   
         ])
     
     # func2standard
@@ -860,9 +930,14 @@ def create_func2standard_workflow(
     workflows.func.append(func2standard)
     normalize.connect([
         (inputnode, func2standard, [('func', 'inputspec.in_file'), 
-                                    ('standard', 'inputspec.ref_file')]),
-        (func2highres, func2standard, [('outputspec.in2ref_mat', 'inputspec.in2x_mat_file')]),
-        (highres2standard, func2standard, [('outputspec.in2ref_mat', 'inputspec.x2ref_mat_file')])
+                                    ('standard', 'inputspec.ref_file'),
+                                    (('interp', interp4flirt), 'interp')]),
+        (inputnode, func2standard, [('highres2standard_mat', 'inputspec.in2x_mat_file')]),
+        (highres2standard, func2standard, [('outputspec.in2ref_mat', 'inputspec.x2ref_mat_file')]), 
+        (func2standard, outputnode, [('outputspec.in2ref', 'func2standard'), 
+                                     ('outputspec.in2ref_mat', 'func2standard_mat'), 
+                                     ('outputspec.ref2in_mat', 'standard2func_mat'), 
+                                     ('outputspec.in2ref_pic', 'func2standard_pic')])
     ])
     
     if fnirt:
@@ -872,52 +947,33 @@ def create_func2standard_workflow(
         normalize.connect([
             (inputnode, fnirt_func2standard, [
                 ('func', 'inputspec.in_file'),
-                ('standard', 'inputspec.ref_file')
+                ('standard', 'inputspec.ref_file'),
+                (('interp', interp4fnirt), 'interp')
             ]),
-            (func2highres, fnirt_func2standard, [
-                ('outputspec.in2ref_mat', 'inputspec.in2ref_mat_file')
+            (inputnode, fnirt_func2standard, [
+                ('highres2standard_mat', 'inputspec.in2ref_mat_file')
             ]),
-            (fnirt_highres2standard, fnirt_func2standard, [
-                ('outputspec.in2ref_fieldcoeff', 'inputspec.in2ref_field_file')
+            (inputnode, fnirt_func2standard, [
+                ('highres2standard_warp', 'inputspec.in2ref_field_file')
+            ]),
+            (fnirt_func2standard, outputnode, [
+                ('outputspec.in2ref', "func2standard_fnirt"), 
+                ('outputspec.in2ref_png', "func2standard_fnirt_pic")  
             ])
         ])
     
-    # special output linker
-    special = special_output_workflow(fnirt=fnirt)
-    workflows.func.append(special)
-    normalize.connect([
-        (inputnode, special, [('standard', 'inputspec.standard'), 
-                              ('func', 'inputspec.func'),
-                              ('highres', 'inputspec.highres')]), 
-        (highres2standard, special, [('outputspec.in2ref_mat', 'inputspec.highres2standard_mat')])
-    ])
-    if fnirt:
-        normalize.connect(fnirt_highres2standard, 'outputspec.in2ref_fieldcoeff', 
-                            special, 'inputspec.highres2standard_warp')
-    
-    # link interp input
-    for wf in workflows.func:
-        if wf.name.find("fnirt") == -1:
-            normalize.connect(inputnode, ('interp', interp4flirt), wf, 'inputspec.interp')
-        else:
-            normalize.connect(inputnode, ('interp', interp4fnirt), wf, 'inputspec.interp')            
-    for wf in workflows.highres:
-        if wf.name.find("fnirt") == -1:
-            normalize.connect(inputnode, ('interp', interp4flirt), wf, 'inputspec.interp')
-        else:
-            normalize.connect(inputnode, ('interp', interp4fnirt), wf, 'inputspec.interp')
-    
-    return (normalize, workflows)
+    # special outputs
+    renamer.connect(inputnode, 'func', 'func')
+    renamer.connect(inputnode, 'standard', 'standard')
+        
+    return normalize
 
 
-# inputs (bunch): func, coplanar, highres, [highres_head, standard_head, standard_mask, 
-#                                           fnirt_config]
-# outputs (bunch): func, highres
 def register( 
     subject_list, 
     inputs, outputs, workingdir, output_type,
-    standard, fnirt, interp, search,  
-    name="registration_func2standard"):
+    standard, fnirt, interp, search, func_label, 
+    name="registration"):
         
     #####
     # Setup workflow
@@ -927,13 +983,19 @@ def register(
         have_coplanar = True
     else:
         have_coplanar = False
-    regproc, workflows = create_func2standard_workflow(name, have_coplanar, search, fnirt)
-    regproc.base_dir = workingdir
     
-    # get input / set certain inputs
-    inputnode = regproc.get_node("inputspec")
-    inputnode.inputs.standard = standard
-    inputnode.inputs.interp = interp
+    # highres2standard
+    h2s = create_highres2standard_workflow("%s_highres2standard" % name, search, fnirt)
+    h2s.base_dir = workingdir
+    h2s_inputnode = h2s.get_node("inputspec")
+    h2s_outputnode = h2s.get_node("outputspec")
+    
+    # func2standard
+    f2s = create_func2standard_workflow("%s_%s2standard" % (name, func_label), have_coplanar, 
+                                        search, fnirt)
+    f2s.base_dir = workingdir
+    f2s_inputnode = f2s.get_node("inputspec")
+    f2s_outputnode = f2s.get_node("outputspec")
     
     
     ######
@@ -957,7 +1019,7 @@ def register(
     datasource = pe.Node(interface=nio.DataGrabber(infields=['subject_id'], 
                                                     outfields=outfields), 
                          name='datasource')
-    datasource.inputs.base_directory=os.path.abspath(inputs.basedir)
+    datasource.inputs.base_directory = op.abspath(op.expanduser(inputs.basedir))
     datasource.inputs.template = "*"
     datasource.inputs.field_template = dict(
         func = os.path.join("%s", inputs.func),
@@ -974,45 +1036,67 @@ def register(
         datasource.inputs.field_template['highres_head'] = os.path.join("%s", inputs.highres_head)
         datasource.inputs.template_args['highres_head'] = [['subject_id']]
     
-    # Link inputs
-    regproc.connect([
+    
+    ######
+    # Link Inputs
+    ######
+    
+    # highres2standard
+    h2s_inputnode.inputs.interp = interp
+    h2s_inputnode.inputs.standard = standard
+    h2s.connect([
         (subinfo, datasource, [('subject_id', 'subject_id')]),
-        (datasource, inputnode, [('func', 'func'), ('highres', 'highres')])
+        (datasource, h2s_inputnode, [('highres', 'highres')])
+    ])
+    if fnirt:
+        h2s.connect(datasource, 'highres_head', h2s_inputnode, 'highres_head')
+        h2s_inputnode.inputs.standard_head = inputs.standard_head
+        h2s_inputnode.inputs.standard_mask = inputs.standard_mask
+        h2s_inputnode.inputs.fnirt_config = inputs.fnirt_config
+    
+    # func2standard
+    f2s_inputnode.inputs.interp = interp
+    f2s_inputnode.inputs.standard = standard
+    f2s.connect([
+        (subinfo, datasource, [('subject_id', 'subject_id')]),
+        (datasource, f2s_inputnode, [('func', 'func')]), 
+        ((outputs.highres, regpath, 'highres2standard.mat'), f2s_inputnode, 
+            'highres2standard_mat')
     ])
     if have_coplanar:
-        regproc.connect(datasource, 'coplanar', inputnode, 'coplanar')
+        f2s.connect(datasource, 'coplanar', f2s_inputnode, 'coplanar')
     if fnirt:
-        regproc.connect(datasource, 'highres_head', inputnode, 'highres_head')
-        inputnode.inputs.standard_head = inputs.standard_head
-        inputnode.inputs.standard_mask = inputs.standard_mask
-        inputnode.inputs.fnirt_config = inputs.fnirt_config
+        f2s.connect((outputs.highres, regpath, "highres2standard_warp"), f2s_inputnode, 
+                        'highres2standard_warp')
     
     
     ######
     # Setup data sink
     ######
     
-    # Datasinks
-    datasinks = dict.fromkeys(vars(workflows).keys())
-    ## will get: "base_directory/subject_id/output_dir"
-    for k in datasinks:
-        datasinks[k] = pe.Node(interface=nio.DataSink(), name='datasink_%s' % k)
-        datasinks[k].inputs.base_directory = os.path.abspath(outputs.basedir)
-        # set container to subject_id
-        regproc.connect(subinfo, 'subject_id', datasinks[k], 'container')
-        # replace subject_id stuff with output directory and reg
-        datasinks[k].inputs.regexp_substitutions = (r"_subject_id_(\w|\d)+", getattr(outputs, k))
+    # highres2standard
+    ## setup
+    h2s_datasink = pe.Node(interface=nio.DataSink(), name="datasink")
+    h2s_datasink.inputs.base_directory = op.abspath(op.expanduser(outputs.basedir))
+    h2s.connect(subinfo, 'subject_id', datasink, 'container')
+    h2s.inputs.regexp_substitutions = (r"_subject_id_(\w|\d)+", outputs.highres)
+    ## link
+    outfields = h2s_outputnode.outputs.get()
+    for outfield in outfields:
+        h2s.connect(h2s_outputnode, outfield, h2s_datasink, "@%s" % outfield)
     
-    # connect output to datasinks
-    for k, wfs in vars(workflows).iteritems():
-        for wf in wfs:
-            outnode = wf.get_node("outputspec")
-            outfields = outnode.outputs.get()
-            for outfield in outfields:
-                regproc.connect(outnode, outfield, datasinks[k], 
-                                "@%s_%s" % (wf.name, outfield))
+    # func2standard
+    ## setup
+    f2s_datasink = pe.Node(interface=nio.DataSink(), name="datasink")
+    f2s_datasink.inputs.base_directory = op.abspath(op.expanduser(outputs.basedir))
+    f2s.connect(subinfo, 'subject_id', datasink, 'container')
+    f2s.inputs.regexp_substitutions = (r"_subject_id_(\w|\d)+", outputs.func)
+    ## link
+    outfields = f2s_outputnode.outputs.get()
+    for outfield in outfields:
+        f2s.connect(f2s_outputnode, outfield, f2s_datasink, "@%s" % outfield)
     
-    return regproc
+    return [h2s, f2s]
 
 
 class store_fnirt(argparse.Action):
@@ -1047,6 +1131,7 @@ class RegParser(usage.NiParser):
         group.add_argument("--interp", choices=["lin", "nn", "sinc", "spline"], default="trilinear")
         group.add_argument("--search", choices=["nada", "normal", "full"], default="normal")
         group.add_argument("--func", nargs=2, action=usage.store_io, default=argparse.SUPPRESS, required=True)
+        group.add_argument("--func-label", required=True)
         group.add_argument("--coplanar", action=usage.store_input, default=argparse.SUPPRESS)
         group.add_argument("--highres", nargs=2, action=usage.store_io, default=argparse.SUPPRESS, required=True)
         group.add_argument("--fnirt", nargs="+", action=store_fnirt, default=False)
@@ -1078,6 +1163,10 @@ class RegParser(usage.NiParser):
                     glob(op.join(outfunc, "func.*"))[0],
                     op.join(outfunc, "example_" + op.basename(glob(op.join(outfunc, "func.*"))[0]))
                 ],
+                [
+                    glob(op.join(outanat, "highres.*"))[0],
+                    op.join(outfunc, op.basename(glob(op.join(outfunc, "highres.*"))[0]))
+                ], 
                 [
                     op.join(outanat, "highres2standard.png"),
                     op.join(outfunc, "highres2standard.png")

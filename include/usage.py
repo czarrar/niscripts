@@ -175,17 +175,22 @@ class NiParser(object):
             raise Exception('Called run for NiParser without calling compile or giving arglist')
         
         self._pre_run()
-        self.workflow = procfun(**self.kwrds)
+        wf = procfun(**self.kwrds)
+        if not isinstance(wf, list):
+            wf = [wf]
+        self.workflow = wf
         if self.log_dir:
             if not os.path.isdir(self.log_dir):
                 os.mkdir(self.log_dir)
-            self.workflow['config']['log_directory'] = self.log_dir
+            for wf in self.workflow
+                wf['config']['log_directory'] = self.log_dir
         if self.crash_dir:
             crashdir = os.path.abspath(os.path.expanduser(self.crash_dir))
             if not os.path.isdir(crashdir):
                 os.makedirs(crashdir)
-            self.workflow.config = dict(crashdump_dir=crashdir) 
-        res = self.workflow.run(plugin=self.plugin, plugin_args=self.plugin_args)
+            for wf in self.workflow:
+                wf.config = dict(crashdump_dir=crashdir)
+        res = [ wf.run(plugin=self.plugin, plugin_args=self.plugin_args) for wf in self.workflow ]
         self._post_run()
         
         return res
