@@ -792,6 +792,7 @@ def create_func2standard_workflow(
     
     input_fields = [
         "func", 
+        "highres", 
         "highres2standard_mat",
         "standard",
         # optional
@@ -816,6 +817,7 @@ def create_func2standard_workflow(
     if coplanar:
         output_fields = [
             "func", 
+            "highres", 
             "standard", 
             # func => coplanar
             "func2coplanar", 
@@ -958,6 +960,7 @@ def create_func2standard_workflow(
     
     # special outputs
     renamer.connect(inputnode, 'func', 'func')
+    renamer.connect(inputnode, 'highres', 'highres')
     renamer.connect(inputnode, 'standard', 'standard')
         
     return normalize
@@ -1053,7 +1056,7 @@ def register(
     f2s_inputnode.inputs.standard = standard
     f2s.connect([
         (subinfo, datasource, [('subject_id', 'subject_id')]),
-        (datasource, f2s_inputnode, [('func', 'func')]), 
+        (datasource, f2s_inputnode, [('func', 'func'), ('highres', 'highres')]), 
         ((outputs.highres, regpath, 'highres2standard.mat'), f2s_inputnode, 
             'highres2standard_mat')
     ])
@@ -1157,10 +1160,6 @@ class RegParser(usage.NiParser):
                     glob(op.join(outfunc, "func.*"))[0],
                     op.join(outfunc, "example_" + op.basename(glob(op.join(outfunc, "func.*"))[0]))
                 ],
-                [
-                    glob(op.join(outanat, "highres.*"))[0],
-                    op.join(outfunc, op.basename(glob(op.join(outfunc, "highres.*"))[0]))
-                ], 
                 [
                     op.join(outanat, "highres2standard.png"),
                     op.join(outfunc, "highres2standard.png")
