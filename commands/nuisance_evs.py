@@ -452,7 +452,7 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
     renamer_func.connect(meants_csf, 'out_file', 'ts_csf')
     
     # Extract TS for wm
-    meants_csf = pe.Node(fsl.ImageMeants(), 
+    meants_wm = pe.Node(fsl.ImageMeants(), 
                             name="03_meants_wm")
     wf.connect([
         (inputnode, meants_wm, [('func', 'in_file')]),
