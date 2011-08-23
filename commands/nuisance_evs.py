@@ -397,9 +397,9 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
         "ts_global",
         "ts_csf",
         "ts_wm",
-        "tsplot_global", 
-        "tsplot_csf", 
-        "tsplot_wm", 
+        "tsplot_global_pic", 
+        "tsplot_csf_pic", 
+        "tsplot_wm_pic", 
         "tsplot_all_pic",
     ]
     outputnode_func = pe.Node(util.IdentityInterface(fields=output_fields_func),
