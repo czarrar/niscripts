@@ -397,7 +397,10 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
         "ts_global",
         "ts_csf",
         "ts_wm",
-        "nuisance_tsplot_pic"
+        "tsplot_global", 
+        "tsplot_csf", 
+        "tsplot_wm", 
+        "tsplot_all_pic",
     ]
     outputnode_func = pe.Node(util.IdentityInterface(fields=output_fields_func),
                                                      name="outputspec_func")
@@ -499,11 +502,28 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
     wf.connect(meants_csf, ('out_file', tolist), concatnode, 'in2')
     wf.connect(meants_wm, ('out_file', tolist), concatnode, 'in3')
     ## plot
-    tsplot = pe.Node(interface=fsl.PlotTimeSeries(title='Nuisance Time-Series', 
-                                                  labels=['global', 'csf', 'wm']), 
-                     name="04_tsplot")
-    wf.connect(concatnode, 'out', tsplot, 'in_file')
-    renamer_func.connect(tsplot, 'out_file', 'nuisance_tsplot_pic')
+    tsplot_all = pe.Node(interface=fsl.PlotTimeSeries(title='Nuisance Time-Series', 
+                                                      labels=['global', 'csf', 'wm']), 
+                     name="04_tsplot_all")
+    wf.connect(concatnode, 'out', tsplot_all, 'in_file')
+    renamer_func.connect(tsplot_all, 'out_file', 'tsplot_all_pic')
+    
+    # Independent plots!
+    ## global
+    tsplot_global = pe.Node(interface=fsl.PlotTimeSeries(title='Global Time-Series'), 
+                     name="04_tsplot_global")
+    wf.connect(meants_global, 'out_file', tsplot_global, 'in_file')
+    renamer_func.connect(tsplot_global, 'out_file', 'tsplot_global_pic')
+    ## csf
+    tsplot_csf = pe.Node(interface=fsl.PlotTimeSeries(title='Global Time-Series'), 
+                     name="04_tsplot_csf")
+    wf.connect(meants_csf, 'out_file', tsplot_csf, 'in_file')
+    renamer_func.connect(tsplot_csf, 'out_file', 'tsplot_csf_pic')    
+    ## wm
+    tsplot_wm = pe.Node(interface=fsl.PlotTimeSeries(title='Global Time-Series'), 
+                     name="04_tsplot_wm")
+    wf.connect(meants_wm, 'out_file', tsplot_wm, 'in_file')
+    renamer_func.connect(tsplot_wm, 'out_file', 'tsplot_wm_pic')    
     
     return wf
 
