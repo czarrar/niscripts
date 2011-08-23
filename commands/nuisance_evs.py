@@ -140,7 +140,7 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     ## pic
     slicer_wm = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
                         name='slicer_wm')
-    ctissues.connect(segment, 'T1', slicer_wm, 'in_file')
+    ctissues.connect(getfree, 'T1', slicer_wm, 'in_file')
     ctissues.connect(extractwm, ('out_file', get_overlay_args), slicer_wm, 'overlay1')
     renamer.connect(slicer_wm, 'out_file', 'wm_pic')
         
@@ -156,7 +156,7 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     ## pic
     slicer_csf = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
                          name='slicer_csf')
-    ctissues.connect(segment, 'T1', slicer_csf, 'in_file')
+    ctissues.connect(getfree, 'T1', slicer_csf, 'in_file')
     ctissues.connect(extractcsf, ('out_file', get_overlay_args), slicer_csf, 'overlay1')
     renamer.connect(slicer_csf, 'out_file', 'csf_pic')
     
@@ -174,7 +174,7 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     ## pic
     slicer_gm = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
                          name='slicer_gm')
-    ctissues.connect(segment, 'T1', slicer_gm, 'in_file')
+    ctissues.connect(getfree, 'T1', slicer_gm, 'in_file')
     ctissues.connect(extractgm, ('out_file', get_overlay_args), slicer_gm, 'overlay1')
     renamer.connect(slicer_gm, 'out_file', 'gm_pic')
     
