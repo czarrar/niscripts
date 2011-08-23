@@ -124,7 +124,7 @@ def split_motion_params(in_file, out_prefix="motion"):
     for i in xrange(nc):
         xcol = [ str(x) for x in xmat[:,i].tolist() ]
         f = file(out_files[i], 'w')
-        f.write(xcol)
+        f.write("\n".join(xcol))
         f.close()
     
     return out_files
