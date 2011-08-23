@@ -382,6 +382,7 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
         "mask_global", 
         "mask_csf",
         "mask_wm",
+        "mask_global_pic", 
         "mask_csf_pic", 
         "mask_wm_pic", 
         # ts
@@ -451,7 +452,7 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
                          name='02_mask_global')
     wf.connect(inputnode, ('reg_dir', regpath, 'func.*'), slicer_global, 'in_file')
     wf.connect(inputnode, ('brain_mask', get_overlay_args), slicer_global, 'overlay1')
-    renamer_func.connect(slicer_brain, 'out_file', 'mask_global_pic')
+    renamer_func.connect(slicer_global, 'out_file', 'mask_global_pic')
     renamer_func.connect(inputnode, 'brain_mask', 'mask_global')
     
     
