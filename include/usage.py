@@ -5,6 +5,12 @@ from nipype.interfaces.base import Bunch
 # Additional Actions
 #####
 
+def append_var(arg):
+    if arg.find("=") == -1:
+        msg = "Could not assign '--var %s' since must be of format 'variable=value'" % arg
+        raise argparse.ArgumentTypeError(msg)
+    return tuple([ x.strip() for x in arg.split("=") ])
+
 class store_input(argparse.Action):
     def __init__(self, check_file=False, check_dir=False, **kwrds):
         super(store_input, self).__init__(**kwrds)

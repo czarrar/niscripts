@@ -971,7 +971,7 @@ def create_func2standard_workflow(
     renamer.connect(inputnode, 'func', 'func')
     renamer.connect(inputnode, 'highres', 'highres')
     renamer.connect(inputnode, 'standard', 'standard')
-        
+    
     return normalize
 
 

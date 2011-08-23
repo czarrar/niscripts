@@ -3,7 +3,7 @@
 import argparse, os, sys
 sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
 
-from usage import NiArgumentParser, store_filename, store_input
+from usage import NiArgumentParser, store_filename, store_input, append_var
 from analysis import fromYamlSubject
 from zlogger import (LoggerError, LoggerCritical)
 
@@ -19,6 +19,7 @@ def create_parser():
     group = parser.add_argument_group('Required')
     group.add_argument('-s', '--subjects', nargs="+", required=True)
     group.add_argument('-c', '--config', action=store_input, check_file=True, required=True)
+    group.add_argument('--var', action="append", type=append_var, dest=vars)
     
     group = parser.add_argument_group('Optional')
     group.add_argument("--combine", action="append_const", const="combine", dest="run_keys")
@@ -48,10 +49,16 @@ def main(arglist):
     kwargs = vars(args)
     if 'run_keys' not in kwargs and not kwargs['run_keys']:
         kwargs['run_keys'] = ["res_decon", "fsf", "feat", "regress"]
+    if 'vars' not in kwargs:
+        template_vars = {}
+    else:
+        template_vars = dict(kwargs.pop("vars"))
     subjects = kwargs.pop("subjects")
     for subject in subjects:
         try:
-            fromYamlSubject(subject=subject, **kwargs)
+            template_vars['subject'] = subject
+            fromYamlSubject(user_template_vars=template_vars, **kwargs)
+            del template_vars['subject']
         except (LoggerError, LoggerCritical) as err:
             pass
 
