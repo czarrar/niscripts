@@ -369,6 +369,7 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
     
     output_fields_func = [
         # masks
+        "mask_global", 
         "mask_csf",
         "mask_wm",
         "mask_csf_pic", 
