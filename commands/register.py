@@ -1065,13 +1065,12 @@ def register(
     f2s.connect([
         (subinfo, datasource, [('subject_id', 'subject_id')]),
         (datasource, f2s_inputnode, [('func', 'func'), ('highres', 'highres')]), 
-        ((outputs.highres, regpath, 'highres2standard.mat'), f2s_inputnode, 
-            'highres2standard_mat')
+        (outputs.highres, (regpath, 'highres2standard.mat'), f2s_inputnode, 'highres2standard_mat')
     ])
     if have_coplanar:
         f2s.connect(datasource, 'coplanar', f2s_inputnode, 'coplanar')
     if fnirt:
-        f2s.connect((outputs.highres, regpath, "highres2standard_warp"), f2s_inputnode, 
+        f2s.connect(outputs.highres, (regpath, "highres2standard_warp.*"), f2s_inputnode, 
                         'highres2standard_warp')
     
     
