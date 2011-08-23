@@ -130,7 +130,7 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     renamer.connect(convert_aseg, 'out_file', 'aseg')
     
     # Extract and erode a mask of the deep cerebral white matter
-    extractwm = pe.Node(fs.Binarize(match=[2, 41]), 
+    extractwm = pe.Node(fs.Binarize(match=[2, 41], subjects_dir=freesurfer_dir), 
                         name="extractwm")
     ctissues.connect([
         (inputnode, extractwm, [('freesurfer_dir', 'subjects_dir')]),
@@ -145,7 +145,8 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     renamer.connect(slicer_wm, 'out_file', 'wm_pic')
         
     # Extract and erode a mask of the ventricles and CSF
-    extractcsf = pe.Node(fs.Binarize(match=[4, 5, 14, 15, 24, 31, 43, 44, 63]),  # TODO: check if want eroded
+    extractcsf = pe.Node(fs.Binarize(match=[4, 5, 14, 15, 24, 31, 43, 44, 63], 
+                                        subjects_dir=freesurfer_dir),
                          name="extractcsf")
     ctissues.connect([
         (inputnode, extractcsf, [('freesurfer_dir', 'subjects_dir')]),
@@ -161,7 +162,8 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     
     # Extract a mask of the grey matter and subcortical areas and brainstem
     extractgm = pe.Node(
-        fs.Binarize(match=[3,8,10,11,12,13,16,17,18,26,28,42,47,49,50,51,52,54,58,60]), 
+        fs.Binarize(match=[3,8,10,11,12,13,16,17,18,26,28,42,47,49,50,51,52,54,58,60], 
+                    subjects_dir=freesurfer_dir), 
         name="extractgm"
     )
     ctissues.connect([
@@ -179,7 +181,7 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     return ctissues
 
 
-def create_nuisance_mask_workflow(fwhm, mask_fprefix, name="nuisance_mask"):
+def create_nuisance_mask_workflow(fwhm, mask_fprefix, freesurfer_dir, name="nuisance_mask"):
     """Transforms a csf/wm/gm mask from anatomical to functional space and then some.
     """
     
@@ -200,7 +202,8 @@ def create_nuisance_mask_workflow(fwhm, mask_fprefix, name="nuisance_mask"):
         "reg_dir",
         "brain_mask_file",
         "erode", 
-        "threshold"
+        "threshold",
+        "freesurfer_dir"
     ]
     inputnode = pe.Node(interface=util.IdentityInterface(fields=input_fields), 
                             name="inputspec")
@@ -229,10 +232,11 @@ def create_nuisance_mask_workflow(fwhm, mask_fprefix, name="nuisance_mask"):
     #####
     
     # 1. erode
-    erode = pe.Node(fs.Binarize(match=[1]), name="01_erode")
+    erode = pe.Node(fs.Binarize(match=[1], subjects_dir=freesurfer_dir), name="01_erode")
     nuisance.connect([
         (inputnode, erode, [('mask_file', 'in_file'),
-                            ('erode', 'erode')])
+                            ('erode', 'erode'),
+                            ('subjects_dir', 'freesurfer_dir')])
     ])
     
     # 2. anat space => func space
@@ -402,23 +406,27 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
     ])
     
     # Create CSF mask
-    csfmask = create_nuisance_mask_workflow(name="02_mask_csf", fwhm=fwhm, mask_fprefix='mask_csf')
+    csfmask = create_nuisance_mask_workflow(name="02_mask_csf", fwhm=fwhm, mask_fprefix='mask_csf', 
+                                                freesurfer_dir=freesurfer_dir)
     wf.connect([
         (segment, csfmask, [('outputspec.csf', 'inputspec.mask_file')]), 
         (inputnode, csfmask, [('brain_mask', 'inputspec.brain_mask_file'),
                               ('csf_prior', 'inputspec.prior_file'),
-                              ('reg_dir', 'inputspec.reg_dir')]),
+                              ('reg_dir', 'inputspec.reg_dir'),
+                              ('freesurfer_dir', 'inputspec.freesurfer_dir')]),
         (csfmask, outputnode_func, [('outputspec.mask', 'mask_csf'),
                                     ('outputspec.mask_pic', 'mask_csf_pic')])
     ])
     
     # Create WM mask
-    wmmask = create_nuisance_mask_workflow(name="02_mask_wm", fwhm=fwhm, mask_fprefix='mask_wm')
+    wmmask = create_nuisance_mask_workflow(name="02_mask_wm", fwhm=fwhm, mask_fprefix='mask_wm', 
+                                            freesurfer_dir=freesurfer_dir)
     wf.connect([
         (segment, wmmask, [('outputspec.wm', 'inputspec.mask_file')]), 
         (inputnode, wmmask, [('brain_mask', 'inputspec.brain_mask_file'),
                               ('wm_prior', 'inputspec.prior_file'),
-                              ('reg_dir', 'inputspec.reg_dir')]),
+                              ('reg_dir', 'inputspec.reg_dir'),
+                              ('freesurfer_dir', 'inputspec.freesurfer_dir')]),
         (wmmask, outputnode_func, [('outputspec.mask', 'mask_wm'),
                                    ('outputspec.mask_pic', 'mask_wm_pic')])
     ])
