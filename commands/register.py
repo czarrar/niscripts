@@ -1066,7 +1066,7 @@ def register(
     f2s.connect([
         (subinfo, datasource, [('subject_id', 'subject_id')]),
         (datasource, f2s_inputnode, [('func', 'func'), ('highres', 'highres')]), 
-        (subinfo, f2s_inputnode, [('subject_id', regpath, path), 'highres2standard_mat'])
+        (subinfo, f2s_inputnode, [(('subject_id', regpath, path), 'highres2standard_mat')])
     ])
     if have_coplanar:
         f2s.connect(datasource, 'coplanar', f2s_inputnode, 'coplanar')
