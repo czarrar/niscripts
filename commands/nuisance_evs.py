@@ -423,7 +423,9 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
         (inputnode, csfmask, [('brain_mask', 'inputspec.brain_mask_file'),
                               ('csf_prior', 'inputspec.prior_file'),
                               ('reg_dir', 'inputspec.reg_dir'),
-                              ('freesurfer_dir', 'inputspec.freesurfer_dir')]),
+                              ('freesurfer_dir', 'inputspec.freesurfer_dir'),
+                              ('csf_erode', 'inputspec.erode'),
+                              ('csf_threshold', 'inputspec.threshold')]), 
         (csfmask, outputnode_func, [('outputspec.mask', 'mask_csf'),
                                     ('outputspec.mask_pic', 'mask_csf_pic')])
     ])
@@ -436,7 +438,9 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
         (inputnode, wmmask, [('brain_mask', 'inputspec.brain_mask_file'),
                               ('wm_prior', 'inputspec.prior_file'),
                               ('reg_dir', 'inputspec.reg_dir'),
-                              ('freesurfer_dir', 'inputspec.freesurfer_dir')]),
+                              ('freesurfer_dir', 'inputspec.freesurfer_dir'),
+                              ('wm_erode', 'inputspec.erode'),
+                              ('wm_threshold', 'inputspec.threshold')]),
         (wmmask, outputnode_func, [('outputspec.mask', 'mask_wm'),
                                    ('outputspec.mask_pic', 'mask_wm_pic')])
     ])
