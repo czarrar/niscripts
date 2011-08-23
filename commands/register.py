@@ -1065,38 +1065,40 @@ class RegParser(usage.NiParser):
             if p.retcode != 0:
                 print 'Error: chmod -R 775 %s' % output
         for outfunc,outanat in zip(outputs1,outputs2):
-            try:
-                os.symlink(
-                    op.join(outfunc, "func2highres.mat"),
+            links = [
+                [
+                    op.join(outfunc, "func2highres.mat"), 
                     op.join(outfunc, "example_func2highres.mat")
-                )
-                os.symlink(
+                ],
+                [
                     op.join(outfunc, "func2standard.mat"),
                     op.join(outfunc, "example_func2standard.mat")
-                )
-                p = glob(op.join(outanat, "highres.*"))[0]
-                os.symlink(
-                    p,
+                ]
+                [
+                    glob(op.join(outanat, "highres.*"))[0],
                     op.join(outfunc, op.basename(p))
-                )
-                p = glob(op.join(outfunc, "func.*"))[0]
-                os.symlink(
-                    p,
+                ],
+                [
+                    glob(op.join(outfunc, "func.*"))[0],
                     op.join(outfunc, "example_" + op.basename(p))
-                )
-                os.symlink(
+                ],
+                [
                     op.join(outfunc, "highres2standard.png"),
                     op.join(outfunc, "highres2standard.png")
-                )
-                os.symlink(
+                ],
+                [
                     op.join(outfunc, "highres2standard_fnirt.png"),
                     op.join(outfunc, "highres2standard_fnirt.png")
-                )                
-            except OSError as (errno, strerr):
-                if errno == 17:
-                    pass
-                else:
-                    raise OSError(errno, strerr)
+                ]
+            ]
+            for link in links:
+                try:
+                    os.symlink(*link)
+                except OSError as (errno, strerr):
+                    if errno == 17:
+                        pass
+                    else:
+                        raise OSError(errno, strerr)
         return
     
 
