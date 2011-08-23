@@ -19,6 +19,7 @@ import nipype.interfaces.utility as util # utility
 import nipype.pipeline.engine as pe # pypeline engine
 import argparse # command-line
 import re
+from glob import glob
 
 import misc, usage # my own extra stuff
 from utilities import *
