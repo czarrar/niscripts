@@ -141,7 +141,7 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     slicer_wm = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
                         name='slicer_wm')
     ctissues.connect(getfree, 'T1', slicer_wm, 'in_file')
-    ctissues.connect(extractwm, ('out_file', get_overlay_args), slicer_wm, 'overlay1')
+    ctissues.connect(extractwm, ('binary_file', get_overlay_args), slicer_wm, 'overlay1')
     renamer.connect(slicer_wm, 'out_file', 'wm_pic')
         
     # Extract and erode a mask of the ventricles and CSF
@@ -157,7 +157,7 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     slicer_csf = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
                          name='slicer_csf')
     ctissues.connect(getfree, 'T1', slicer_csf, 'in_file')
-    ctissues.connect(extractcsf, ('out_file', get_overlay_args), slicer_csf, 'overlay1')
+    ctissues.connect(extractcsf, ('binary_file', get_overlay_args), slicer_csf, 'overlay1')
     renamer.connect(slicer_csf, 'out_file', 'csf_pic')
     
     # Extract a mask of the grey matter and subcortical areas and brainstem
@@ -175,7 +175,7 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     slicer_gm = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
                          name='slicer_gm')
     ctissues.connect(getfree, 'T1', slicer_gm, 'in_file')
-    ctissues.connect(extractgm, ('out_file', get_overlay_args), slicer_gm, 'overlay1')
+    ctissues.connect(extractgm, ('binary_file', get_overlay_args), slicer_gm, 'overlay1')
     renamer.connect(slicer_gm, 'out_file', 'gm_pic')
     
     return ctissues
