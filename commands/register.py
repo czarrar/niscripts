@@ -669,6 +669,12 @@ def create_highres2standard_workflow(
     search_type = "normal",
     fnirt = False
 ):
+    #####
+    # Setup workflow
+    #####
+    
+    normalize = pe.Workflow(name=name)
+    
     
     #####
     # Setup input node
@@ -719,13 +725,6 @@ def create_highres2standard_workflow(
                         name="outputspec")
     
     renamer = RegOutputConnector(normalize, outputnode, inputnode)
-    
-    
-    #####
-    # Setup workflow
-    #####
-    
-    normalize = pe.Workflow(name=name)
     
     
     #####
@@ -781,6 +780,12 @@ def create_func2standard_workflow(
     coplanar = False, 
     search_type = 'normal', 
     fnirt = False):
+    #####
+    # Setup workflow
+    #####
+    
+    normalize = pe.Workflow(name=name)    
+    
     
     #####
     # Setup input node
@@ -848,13 +853,6 @@ def create_func2standard_workflow(
                         name="outputspec")
     
     renamer = RegOutputConnector(normalize, outputnode, inputnode)
-    
-    
-    #####
-    # Setup workflow
-    #####
-    
-    normalize = pe.Workflow(name=name)    
     
     
     #####
