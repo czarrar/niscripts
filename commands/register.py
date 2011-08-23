@@ -700,7 +700,7 @@ def create_highres2standard_workflow(
     # Setup output node
     #####
     
-    output_files = [
+    output_fields = [
         "highres", 
         "highres2standard", 
         "highres2standard_mat", 
@@ -708,7 +708,7 @@ def create_highres2standard_workflow(
         "highres2standard_pic"
     ]
     if fnirt:
-        output_files.extend([
+        output_fields.extend([
             "log_file",
             "highres2standard_warped", 
             "highres2standard_fieldcoeff", 
@@ -810,7 +810,7 @@ def create_func2standard_workflow(
     #####
     
     if coplanar:
-        output_files = [
+        output_fields = [
             "func", 
             "standard", 
             # func => coplanar
@@ -825,8 +825,8 @@ def create_func2standard_workflow(
             "coplanar2highres_pic"
         ]
     else:
-        output_files = []
-    output_files.extend([
+        output_fields = []
+    output_fields.extend([
         # func => highres
         "func2highres", 
         "func2highres_mat", 
@@ -839,10 +839,10 @@ def create_func2standard_workflow(
         "func2standard_pic", 
     ])
     if fnirt:
-        output_files.extend([
+        output_fields.extend([
             "func2standard_fnirt", 
             "func2standard_fnirt_pic"
-        ])        
+        ])
     
     outputnode = pe.Node(util.IdentityInterface(fields=output_fields),
                         name="outputspec")
