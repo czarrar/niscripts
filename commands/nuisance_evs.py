@@ -142,6 +142,7 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
         (inputnode, extractwm, [('freesurfer_dir', 'subjects_dir')]),
         (convert_aseg, extractwm, [('out_file', 'in_file')])
     ])
+    renamer.convert_aseg(extractwm, 'binary_file', 'wm')
     
     ## pic
     slicer_wm = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
@@ -158,6 +159,7 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
         (inputnode, extractcsf, [('freesurfer_dir', 'subjects_dir')]),
         (convert_aseg, extractcsf, [('out_file', 'in_file')])
     ])
+    renamer.convert_aseg(extractwm, 'binary_file', 'csf')
     
     ## pic
     slicer_csf = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
@@ -176,6 +178,7 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
         (inputnode, extractgm, [('freesurfer_dir', 'subjects_dir')]),
         (convert_aseg, extractgm, [('out_file', 'in_file')])
     ])
+    renamer.convert_aseg(extractwm, 'binary_file', 'gm')
     
     ## pic
     slicer_gm = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
