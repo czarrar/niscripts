@@ -129,6 +129,12 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     ctissues.connect(inputnode, 'orientation', convert_aseg, 'out_orientation')
     renamer.connect(convert_aseg, 'out_file', 'aseg')
     
+    convert_brain = pe.Node(fs.MRIConvert(out_type="niigz", subjects_dir=freesurfer_dir), 
+                            name="convert_head")
+    ctissues.connect(getfree, 'brainmask', convert_brain, 'in_file')
+    ctissues.connect(inputnode, 'orientation', convert_brain, 'out_orientation')
+    
+    
     # Extract and erode a mask of the deep cerebral white matter
     extractwm = pe.Node(fs.Binarize(match=[2, 41], subjects_dir=freesurfer_dir), 
                         name="extractwm")
@@ -140,7 +146,7 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     ## pic
     slicer_wm = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
                         name='slicer_wm')
-    ctissues.connect(getfree, 'T1', slicer_wm, 'in_file')
+    ctissues.connect(convert_brain, 'out_file', slicer_wm, 'in_file')
     ctissues.connect(extractwm, ('binary_file', get_overlay_args), slicer_wm, 'overlay1')
     renamer.connect(slicer_wm, 'out_file', 'wm_pic')
         
@@ -156,7 +162,7 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     ## pic
     slicer_csf = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
                          name='slicer_csf')
-    ctissues.connect(getfree, 'T1', slicer_csf, 'in_file')
+    ctissues.connect(convert_brain, 'out_file', slicer_csf, 'in_file')
     ctissues.connect(extractcsf, ('binary_file', get_overlay_args), slicer_csf, 'overlay1')
     renamer.connect(slicer_csf, 'out_file', 'csf_pic')
     
@@ -174,7 +180,7 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     ## pic
     slicer_gm = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
                          name='slicer_gm')
-    ctissues.connect(getfree, 'T1', slicer_gm, 'in_file')
+    ctissues.connect(convert_brain, 'out_file', slicer_gm, 'in_file')
     ctissues.connect(extractgm, ('binary_file', get_overlay_args), slicer_gm, 'overlay1')
     renamer.connect(slicer_gm, 'out_file', 'gm_pic')
     
