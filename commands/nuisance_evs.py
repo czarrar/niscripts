@@ -436,7 +436,7 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
                             name="03_meants_global")
     wf.connect([
         (inputnode, meants_global, [('func', 'in_file'),
-                                     ('brain_mask', 'mask_file')])
+                                     ('brain_mask', 'mask')])
     ])
     renamer_func.connect(meants_global, 'out_file', 'ts_global')
     renamer_func.connect(inputnode, 'brain_mask', 'mask_global')
@@ -446,7 +446,7 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
                             name="03_meants_csf")
     wf.connect([
         (inputnode, meants_csf, [('func', 'in_file')]),
-        (csfmask, meants_csf, [('mask', 'mask_file')]),
+        (csfmask, meants_csf, [('mask', 'mask')]),
     ])
     renamer_func.connect(meants_csf, 'out_file', 'ts_csf')
     
@@ -455,7 +455,7 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
                             name="03_meants_wm")
     wf.connect([
         (inputnode, meants_wm, [('func', 'in_file')]),
-        (wmmask, meants_wm, [('mask', 'mask_file')]),
+        (wmmask, meants_wm, [('mask', 'mask')]),
     ])
     renamer_func.connect(meants_wm, 'out_file', 'ts_wm')
     
