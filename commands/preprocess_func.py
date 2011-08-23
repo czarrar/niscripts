@@ -119,7 +119,7 @@ def split_motion_params(in_file, out_prefix="motion"):
     
     cwd = os.getcwd()
     xmat = np.loadtxt(in_file)
-    nc = x.shape[1]
+    nc = xmat.shape[1]
     out_files = [ op.join(cwd, "%s_%02i.1D" % (out_prefix, i+1)) for i in xrange(nc) ]
     for i in xrange(nc):
         xcol = [ str(x) for x in xmat[:,i].tolist() ]
