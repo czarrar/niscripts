@@ -32,9 +32,9 @@ def regpath(regdir, fprefix):
     import os, glob
     fpath = os.path.join(regdir, fprefix)
     gpath = glob.glob(fpath)
-    if gpath == 0:
+    if len(gpath) == 0:
         raise Exception("Could not find file '%s' in regdir '%s'" % (fprefix, regdir))
-    elif gpath > 1:
+    elif len(gpath) > 1:
         raise Exception("Too many files found for '%s' in regdir '%s'" % (fprefix, regdir))
     return gpath[0]
 
