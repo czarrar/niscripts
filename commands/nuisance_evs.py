@@ -117,7 +117,7 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     # Now get inputs
     getfree = pe.Node(nio.FreeSurferSource(subjects_dir=freesurfer_dir),
                       name="getfree")
-    preproc.connect([
+    ctissues.connect([
         (inputnode, getfree, [('freesurfer_dir', 'subjects_dir')]),
         (segment, getfree, [('subject_id', 'subject_id')])
     ])
@@ -125,8 +125,8 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     # Save to nii.gz
     convert_aseg = pe.Node(fs.MRIConvert(out_type="niigz", subjects_dir=freesurfer_dir), 
                            name="convert_orig")
-    preproc.connect(getfree, 'aseg', convert_aseg, 'in_file')
-    preproc.connect(inputnode, 'orientation', convert_aseg, 'out_orientation')
+    ctissues.connect(getfree, 'aseg', convert_aseg, 'in_file')
+    ctissues.connect(inputnode, 'orientation', convert_aseg, 'out_orientation')
     renamer.connect(convert_aseg, 'out_file', 'aseg')
     
     # Extract and erode a mask of the deep cerebral white matter
