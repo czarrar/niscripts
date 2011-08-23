@@ -930,7 +930,6 @@ def create_func2standard_workflow(
                                     ('standard', 'inputspec.ref_file'),
                                     (('interp', interp4flirt), 'inputspec.interp')]),
         (inputnode, func2standard, [('highres2standard_mat', 'inputspec.in2x_mat_file')]),
-        (highres2standard, func2standard, [('outputspec.in2ref_mat', 'inputspec.x2ref_mat_file')]), 
         (func2standard, outputnode, [('outputspec.in2ref', 'func2standard'), 
                                      ('outputspec.in2ref_mat', 'func2standard_mat'), 
                                      ('outputspec.ref2in_mat', 'standard2func_mat'), 
