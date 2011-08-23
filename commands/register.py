@@ -750,7 +750,6 @@ def create_highres2standard_workflow(
     if fnirt:
         name = "fnirt_highres2standard"
         fnirt_highres2standard = create_nonlin_reg_workflow(name = name)
-        workflows.highres.append(fnirt_highres2standard)
         normalize.connect([
             (inputnode, fnirt_highres2standard, [
                 ('highres_head', 'inputspec.in_file'), 
@@ -909,7 +908,6 @@ def create_func2standard_workflow(
         func2highres = create_lin_reg_workflow(name = name, 
                                                reg_type = name, 
                                                search_type = search_type)
-        workflows.func.append(func2highres)
         normalize.connect([
             (inputnode, func2highres, [('func', 'inputspec.in_file'), 
                                        ('highres', 'inputspec.ref_file'), 
@@ -925,7 +923,6 @@ def create_func2standard_workflow(
     func2standard = create_link_lin_reg_workflow(name = name, 
                                                  in2x_reg_type = "func2highres", 
                                                  x2ref_reg_type = "highres2standard")
-    workflows.func.append(func2standard)
     normalize.connect([
         (inputnode, func2standard, [('func', 'inputspec.in_file'), 
                                     ('standard', 'inputspec.ref_file'),
@@ -941,7 +938,6 @@ def create_func2standard_workflow(
     if fnirt:
         name = "fnirt_func2standard"
         fnirt_func2standard = create_link_nonlin_reg_workflow(name = name)
-        workflows.func.append(fnirt_func2standard)
         normalize.connect([
             (inputnode, fnirt_func2standard, [
                 ('func', 'inputspec.in_file'),
