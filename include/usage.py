@@ -182,7 +182,7 @@ class NiParser(object):
         if self.log_dir:
             if not os.path.isdir(self.log_dir):
                 os.mkdir(self.log_dir)
-            for wf in self.workflow
+            for wf in self.workflow:
                 wf['config']['log_directory'] = self.log_dir
         if self.crash_dir:
             crashdir = os.path.abspath(os.path.expanduser(self.crash_dir))
