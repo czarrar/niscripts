@@ -55,14 +55,14 @@ def reg_pics(in_file, ref_file):
     out_file = "%(prefix)s.%(ext)s" % cmd_args
     return out_file
 
-def regpath(regdir, fprefix):
+def regpath(subject_id, fpath):
     import os, glob
-    fpath = os.path.join(regdir, fprefix)
+    fpath = fpath % subject_id
     gpath = glob.glob(fpath)
     if len(gpath) == 0:
-        raise Exception("Could not find file '%s' in regdir '%s'" % (fprefix, regdir))
+        raise Exception("Could not find reg file %s" % fpath)
     elif len(gpath) > 1:
-        raise Exception("Too many files found for '%s' in regdir '%s'" % (fprefix, regdir))
+        raise Exception("Too many files found for reg file '%s'" % fpath)
     return gpath[0]
 
 def interp4fnirt(interp):
@@ -1062,17 +1062,17 @@ def register(
     # func2standard
     f2s_inputnode.inputs.interp = interp
     f2s_inputnode.inputs.standard = standard
+    path = op.join(outputs.basedir, "%s", outputs.highres, "highres2standard.mat")
     f2s.connect([
         (subinfo, datasource, [('subject_id', 'subject_id')]),
         (datasource, f2s_inputnode, [('func', 'func'), ('highres', 'highres')]), 
-        (outputs.highres, f2s_inputnode, [(regpath, 'highres2standard.mat'), 
-                                            'highres2standard_mat'])
+        (subinfo, f2s_inputnode, [('subject_id', regpath, path), 'highres2standard_mat'])
     ])
     if have_coplanar:
         f2s.connect(datasource, 'coplanar', f2s_inputnode, 'coplanar')
     if fnirt:
-        f2s.connect(outputs.highres, (regpath, "highres2standard_warp.*"), f2s_inputnode, 
-                        'highres2standard_warp')
+        path = op.join(outputs.basedir, "%s", outputs.highres, "highres2standard_warp.*")
+        f2s.connect(subinfo, ('subject_id', regpath, path), f2s_inputnode, 'highres2standard_warp')
     
     
     ######
