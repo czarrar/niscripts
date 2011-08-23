@@ -882,14 +882,14 @@ def create_func2standard_workflow(
             (func2coplanar, outputnode, [('outputspec.in2ref', 'func2coplanar'), 
                                          ('outputspec.in2ref_mat', 'func2coplanar_mat'), 
                                          ('outputspec.ref2in_mat', 'coplanar2func_mat'), 
-                                         ('outputspec.in2ref_pic', 'func2coplanar_pic')]), 
+                                         ('outputspec.in2ref_png', 'func2coplanar_pic')]), 
             (inputnode, coplanar2highres, [('coplanar', 'inputspec.in_file'), 
                                            ('highres', 'inputspec.ref_file'),
                                            (('interp', interp4flirt), 'inputspec.interp')]), 
             (coplanar2highres, outputnode, [('outputspec.in2ref', 'coplanar2highres'), 
                                             ('outputspec.in2ref_mat', 'coplanar2highres_mat'), 
                                             ('outputspec.ref2in_mat', 'highres2coplanar_mat'), 
-                                            ('outputspec.in2ref_pic', 'coplanar2highres_pic')]), 
+                                            ('outputspec.in2ref_png', 'coplanar2highres_pic')]), 
             (inputnode, func2highres, [('func', 'inputspec.in_file'), 
                                        ('highres', 'inputspec.ref_file'),
                                        (('interp', interp4flirt), 'inputspec.interp')]), 
@@ -900,7 +900,7 @@ def create_func2standard_workflow(
             (func2highres, outputnode, [('outputspec.in2ref', 'func2highres'), 
                                         ('outputspec.in2ref_mat', 'func2highres_mat'), 
                                         ('outputspec.ref2in_mat', 'highres2func_mat'), 
-                                        ('outputspec.in2ref_pic', 'func2highres_pic')])
+                                        ('outputspec.in2ref_png', 'func2highres_pic')])
         ])
     else:
         # func2highres 
@@ -915,7 +915,7 @@ def create_func2standard_workflow(
             (func2highres, outputnode, [('outputspec.in2ref', 'func2highres'), 
                                         ('outputspec.in2ref_mat', 'func2highres_mat'), 
                                         ('outputspec.ref2in_mat', 'highres2func_mat'), 
-                                        ('outputspec.in2ref_pic', 'func2highres_pic')]),   
+                                        ('outputspec.in2ref_png', 'func2highres_pic')]),   
         ])
     
     # func2standard
@@ -932,7 +932,7 @@ def create_func2standard_workflow(
         (func2standard, outputnode, [('outputspec.in2ref', 'func2standard'), 
                                      ('outputspec.in2ref_mat', 'func2standard_mat'), 
                                      ('outputspec.ref2in_mat', 'standard2func_mat'), 
-                                     ('outputspec.in2ref_pic', 'func2standard_pic')])
+                                     ('outputspec.in2ref_png', 'func2standard_pic')])
     ])
     
     if fnirt:
