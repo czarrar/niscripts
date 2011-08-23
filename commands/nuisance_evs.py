@@ -514,16 +514,18 @@ def nuisance_evs(
                         iterables=('subject_id', subject_list))
     
     # Say where to find input data
-    datasource = pe.Node(interface=nio.DataGrabber(infields=['subject_id'], outfields=['func', 'func_mask']), name='datasource')
+    datasource = pe.Node(interface=nio.DataGrabber(infields=['subject_id'], outfields=['func', 'func_mask', 'reg']), name='datasource')
     datasource.inputs.base_directory=os.path.abspath(inputs.basedir)
     datasource.inputs.template = "*"
     datasource.inputs.field_template = dict(
         func = os.path.join("%s", inputs.func),
-        func_mask = os.path.join("%s", inputs.func_mask)
+        func_mask = os.path.join("%s", inputs.func_mask),
+        reg = os.path.join("%s", inputs.reg_dir)
     )
     datasource.inputs.template_args = dict(
                                         func = [['subject_id']],
-                                        func_mask = [['subject_id']]
+                                        func_mask = [['subject_id']],
+                                        reg = [['subject_id']]
                                       )
     
     # Link inputs
@@ -532,9 +534,9 @@ def nuisance_evs(
         (subinfo, datasource, [('subject_id', 'subject_id')]), 
         (subinfo, inputnode, [('subject_id', 'subject_id')]), 
         (datasource, inputnode, [('func', 'func'),
-                                 ('func_mask', 'brain_mask')])
+                                 ('func_mask', 'brain_mask'),
+                                 ('reg', 'reg_dir')])
     ])
-    wf.inputs.inputspec.reg_dir = inputs.reg_dir
     
     
     ######
