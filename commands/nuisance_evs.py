@@ -514,11 +514,12 @@ def nuisance_evs(
                                       )
     
     # Link inputs
+    inputnode = wf.get_node("inputspec")
     wf.connect([
         (subinfo, datasource, [('subject_id', 'subject_id')]), 
-        (subinfo, wf, [('subject_id', 'inputspec.subject_id')]), 
-        (datasource, wf, [('func', 'inputspec.func'),
-                          ('func_mask', 'inputspec.brain_mask')])
+        (subinfo, inputnode, [('subject_id', 'subject_id')]), 
+        (datasource, inputnode, [('func', 'func'),
+                                 ('func_mask', 'brain_mask')])
     ])
     wf.inputs.inputspec.reg_dir = inputs.reg_dir
     
