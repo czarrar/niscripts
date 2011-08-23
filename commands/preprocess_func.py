@@ -373,12 +373,12 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
                                         function=split_motion_params), 
                           name="splitmotion")
     preproc.connect(combinemotion, "out_file", splitmotion, "in_file")
-    preproc.connect(splitmotion, ("out_files", pick_list_elem, 1), outputnode, 'motion_01')
+    preproc.connect(splitmotion, ("out_files", pick_list_elem, 0), outputnode, 'motion_01')
     preproc.connect(splitmotion, ("out_files", pick_list_elem, 1), outputnode, 'motion_02')
-    preproc.connect(splitmotion, ("out_files", pick_list_elem, 1), outputnode, 'motion_03')
-    preproc.connect(splitmotion, ("out_files", pick_list_elem, 1), outputnode, 'motion_04')
-    preproc.connect(splitmotion, ("out_files", pick_list_elem, 1), outputnode, 'motion_05')
-    preproc.connect(splitmotion, ("out_files", pick_list_elem, 1), outputnode, 'motion_06')
+    preproc.connect(splitmotion, ("out_files", pick_list_elem, 2), outputnode, 'motion_03')
+    preproc.connect(splitmotion, ("out_files", pick_list_elem, 3), outputnode, 'motion_04')
+    preproc.connect(splitmotion, ("out_files", pick_list_elem, 4), outputnode, 'motion_05')
+    preproc.connect(splitmotion, ("out_files", pick_list_elem, 5), outputnode, 'motion_06')
     
     # Plot rotation parameters from MCFLIRT
     plotrot = pe.MapNode(fsl.PlotMotionParams(in_source="fsl", plot_type="rotations"),
