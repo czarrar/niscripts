@@ -379,8 +379,8 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
                                                      name="outputspec_func")
     
     # renaming
-    renamer_highres = SimpleOutputConnector(nuisance, outputnode_highres)
-    renamer_func = SimpleOutputConnector(nuisance, outputnode_func)
+    renamer_highres = SimpleOutputConnector(wf, outputnode_highres)
+    renamer_func = SimpleOutputConnector(wf, outputnode_func)
     
     
     #####
