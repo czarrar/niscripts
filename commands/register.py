@@ -1073,21 +1073,17 @@ class RegParser(usage.NiParser):
                 [
                     op.join(outfunc, "func2standard.mat"),
                     op.join(outfunc, "example_func2standard.mat")
-                ]
-                [
-                    glob(op.join(outanat, "highres.*"))[0],
-                    op.join(outfunc, op.basename(p))
-                ],
+                ], 
                 [
                     glob(op.join(outfunc, "func.*"))[0],
-                    op.join(outfunc, "example_" + op.basename(p))
+                    op.join(outfunc, "example_" + op.basename(glob(op.join(outfunc, "func.*"))[0]))
                 ],
                 [
-                    op.join(outfunc, "highres2standard.png"),
+                    op.join(outanat, "highres2standard.png"),
                     op.join(outfunc, "highres2standard.png")
-                ],
+                ], 
                 [
-                    op.join(outfunc, "highres2standard_fnirt.png"),
+                    op.join(outanat, "highres2standard_fnirt.png"),
                     op.join(outfunc, "highres2standard_fnirt.png")
                 ]
             ]
