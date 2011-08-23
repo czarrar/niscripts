@@ -236,7 +236,7 @@ def create_nuisance_mask_workflow(fwhm, mask_fprefix, freesurfer_dir, name="nuis
     nuisance.connect([
         (inputnode, erode, [('mask_file', 'in_file'),
                             ('erode', 'erode'),
-                            ('subjects_dir', 'freesurfer_dir')])
+                            ('freesurfer_dir', 'subjects_dir')])
     ])
     
     # 2. anat space => func space
