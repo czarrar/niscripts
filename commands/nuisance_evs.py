@@ -22,6 +22,7 @@ sys.path.append(op.join(os.environ.get("NISCRIPTS"), "include"))
 # my own extra stuff
 import misc, usage
 from utilities import SimpleOutputConnector, run_freesurfer, sink_outputs
+from execute import Process
 
 def get_overlay_args(fname):
     """Args for the overlay1 option of slicer"""
