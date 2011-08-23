@@ -54,6 +54,9 @@ def pickvol(filenames, fileidx, which):
         raise Exception('unknown value for volume selection : %s'%which)
     return idx
 
+def pick_list_elem(l, index):
+    return l[index]
+
 # borrowed from Fluid_NiPype
 def max_motion_func(rms_files):
     """Determine the maximum absolute and relative motion values."""
@@ -106,7 +109,25 @@ def combine_motion_params(in_files):
     tmp = Process("cat %s" % " ".join(in_files), stdout=f, cwd=cwd, to_print=True)
     print tmp.stderr
     
+    f.close()
     return out_file
+
+def split_motion_params(in_file, out_prefix="motion"):
+    import numpy as np
+    import os
+    import os.path as op
+    
+    cwd = os.getcwd()
+    x = np.loadtxt(in_file)
+    nc = x.shape[1]
+    out_files = [ op.join(cwd, "%s_%02i.1D" % (out_prefix, i+1)) for i in xrange(nc) ]
+    for i in xrange(nc):
+        xcol = x[:,i].tolist()
+        f = file(out_files[i], 'w')
+        f.write(xcol)
+        f.close()
+    
+    return out_files
 
 def get_overlay_args(fname):
     """Args for the overlay1 option of slicer"""
@@ -183,7 +204,8 @@ def functional_preprocessing(
     
     ## substitute map stuff
     preprocsinksubs = get_mapnode_substitutions(preproc, outputnode, max_runs, 
-        unmap=["func_mc_ref", "example_func_all", "func_mask_all", "motion_all"])
+        unmap=["func_mc_ref", "example_func_all", "func_mask_all", "motion_all", 
+               "motion_01", "motion_02", "motion_03", "motion_04", "motion_05", "motion_06"])
     datasink.inputs.substitutions = preprocsinksubs
     
     # replace subject_id stuff with functional scan
@@ -246,6 +268,12 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
         "example_func_all", 
         "func_mask_all",
         "motion_all",
+        "motion_01",
+        "motion_02",
+        "motion_03",
+        "motion_04",
+        "motion_05",
+        "motion_06",
         "pics_func_mean_head1",
         "pics_func_mean_head2",
         "pics_func_mean_brain1",
@@ -338,6 +366,19 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
                            name="combinemotion")
     preproc.connect(motion_correct, 'par_file', combinemotion, 'in_files')
     renamer.connect(combinemotion, 'out_file', 'motion_all')
+    
+    # Split motion up
+    splitmotion = pe.Node(util.Function(input_names=["in_file", "out_prefix"],
+                                        output_names=["out_files"], 
+                                        function=split_motion_params), 
+                          name="combinemotion")
+    preproc.connect(combinemotion, "out_file", splitmotion, "in_file")
+    preproc.connect(splitmotion, ("out_files", pick_list_elem, 1), outputnode, 'motion_01')
+    preproc.connect(splitmotion, ("out_files", pick_list_elem, 1), outputnode, 'motion_02')
+    preproc.connect(splitmotion, ("out_files", pick_list_elem, 1), outputnode, 'motion_03')
+    preproc.connect(splitmotion, ("out_files", pick_list_elem, 1), outputnode, 'motion_04')
+    preproc.connect(splitmotion, ("out_files", pick_list_elem, 1), outputnode, 'motion_05')
+    preproc.connect(splitmotion, ("out_files", pick_list_elem, 1), outputnode, 'motion_06')
     
     # Plot rotation parameters from MCFLIRT
     plotrot = pe.MapNode(fsl.PlotMotionParams(in_source="fsl", plot_type="rotations"),

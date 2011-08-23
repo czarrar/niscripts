@@ -487,7 +487,7 @@ class FsfSubject(SubjectBase):
         result = template.render(**context)
         return self._remove_extra_stuff(result)
     
-    def setData(self, infile, outdir, outfsf, highpass_filter, tr=None, overwrite=0):
+    def setData(self, infile, outdir, outfsf, highpass_filter, hp_yn=False, tr=None, overwrite=0):
         infile = self._substitute(infile)
         outdir = self._substitute(outdir)
         outfsf = self._substitute(outfsf)
@@ -497,7 +497,7 @@ class FsfSubject(SubjectBase):
         
         self.fsf_context['func_file'] = infile
         self.fsf_context['outputdir'] = outdir
-        self.fsf_context['highpass_yn'] = False
+        self.fsf_context['highpass_yn'] = hp_yn
         self.fsf_context['highpass_filter'] = highpass_filter
         
         func = nibabel.load(infile)
