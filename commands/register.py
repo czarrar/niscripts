@@ -55,6 +55,15 @@ def reg_pics(in_file, ref_file):
     out_file = "%(prefix)s.%(ext)s" % cmd_args
     return out_file
 
+def regpath(regdir, fprefix):
+    import os, glob
+    fpath = os.path.join(regdir, fprefix)
+    gpath = glob.glob(fpath)
+    if len(gpath) == 0:
+        raise Exception("Could not find file '%s' in regdir '%s'" % (fprefix, regdir))
+    elif len(gpath) > 1:
+        raise Exception("Too many files found for '%s' in regdir '%s'" % (fprefix, regdir))
+    return gpath[0]
 
 def interp4fnirt(interp):
     if interp == "lin":
