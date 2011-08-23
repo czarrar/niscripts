@@ -123,68 +123,76 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
         (segment, getfree, [('subject_id', 'subject_id')])
     ])
     
-    # Save to nii.gz
+    # Save head => nii.gz
     convert_aseg = pe.Node(fs.MRIConvert(out_type="niigz", subjects_dir=freesurfer_dir), 
                            name="convert_orig")
     ctissues.connect(getfree, 'aseg', convert_aseg, 'in_file')
     ctissues.connect(inputnode, 'orientation', convert_aseg, 'out_orientation')
-    renamer.connect(convert_aseg, 'out_file', 'aseg')
+    ## reorient for sure
+    reorient_aseg = pe.Node(interface=afni.Threedresample(), name='reorient_aseg')
+    preproc.connect(convert_aseg, 'out_file', reorient_aseg, 'in_file')
+    preproc.connect(inputnode, 'orientation', reorient_aseg, 'orientation')
+    renamer(reorient_aseg, 'out_file', 'aseg')
     
+    # Save brain => nii.gz
     convert_brain = pe.Node(fs.MRIConvert(out_type="niigz", subjects_dir=freesurfer_dir), 
-                            name="convert_head")
+                            name="convert_brain")
     ctissues.connect(getfree, 'brainmask', convert_brain, 'in_file')
     ctissues.connect(inputnode, 'orientation', convert_brain, 'out_orientation')
-    
+    ## reorient for sure
+    reorient_brain = pe.Node(interface=afni.Threedresample(), name='reorient_brain')
+    preproc.connect(convert_brain, 'out_file', reorient_brain, 'in_file')
+    preproc.connect(inputnode, 'orientation', reorient_brain, 'orientation')
     
     # Extract and erode a mask of the deep cerebral white matter
-    extractwm = pe.Node(fs.Binarize(match=[2, 41], subjects_dir=freesurfer_dir), 
+    extractwm = pe.Node(fs.Binarize(match=[2, 41], subjects_dir=freesurfer_dir, out_type="nii.gz"), 
                         name="extractwm")
     ctissues.connect([
         (inputnode, extractwm, [('freesurfer_dir', 'subjects_dir')]),
-        (convert_aseg, extractwm, [('out_file', 'in_file')])
+        (reorient_aseg, extractwm, [('out_file', 'in_file')])
     ])
     renamer.connect(extractwm, 'binary_file', 'wm')
     
     ## pic
     slicer_wm = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
                         name='slicer_wm')
-    ctissues.connect(convert_brain, 'out_file', slicer_wm, 'in_file')
+    ctissues.connect(reorient_brain, 'out_file', slicer_wm, 'in_file')
     ctissues.connect(extractwm, ('binary_file', get_overlay_args), slicer_wm, 'overlay1')
     renamer.connect(slicer_wm, 'out_file', 'wm_pic')
         
     # Extract and erode a mask of the ventricles and CSF
     extractcsf = pe.Node(fs.Binarize(match=[4, 5, 14, 15, 24, 31, 43, 44, 63], 
-                                        subjects_dir=freesurfer_dir),
+                                        subjects_dir=freesurfer_dir, out_type="nii.gz"),
                          name="extractcsf")
     ctissues.connect([
         (inputnode, extractcsf, [('freesurfer_dir', 'subjects_dir')]),
-        (convert_aseg, extractcsf, [('out_file', 'in_file')])
+        (reorient_aseg, extractcsf, [('out_file', 'in_file')])
     ])
     renamer.connect(extractcsf, 'binary_file', 'csf')
     
     ## pic
     slicer_csf = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
                          name='slicer_csf')
-    ctissues.connect(convert_brain, 'out_file', slicer_csf, 'in_file')
+    ctissues.connect(reorient_brain, 'out_file', slicer_csf, 'in_file')
     ctissues.connect(extractcsf, ('binary_file', get_overlay_args), slicer_csf, 'overlay1')
     renamer.connect(slicer_csf, 'out_file', 'csf_pic')
     
     # Extract a mask of the grey matter and subcortical areas and brainstem
     extractgm = pe.Node(
         fs.Binarize(match=[3,8,10,11,12,13,16,17,18,26,28,42,47,49,50,51,52,54,58,60], 
-                    subjects_dir=freesurfer_dir), 
+                    subjects_dir=freesurfer_dir, out_type="nii.gz"), 
         name="extractgm"
     )
     ctissues.connect([
         (inputnode, extractgm, [('freesurfer_dir', 'subjects_dir')]),
-        (convert_aseg, extractgm, [('out_file', 'in_file')])
+        (reorient_aseg, extractgm, [('out_file', 'in_file')])
     ])
     renamer.connect(extractgm, 'binary_file', 'gm')
     
     ## pic
     slicer_gm = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
                          name='slicer_gm')
-    ctissues.connect(convert_brain, 'out_file', slicer_gm, 'in_file')
+    ctissues.connect(reorient_brain, 'out_file', slicer_gm, 'in_file')
     ctissues.connect(extractgm, ('binary_file', get_overlay_args), slicer_gm, 'overlay1')
     renamer.connect(slicer_gm, 'out_file', 'gm_pic')
     
