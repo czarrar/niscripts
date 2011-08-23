@@ -243,7 +243,7 @@ def create_nuisance_mask_workflow(fwhm, mask_fprefix, freesurfer_dir, name="nuis
     mask2func = pe.Node(fsl.ApplyXfm(apply_xfm=True, interp="trilinear"), 
                         name="02_mask2func")
     nuisance.connect([
-        (erode, mask2func, [('out_file', 'in_file')]),
+        (erode, mask2func, [('binary_file', 'in_file')]),
         (inputnode, mask2func, [(('reg_dir', regpath, 'func.*'), 'reference'),
                                 (('reg_dir', regpath, 'highres2func.mat'), 'in_matrix_file')])
     ])
