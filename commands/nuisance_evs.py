@@ -515,12 +515,12 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
     wf.connect(meants_global, 'out_file', tsplot_global, 'in_file')
     renamer_func.connect(tsplot_global, 'out_file', 'tsplot_global_pic')
     ## csf
-    tsplot_csf = pe.Node(interface=fsl.PlotTimeSeries(title='Global Time-Series'), 
+    tsplot_csf = pe.Node(interface=fsl.PlotTimeSeries(title='CSF Time-Series'), 
                      name="04_tsplot_csf")
     wf.connect(meants_csf, 'out_file', tsplot_csf, 'in_file')
     renamer_func.connect(tsplot_csf, 'out_file', 'tsplot_csf_pic')    
     ## wm
-    tsplot_wm = pe.Node(interface=fsl.PlotTimeSeries(title='Global Time-Series'), 
+    tsplot_wm = pe.Node(interface=fsl.PlotTimeSeries(title='White-Matter Time-Series'), 
                      name="04_tsplot_wm")
     wf.connect(meants_wm, 'out_file', tsplot_wm, 'in_file')
     renamer_func.connect(tsplot_wm, 'out_file', 'tsplot_wm_pic')    
