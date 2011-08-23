@@ -130,8 +130,8 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     ctissues.connect(inputnode, 'orientation', convert_aseg, 'out_orientation')
     ## reorient for sure
     reorient_aseg = pe.Node(interface=afni.Threedresample(), name='reorient_aseg')
-    preproc.connect(convert_aseg, 'out_file', reorient_aseg, 'in_file')
-    preproc.connect(inputnode, 'orientation', reorient_aseg, 'orientation')
+    ctissues.connect(convert_aseg, 'out_file', reorient_aseg, 'in_file')
+    ctissues.connect(inputnode, 'orientation', reorient_aseg, 'orientation')
     renamer(reorient_aseg, 'out_file', 'aseg')
     
     # Save brain => nii.gz
@@ -141,8 +141,8 @@ def create_tissue_masks(freesurfer_dir, name="segmentation"):
     ctissues.connect(inputnode, 'orientation', convert_brain, 'out_orientation')
     ## reorient for sure
     reorient_brain = pe.Node(interface=afni.Threedresample(), name='reorient_brain')
-    preproc.connect(convert_brain, 'out_file', reorient_brain, 'in_file')
-    preproc.connect(inputnode, 'orientation', reorient_brain, 'orientation')
+    ctissues.connect(convert_brain, 'out_file', reorient_brain, 'in_file')
+    ctissues.connect(inputnode, 'orientation', reorient_brain, 'orientation')
     
     # Extract and erode a mask of the deep cerebral white matter
     extractwm = pe.Node(fs.Binarize(match=[2, 41], subjects_dir=freesurfer_dir, out_type="nii.gz"), 
