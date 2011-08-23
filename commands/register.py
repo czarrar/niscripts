@@ -739,7 +739,7 @@ def create_highres2standard_workflow(
     normalize.connect([
         (inputnode, highres2standard, [('highres', 'inputspec.in_file'), 
                                        ('standard', 'inputspec.ref_file'),
-                                       (('interp', interp4flirt), 'interp')]),
+                                       (('interp', interp4flirt), 'inputspec.interp')]),
         (highres2standard, outputnode, [('outputspec.in2ref', "highres2standard"),
                                         ('outputspec.in2ref_mat', "highres2standard_mat"),
                                         ('outputspec.ref2in_mat', "standard2highres_mat"),
@@ -757,7 +757,7 @@ def create_highres2standard_workflow(
                 ('standard_head', 'inputspec.ref_file'), 
                 ('standard_mask', 'inputspec.refmask_file'),
                 ('fnirt_config', 'inputspec.config_file'),
-                (('interp', interp4fnirt), 'interp')]),
+                (('interp', interp4fnirt), 'inputspec.interp')]),
             (highres2standard, fnirt_highres2standard, [
                 ('outputspec.in2ref_mat', 'inputspec.affine_file')]),
             (fnirt_highres2standard, outputnode, [
@@ -879,21 +879,21 @@ def create_func2standard_workflow(
         normalize.connect([
             (inputnode, func2coplanar, [('func', 'inputspec.in_file'), 
                                         ('coplanar', 'inputspec.ref_file'),
-                                        (('interp', interp4flirt), 'interp')]),
+                                        (('interp', interp4flirt), 'inputspec.interp')]),
             (func2coplanar, outputnode, [('outputspec.in2ref', 'func2coplanar'), 
                                          ('outputspec.in2ref_mat', 'func2coplanar_mat'), 
                                          ('outputspec.ref2in_mat', 'coplanar2func_mat'), 
                                          ('outputspec.in2ref_pic', 'func2coplanar_pic')]), 
             (inputnode, coplanar2highres, [('coplanar', 'inputspec.in_file'), 
                                            ('highres', 'inputspec.ref_file'),
-                                           (('interp', interp4flirt), 'interp')]), 
+                                           (('interp', interp4flirt), 'inputspec.interp')]), 
             (coplanar2highres, outputnode, [('outputspec.in2ref', 'coplanar2highres'), 
                                             ('outputspec.in2ref_mat', 'coplanar2highres_mat'), 
                                             ('outputspec.ref2in_mat', 'highres2coplanar_mat'), 
                                             ('outputspec.in2ref_pic', 'coplanar2highres_pic')]), 
             (inputnode, func2highres, [('func', 'inputspec.in_file'), 
                                        ('highres', 'inputspec.ref_file'),
-                                       (('interp', interp4flirt), 'interp')]), 
+                                       (('interp', interp4flirt), 'inputspec.interp')]), 
             (func2coplanar, func2highres, [('outputspec.in2ref_mat', 
                                             'inputspec.in2x_mat_file')]), 
             (coplanar2highres, func2highres, [('outputspec.in2ref_mat', 
@@ -913,7 +913,7 @@ def create_func2standard_workflow(
         normalize.connect([
             (inputnode, func2highres, [('func', 'inputspec.in_file'), 
                                        ('highres', 'inputspec.ref_file'), 
-                                       (('interp', interp4flirt), 'interp')]), 
+                                       (('interp', interp4flirt), 'inputspec.interp')]), 
             (func2highres, outputnode, [('outputspec.in2ref', 'func2highres'), 
                                         ('outputspec.in2ref_mat', 'func2highres_mat'), 
                                         ('outputspec.ref2in_mat', 'highres2func_mat'), 
@@ -929,7 +929,7 @@ def create_func2standard_workflow(
     normalize.connect([
         (inputnode, func2standard, [('func', 'inputspec.in_file'), 
                                     ('standard', 'inputspec.ref_file'),
-                                    (('interp', interp4flirt), 'interp')]),
+                                    (('interp', interp4flirt), 'inputspec.interp')]),
         (inputnode, func2standard, [('highres2standard_mat', 'inputspec.in2x_mat_file')]),
         (highres2standard, func2standard, [('outputspec.in2ref_mat', 'inputspec.x2ref_mat_file')]), 
         (func2standard, outputnode, [('outputspec.in2ref', 'func2standard'), 
@@ -946,7 +946,7 @@ def create_func2standard_workflow(
             (inputnode, fnirt_func2standard, [
                 ('func', 'inputspec.in_file'),
                 ('standard', 'inputspec.ref_file'),
-                (('interp', interp4fnirt), 'interp')
+                (('interp', interp4fnirt), 'inputspec.interp')
             ]),
             (inputnode, fnirt_func2standard, [
                 ('highres2standard_mat', 'inputspec.in2ref_mat_file')
