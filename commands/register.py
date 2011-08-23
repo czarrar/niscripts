@@ -1094,7 +1094,7 @@ class RegParser(usage.NiParser):
             except OSError as (errno, strerr):
                 if errno == 17:
                     pass
-                else
+                else:
                     raise OSError(errno, strerr)
         return
     
