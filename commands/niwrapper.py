@@ -49,8 +49,8 @@ class NiWrapper(SubjectBase):
         self._is_parsed = False
         return
     
-    def setup(self, run_keys, log_dir, subjects, sge, sge_opts, verbosity, dry_run=False, 
-                     **cmds):
+    def setup(self, run_keys, log_dir, subjects, sge, sge_opts, verbosity, processors, 
+                dry_run=False, **cmds):
         # Set subjects
         new_subjects = []
         for s in subjects:
@@ -64,6 +64,7 @@ class NiWrapper(SubjectBase):
         subjects = new_subjects
         
         # Save
+        self.processors = processors
         self.run_keys = run_keys
         self.subjects = subjects
         self.sge = sge
@@ -92,6 +93,10 @@ class NiWrapper(SubjectBase):
         super(NiWrapper, self).__init__(verbosity, self.template_context, dry_run, log)
         self.log.debug("NiWrapper logger is up and running")
         
+        # Check
+        if self.sge and self.processors > 1:
+            self.log.error("Cannot specify -q/--sge and -p/--processors")
+        
         self._is_parsed = True
         return
     
@@ -110,6 +115,7 @@ class NiWrapper(SubjectBase):
         
         group = parser.add_argument_group('Subject Options')
         group.add_argument('-s', '--subjects', nargs="+", required=True, metavar="subject")
+        group.add_argument('-p', '--processors', default=1, type=int, help="use multiple processers on same computer (must specify number of processors)")
         group.add_argument('-q', '--sge', action="store_true", default=False, help="use SGE")
         group.add_argument('--sge-opts', default="-S /bin/bash -V -cwd -j y", 
                             help="default: %(default)s")
@@ -164,13 +170,19 @@ class NiWrapper(SubjectBase):
         if self.sge:
             self.log.debug("...using SGE")
             self._setup_sge()
-        for s in self.subjects:
-            self.log.title("Subject: %s" % s)
+        if self.processors > 1:
             for k in self.run_keys:
                 self.log.subtitle("command: %s" % k)
-                cmd = "%s -s %s" % (self._commands[k], s)
+                cmd = "%s --plugin MultiProc %i -s %s" % 
+                        (self._commands[k], self.processors, " ".join(self.subjects))
                 self._execute(s, k, cmd)
-        
+        else:
+            for s in self.subjects:
+                self.log.title("Subject: %s" % s)
+                for k in self.run_keys:
+                    self.log.subtitle("command: %s" % k)
+                    cmd = "%s -s %s" % (self._commands[k], s)
+                    self._execute(s, k, cmd)        
         return
     
     def _setup_sge(self):
