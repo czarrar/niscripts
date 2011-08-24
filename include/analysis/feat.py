@@ -800,7 +800,7 @@ class RegressSubject(SubjectBase):
         self.cmd_opts = self.setVars(config_dict)
     
     def setVars(self, config_dict):
-        choices = ["in_file", "out_file", "mask"]
+        choices = ["in_file", "out_file", "mask", "design_file"]
         for k in choices:
             if k in config_dict:
                 config_dict[k] = self._substitute(config_dict[k])
