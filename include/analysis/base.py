@@ -79,7 +79,7 @@ class SubjectBase(object):
         f = open(fname, 'r')
         l = f.readline()
         f.close()
-        ncols = len(re.split("[ \t]+", l))
+        ncols = len(re.split("[ \t]+", l.strip()))
         return ncols
     
     def addTemplateContext(self, k, v):
