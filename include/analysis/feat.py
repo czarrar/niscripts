@@ -792,7 +792,7 @@ class RegressSubject(SubjectBase):
     _logname = "regress_subject"
     
     def __init__(self, *args, **kwargs):
-        super(FeatSubject, self).__init__(*args, **kwargs)
+        super(RegressSubject, self).__init__(*args, **kwargs)
     
     def fromDict(self, config_dict):
         self.check_req(config_dict, ["design_file", "in_file", "out_file"])
