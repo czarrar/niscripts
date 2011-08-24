@@ -175,7 +175,7 @@ class NiWrapper(SubjectBase):
                 self.log.subtitle("command: %s" % k)
                 cmd = "%s --plugin MultiProc %i -s %s" % (self._commands[k], self.processors, 
                                                             " ".join(self.subjects))
-                self._execute(s, k, cmd)
+                self._execute(cmd)
         else:
             for s in self.subjects:
                 self.log.title("Subject: %s" % s)
@@ -194,10 +194,12 @@ class NiWrapper(SubjectBase):
             os.mkdir(self.sge_scripts)
         return
     
-    def _execute(self, subject, label, cmd):
+    def _execute(self, cmd, subject=None, label=None):
         if not self._is_parsed:
             raise Exception("Have not parsed anything yet")
         if self.sge:
+            if subject is None or label is None:
+                self.log.fatal("Must specificy subject and label for _execute")
             script = op.join(self.sge_scripts, "x_%s_%s.bash" % (subject, label))
             output = op.join(self.sge_stdout, "o_%s_%s.txt" % (subject, label))
             # Create a new file
