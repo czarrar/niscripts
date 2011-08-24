@@ -31,12 +31,18 @@ def get_overlay_args(fname):
 
 def anatomical_preprocessing(
     subject_list, 
-    inputs, outputs, workingdir, output_type,
-    run, orientation, freesurfer_dir=None, name="anatomical_preprocessing"):
+    inputs, outputs, workingdir, output_type, label, 
+    run, orientation, freesurfer_dir=None, name="%s_preprocessing"):
     
     #####
     # Setup workflow
     #####
+    
+    if name.find("%s") != -1:
+        name = name % label
+    else:
+        print "ERROR: You must have a '%s' in the name for the label"
+        raise SystemExit(2)
     
     if run == "bet":
         preproc = create_ap_bet_workflow(name=name + "_withbet")

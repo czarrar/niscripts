@@ -531,8 +531,8 @@ def create_nuisance_evs_workflow(freesurfer_dir, fwhm, name="nuisance_evs"):
 def nuisance_evs(
     subject_list, 
     inputs, outputs, workingdir, output_type, 
-    orientation, fwhm, 
-    name="nuisance_evs"):
+    orientation, fwhm, label, 
+    name="%s_get_nuisance"):
     """Wrapper...
     """
     
@@ -540,8 +540,15 @@ def nuisance_evs(
     # Setup workflow
     #####
     
+    if name.find("%s") != -1:
+        name = name % label
+    else:
+        print "ERROR: You must have a '%s' in the name for the label"
+        raise SystemExit(2)
+    
     wf = create_nuisance_evs_workflow(inputs.freesurfer_dir, fwhm, name=name)
     wf.base_dir = workingdir
+    
     
     ######
     # Setup data source
@@ -606,6 +613,7 @@ class NuisanceEVsParser(usage.NiParser):
         )
         
         group = parser.add_argument_group('Nuisance EV Creation Options')
+        group.add_argument("--label", required=True)
         group.add_argument('--func', action=usage.store_input, required=True)
         group.add_argument('--func-mask', action=usage.store_input, required=True)
         group.add_argument('--reg-dir', action=usage.store_input, required=True)

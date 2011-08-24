@@ -140,13 +140,19 @@ tolist = lambda x: [x]
 def functional_preprocessing(
     subject_list, 
     inputs, outputs, workingdir, output_type, 
-    fwhm, hpfilter, lpfilter, tr, motion_nstages, 
-    name="functional_preprocessing", whichvol="middle", timeshift=False, tpattern=None):
+    fwhm, hpfilter, lpfilter, tr, motion_nstages, label, 
+    name="%s_preprocessing", whichvol="middle", timeshift=False, tpattern=None):
     """todo"""
     
     #####
     # Setup pipeline
     #####
+    
+    if name.find("%s") != -1:
+        name = name % label
+    else:
+        print "ERROR: You must have a '%s' in the name for the label"
+        raise SystemExit(2)
     
     preproc = create_func_preproc_workflow(name, whichvol, timeshift, tpattern)
     preproc.base_dir = workingdir
