@@ -10,6 +10,7 @@ import numpy as np
 from copy import deepcopy
 from execute import Process
 from analysis.base import SubjectBase
+import nipype.interfaces.fsl as fsl # fsl
 
 # Time
 NIFTI_UNITS_SEC=8
