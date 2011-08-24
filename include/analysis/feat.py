@@ -808,7 +808,7 @@ class RegressSubject(SubjectBase):
     
     def run(self):
         self.log.info("Setting up command")
-        filt = fsl.FilterRegressor(**cmd_opts)
+        filt = fsl.FilterRegressor(**self.cmd_opts)
         cmd = filt.cmdline
         
         self.log.info("Running fsl_regfilt")
