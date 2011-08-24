@@ -648,6 +648,7 @@ class FuncPreprocParser(usage.NiParser):
             """
         )
         group = parser.add_argument_group('Functional Preprocessing Options')
+        group.add_argument('--label', required=True)
         group.add_argument('--func', nargs=2, action=usage.store_io, required=True)
         group.add_argument('--fwhm', type=float, default=5.0)
         group.add_argument('--hpfilter', type=float, default=128)

@@ -335,6 +335,7 @@ class AnatPreprocParser(usage.NiParser):
         )
         
         group = parser.add_argument_group('Anatomical Preprocessing Options')
+        group.add_argument('--label', required=True)
         group.add_argument('--struct', nargs=2, action=usage.store_io, required=True)
         group.add_argument('--run', choices=['bet', 'freesurfer'], required=True)
         group.add_argument('--orientation', default='RPI')
