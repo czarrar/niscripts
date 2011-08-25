@@ -860,6 +860,6 @@ class RegressSubject(SubjectBase):
     def run(self):
         self.compile()
         self.log.info("Running fsl_regfilt")
-        self.log.command(self.cmd, cwd=self.cmd_opts["out"])
+        self.log.command(self.cmd, cwd=op.dirname(self.cmd_opts["out"]))
     
 
