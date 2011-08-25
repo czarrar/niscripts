@@ -794,24 +794,72 @@ class RegressSubject(SubjectBase):
     
     def __init__(self, *args, **kwargs):
         super(RegressSubject, self).__init__(*args, **kwargs)
+        self.log.info("Starting RegressSubject")
+        self.cmd = None
     
     def fromDict(self, config_dict):
-        self.check_req(config_dict, ["design_file", "in_file", "out_file"])
-        self.cmd_opts = self.setVars(config_dict)
+        self.setVars(config_dict)
+        return
     
     def setVars(self, config_dict):
-        choices = ["in_file", "out_file", "mask", "design_file"]
+        # Checks
+        self.check_req(config_dict, ["in", "out", "design"])
+        if "filter" not in config_dict or "filter_all" not in config_dict:
+            self.log.critical("Must give filter or filter_all option for RegressSubject")
+        elif "filter" not in config_dict and "filter_all" not in config_dict:
+            self.log.critical("Cannot give both filter or filter_all options for RegressSubject")
+        
+        # Substitute paths
+        overwrite = config_dict.pop("overwrite", False)
+        choices = ["in", "out", "design", "mask"]
         for k in choices:
             if k in config_dict:
                 config_dict[k] = self._substitute(config_dict[k])
-        return config_dict
+        
+        # Check paths
+        if not op.isfile(config_dict["in"]):
+            self.log.error("Cannot find --in %s" % config_dict["in"])
+        if not op.isfile(config_dict["design"]):
+            self.log.error("Cannot find --design %s" % config_dict["design"])
+        if not op.isfile(config_dict["mask"]):
+            self.log.error("Cannot find --mask %s" % config_dict["mask"])
+        if op.isfile(config_dict["out"]):
+            if overwrite:
+                self.log.warning("Removing previous output %s" % config_dict["out"])
+                os.remove(config_dict["out"])
+            else:
+                self.log.error("Output %s already exists" % config_dict["out"])
+        
+        self.cmd_opts = config_dict
+        return
+    
+    def compile(self):
+        self.log.info("Compiling")
+        #filt = fsl.FilterRegressor(**self.cmd_opts)
+        #cmd = filt.cmdline
+        if "filter_all" in self.cmd_opts:
+            p = Process("grep /NumWaves %s" % self.cmd_opts["design"]) | Process("awk {print $2}")
+            ncols = int(p.stdout)
+            del self.cmd_opts["filter_all"]
+            self.cmd_opts["filter"] = ",".join([ str(x) for x in xrange(ncols) ])
+        
+        cmd = ["fsl_regfilt"]
+        for k,v in self.cmd_opts:
+            if len(k) == 1:
+                pre = "-"
+            else:
+                pre = "--"
+            if isinstance(v, bool) and v is True:
+                cmd.append("%s%s" % (pre, v))
+            else:
+                cmd.append("%s%s %s" % (pre, k, v))
+        
+        self.cmd = " ".join(cmd)
+        return self.cmd
     
     def run(self):
-        self.log.info("Setting up command")
-        filt = fsl.FilterRegressor(**self.cmd_opts)
-        cmd = filt.cmdline
-        
+        self.compile()
         self.log.info("Running fsl_regfilt")
-        self.log.command(cmd)
+        self.log.command(self.cmd, cwd=self.cmd_opts["out"])
     
 
