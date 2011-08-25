@@ -854,8 +854,10 @@ class RegressSubject(SubjectBase):
                 pre = "--"
             if isinstance(v, bool) and v is True:
                 cmd.append("%s%s" % (pre, v))
-            else:
+            elif len(k) == 1:
                 cmd.append("%s%s %s" % (pre, k, v))
+            else:
+                cmd.append("%s%s=%s" % (pre, k, v))
         
         self.cmd = " ".join(cmd)
         return self.cmd
