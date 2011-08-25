@@ -838,7 +838,8 @@ class RegressSubject(SubjectBase):
         #filt = fsl.FilterRegressor(**self.cmd_opts)
         #cmd = filt.cmdline
         if "filter_all" in self.cmd_opts:
-            p = Process("grep /NumWaves %s" % self.cmd_opts["design"]) | Process("awk {print $2}")
+            print self.cmd_opts["design"]
+            p = Process("grep /NumWaves %s" % self.cmd_opts["design"], to_print=True) | Process("awk {print $2}", to_print=True)
             if p.retcode != 0:
                 self.log.error("Could not get the number of columns in %s" % 
                                     self.cmd_opts["design"])
