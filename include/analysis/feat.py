@@ -804,9 +804,9 @@ class RegressSubject(SubjectBase):
     def setVars(self, config_dict):
         # Checks
         self.check_req(config_dict, ["in", "out", "design"])
-        if "filter" not in config_dict or "filter_all" not in config_dict:
+        if "filter" not in config_dict and "filter_all" not in config_dict:
             self.log.critical("Must give filter or filter_all option for RegressSubject")
-        elif "filter" not in config_dict and "filter_all" not in config_dict:
+        elif "filter" in config_dict and "filter_all" in config_dict:
             self.log.critical("Cannot give both filter or filter_all options for RegressSubject")
         
         # Substitute paths
