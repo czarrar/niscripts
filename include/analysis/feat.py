@@ -847,7 +847,7 @@ class RegressSubject(SubjectBase):
             self.cmd_opts["filter"] = ",".join([ str(x) for x in xrange(ncols) ])
         
         cmd = ["fsl_regfilt"]
-        for k,v in self.cmd_opts:
+        for k,v in self.cmd_opts.iteritems():
             if len(k) == 1:
                 pre = "-"
             else:
