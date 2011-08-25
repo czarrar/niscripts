@@ -839,6 +839,9 @@ class RegressSubject(SubjectBase):
         #cmd = filt.cmdline
         if "filter_all" in self.cmd_opts:
             p = Process("grep /NumWaves %s" % self.cmd_opts["design"]) | Process("awk {print $2}")
+            if p.retcode != 0:
+                self.log.error("Could not get the number of columns in %s" % 
+                                    self.cmd_opts["design"])
             ncols = int(p.stdout)
             del self.cmd_opts["filter_all"]
             self.cmd_opts["filter"] = ",".join([ str(x) for x in xrange(ncols) ])
