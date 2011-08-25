@@ -844,7 +844,7 @@ class RegressSubject(SubjectBase):
                                     self.cmd_opts["design"])
             ncols = int(p.stdout)
             del self.cmd_opts["filter_all"]
-            self.cmd_opts["filter"] = ",".join([ str(x) for x in xrange(ncols) ])
+            self.cmd_opts["filter"] = ",".join([ str(x+1) for x in xrange(ncols) ])
         
         cmd = ["fsl_regfilt"]
         for k,v in self.cmd_opts.iteritems():
