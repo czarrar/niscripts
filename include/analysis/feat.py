@@ -982,6 +982,7 @@ class ApplyRegSubject(SubjectBase):
                 cmd_opts.append("-i %s" % infile)
                 cmd_opts.append("-r %s" % self.stdfile)
                 cmd_opts.append("--premat=%s" % self.prematfile)
+                cmd_opts.append("-w %s" % self.warpfile)
                 cmd_opts.append("-o %s" % outfile)
                 for k,v in self.cmd_kwargs.iteritems():
                     if isinstance(v, bool):
