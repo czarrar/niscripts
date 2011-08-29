@@ -957,7 +957,7 @@ class ApplyRegSubject(SubjectBase):
     
     def compile(self):
         self.log.info("Compiling")
-        if not self._isset_data or self._isset_reg_files or self._isset_options:
+        if not self._isset_data or not self._isset_reg_files or not self._isset_options:
             self.log.critical("Must set data, registration files, and options before compiling")
         many_cmd_opts = []
         
