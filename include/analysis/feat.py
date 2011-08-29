@@ -1011,7 +1011,7 @@ class ApplyRegSubject(SubjectBase):
         self.log.info("Setting data")
         
         # Set inputs
-        infiles = self.__getInputsWorker(infiles)
+        infiles = self._getInputsWorker(infiles)
         self.infiles = infiles
         
         # Set outputs
