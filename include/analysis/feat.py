@@ -978,7 +978,7 @@ class ApplyRegSubject(SubjectBase):
                 many_cmd_opts.append(cmd_opts)
         elif self.regtype == "fnirt":
             for infile,outfile in zip(self.infiles, self.outfiles):
-                cmd_opts = ["fnirt"]
+                cmd_opts = ["applywarp"]
                 cmd_opts.append("-i %s" % infile)
                 cmd_opts.append("-r %s" % self.stdfile)
                 cmd_opts.append("--premat=%s" % self.prematfile)
