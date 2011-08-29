@@ -1035,16 +1035,16 @@ class ApplyRegSubject(SubjectBase):
             if len(outfiles) != len(infiles):
                 self.log.error("# of outputs (%i) not same as # of inputs (%i)" % 
                                     (len(outfiles), len(infiles)))
-            for outfile in outfiles:
-                if op.isfile(outfile):
-                    if overwrite:
-                        self.log.warning("Removing output '%s'" % outfile)
-                        os.remove(outfile)
-                    else:
-                        self.log.error("Output '%s' already exists" % outfile)
         else:
             self.log.error("Must specify either output directory (outdir) or output files" \
                             " (outfiles)")
+        for outfile in outfiles:
+            if op.isfile(outfile):
+                if overwrite:
+                    self.log.warning("Removing output '%s'" % outfile)
+                    os.remove(outfile)
+                else:
+                    self.log.error("Output '%s' already exists" % outfile)
         self.outfiles = outfiles
         
         # Set regdir
