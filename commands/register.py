@@ -1176,6 +1176,10 @@ class RegParser(usage.NiParser):
                 [
                     op.join(outanat, "highres2standard_fnirt.png"),
                     op.join(outfunc, "highres2standard_fnirt.png")
+                ],
+                [
+                    glob(op.join(outanat, "highres2standard_warp.*"))[0],
+                    op.join(outfunc, op.basename(glob(op.join(outfunc, "highres2standard_warp.*"))[0]))
                 ]
             ]
             for link in links:
