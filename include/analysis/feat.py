@@ -9,13 +9,20 @@ from glob import glob
 import numpy as np
 from copy import deepcopy
 from execute import Process
-from analysis.base import SubjectBase
-import nipype.interfaces.fsl as fsl # fsl
+from analysis.base import Base, SubjectBase
+#import nipype.interfaces.fsl as fsl # fsl
 
 # Time
 NIFTI_UNITS_SEC=8
 NIFTI_UNITS_MSEC=16
 NIFTI_UNITS_USEC=24
+
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
 
 class CombineSubject(SubjectBase):
     """
@@ -266,6 +273,133 @@ class ResDeconSubject(SubjectBase):
         
         self.decon_opts = decon_opts
         
+        self._isset_options = True
+        return
+    
+
+class TsSubject(SubjectBase):
+    def __init__(self, *args, **kwargs):
+        super(TsSubject, self).__init__(*args, **kwargs)
+        self.log.info("Starting TsSubject")
+        self._isset_data = False
+        self.data_opts = []
+        self._isset_options = False
+        self.option_opts = []
+        self.cmd = ""
+        return
+    
+    def fromDict(self, config):
+        self.check_req(config, ["data"])
+        
+        data = config.pop("data")
+        self.check_req(data, ["infunc", "outts"])
+        self.setData(**data)
+        
+        options = config.pop("options", None)
+        if options:
+            self.setOptions(**options)
+        
+        return
+    
+    def compile(self):
+        self.log.info("Compiling")
+        if not self._isset_data or not self.data_opts:
+            self.log.error("Must set data first")
+        cmd_opts = ["fslmeants"] + self.data_opts + self.option_opts
+        self.cmd = " ".join(cmd_opts)
+        return self.cmd
+    
+    def run(self):
+        self.compile()
+        self.log.info("Running")
+        
+        if not self.cmd:
+            self.log.fatal("No command")
+        
+        if self.dry_run:
+            self.log.drycommand(self.cmd)
+        else:
+            self.log.command(self.cmd)
+        
+        return
+    
+    def setData(self, infunc, outts, inmask=None, incoord=None, overwrite=False):
+        self.log.info("Setting data")
+        data_opts = []
+        
+        # Input 4D
+        infunc = self._substitute(infunc)
+        if not op.isfile(infunc):
+            self.log.error("Input 4D functional '%s' does not exist" % infunc)
+        data_opts.append("-i %s" % infunc)
+        
+        # ROI
+        if inmask is not None and incoord is not None:
+            self.log.error("Cannot specify both input mask (inmask) and input coords (incoord)")
+        elif inmask:
+            inmask = self._substitute(inmask)
+            if not op.isfile(inmask):
+                self.log.error("Input mask (inmask=%s) does not exist" % inmask)
+            data_opts.append("-m %s" % inmask)
+        elif incoord:
+            if not isinstance(incoord, list) or len(incoord) != 3:
+                self.log.error("Input coordinates (incoord=%s) must be a list of length 3" % 
+                                    incoord)
+            data_opts.append("-c %s" % " ".join(incoord))
+        else:
+            self.log.error("Must specify either input mask (inmask) or input coords (incoord)")
+        
+        # Output
+        outts = self._substitute(outts)
+        if op.isfile(outts):
+            if overwrite:
+                self.log.warning("Removing output '%s'" % outts)
+                os.remove(outts)
+            else:
+                self.log.error("Output '%s' already exists" % outts)
+        if not op.isdir(op.dirname(outts)):
+            self.log.info("Creating base directory '%s' of output" % op.dirname(outts))
+            os.mkdir(op.dirname(outts))
+        data_opts.append("-o %s" % outts)
+        
+        self.data_opts = data_opts
+        self._isset_data = True
+        return 
+    
+    def setOptions(self, **kwargs):
+        self.log.info("Setting options")
+        option_opts = []
+        
+        choices = {
+            "usemm": 'opt', 
+            "showall": 'opt', 
+            "eig": 'opt', 
+            "order": 'optarg', 
+            "no_bin": 'opt', 
+            "label": 'optfile', 
+            "transpose": 'opt', 
+            "verbose": 'opt'
+        }
+        
+        for k,v in kwargs.iteritems():
+            if k not in choices:
+                self.log.error("Bad option '%s'; must be one of %s" % 
+                                    (k, ", ".join(choices.keys())))          
+            if choices[k] == "opt":
+                if not isinstance(v, bool):
+                    self.log.error("Option %s must have a value of True/False" % v)
+                if v:
+                    option_opts.append("--%s" % k)
+            elif choices[k] == "optarg":
+                option_opts.append("--%s %s" % (k,v))
+            elif choices[k] == "optfile":
+                if not op.isfile(v):
+                    self.log.error("Couldn't find file '%s' for option '%s'" % (v,k))
+                option_opts.append("--%s %s" % (k,v))
+            else:
+                raise Exception("todo")
+        
+        self.option_opts = option_opts
         self._isset_options = True
         return
     
@@ -788,6 +922,192 @@ class FeatSubject(SubjectBase):
         
         return
 
+class ApplyRegSubject(SubjectBase):
+    """Apply standard registration to image in functional space
+    """
+    
+    _logname = "apply_reg_subject"
+    
+    def __init__(self, *args, **kwargs):
+        super(ApplyRegSubject, self).__init__(*args, **kwargs)
+        self.log.info("Starting ApplyRegSubject")
+        self.infiles = None
+        self.regdir = None
+        self.outfiles = None
+        self.regtype = None
+        self.many_cmd_opts = None
+        return
+    
+    def fromDict(self, config):
+        self.check_req(config, ["data"])
+        
+        data = config.pop("data")
+        self.setData(**data)
+        
+        options = config.pop("options", {})
+        self.setOptions(**options)
+        
+        reg_files = config.pop("reg_files", {})
+        self.setRegFiles(**reg_files)
+        
+        for k in config:
+            self.log.fatal("Unrecognized option '%s'" % k)
+        
+        return
+    
+    def compile(self):
+        self.log.info("Compiling")
+        if not self._isset_data or self._isset_reg_files or self._isset_options:
+            self.log.critical("Must set data, registration files, and options before compiling")
+        many_cmd_opts = []
+        
+        if self.regtype == "flirt":
+            for infile,outfile in zip(self.infiles, self.outfiles):
+                cmd_opts = ["flirt"]
+                cmd_opts.append("-in %s" % infile)
+                cmd_opts.append("-ref %s" % self.stdfile)
+                cmd_opts.append("-applyxfm")
+                cmd_opts.append("-init %s" % self.matfile)
+                cmd_opts.append("-out %s" % outfile)
+                for k,v in self.cmd_kwargs.iteritems():
+                    if isinstance(v, bool):
+                        if v is True:
+                            cmd_opts.append("-%s" % k)
+                    else:
+                        cmd_opts.append("-%s %s" % (k,v))
+                many_cmd_opts.append(cmd_opts)
+        elif self.regtype == "fnirt":
+            for infile,outfile in zip(self.infiles, self.outfiles):
+                cmd_opts = ["fnirt"]
+                cmd_opts.append("-i %s" % infile)
+                cmd_opts.append("-r %s" % self.stdfile)
+                cmd_opts.append("--premat=%s" % self.prematfile)
+                cmd_opts.append("-o %s" % outfile)
+                for k,v in self.cmd_kwargs.iteritems():
+                    if isinstance(v, bool):
+                        if v is True:
+                            cmd_opts.append("--%s" % k)
+                    else:
+                        cmd_opts.append("--%s=%s" % (k,v))
+                many_cmd_opts.append(cmd_opts)
+        
+        self.many_cmd_opts = many_cmd_opts
+        return
+    
+    def run(self):
+        self.compile()
+        self.log.info("Running")
+        if not self.many_cmd_opts:
+            self.log.fatal("Bad")
+        for cmd_opts in self.many_cmd_opts:
+            cmd = " ".join(cmd_opts)
+            if self.dry_run:
+                self.log.drycommand(cmd)
+            else:
+                self.log.command(cmd)
+        return
+    
+    def setData(self, infiles, regdir, outdir=None, outfiles=None, overwrite=False):
+        self.log.info("Setting data")
+        
+        # Set inputs
+        infiles = self.__getInputsWorker(infiles)
+        self.infiles = infiles
+        
+        # Set outputs
+        if outdir is not None and outfiles is not None:
+            self.log.error("Cannot specify both output directory (outdir) and output files" \
+                            " (outfiles)")
+        if outdir:
+            outdir = self._substitute(outdir)
+            if not op.isdir(outdir):
+                self.log.info("Creating output directory")
+                os.mkdir(outdir)
+            outfiles = [ op.join(outdir, op.basename(x)) for x in infiles ]
+            for infile,outfile in zip(infiles, outfiles):
+                if op.dirname(infile) == op.dirname(outfile):
+                    self.log.error("Output directory '%s' has same base path as input" % outdir)
+        elif outfiles:
+            if isinstance(outfiles, str):
+                outfiles = [outfiles]
+            outfiles = [ self._substitute(x) for x in outfiles ]
+            if len(outfiles) != len(infiles):
+                self.log.error("# of outputs (%i) not same as # of inputs (%i)" % 
+                                    (len(outfiles), len(infiles)))
+            for outfile in outfiles:
+                if op.isfile(outfile):
+                    if overwrite:
+                        self.log.warning("Removing output '%s'" % outfile)
+                        os.remove(outfile)
+                    else:
+                        self.log.error("Output '%s' already exists" % outfile)
+        else:
+            self.log.error("Must specify either output directory (outdir) or output files" \
+                            " (outfiles)")
+        self.outfiles = outfiles
+        
+        # Set regdir
+        regdir = self._substitute(regdir)
+        self.regdir = regdir
+        
+        self._isset_data = True
+        return
+    
+    def setRegFiles(self, standard="standard.nii.gz", warp="highres2standard_warp.nii.gz", premat="example_func2highres.mat", mat="example_func2standard.mat"):
+        """Files found in the reg directory"""
+        self.log.info("Setting registration files")
+        
+        # Can I run this function?
+        if not self._isset_data or not self.regdir:
+            self.log.error("Must set data before setting registration files")
+        if not self._isset_options or not self.regtype:
+            self.log.error("Must set options before setting registration files")
+        
+        # Paths
+        self.stdfile = op.join(self.regdir, self._substitute(standard))
+        self.warpfile = op.join(self.regdir, self._substitute(warp))
+        self.prematfile = op.join(self.regdir, self._substitute(premat))
+        self.matfile = op.join(self.regdir, self._substitute(mat))
+        
+        # Flirt or Fnirt?
+        if self.regtype == "auto":
+            if op.isfile(self.warpfile):
+                self.regtype == "fnirt"
+            elif op.isfile(self.matfile):
+                self.regtype == "flirt"
+            else:
+                self.log.error("Couldn't determine registration type of %s" % self.regdir)
+        
+        # Checks
+        if not op.isfile(self.stdfile):
+            self.log.error("Standard image '%s' does not exist" % self.stdfile)
+        if self.regtype == "flirt":
+            if not op.isfile(self.matfile):
+                self.log.error("Matrix file '%s' does not exist" % self.matfile)
+        if self.regtype == "fnirt":
+            if not op.isfile(self.warpfile):
+                self.log.error("Warp file '%s' does not exist" % self.warpfile)
+            if not op.isfile(self.matfile):
+                self.log.error("Matrix file '%s' does not exist" % self.prematfile)
+        
+        self._isset_reg_files = True
+        return
+    
+    def setOptions(self, regtype="auto", **kwargs):
+        self.log.info("Setting options")
+        
+        regtype_options = ["auto", "flirt", "fnirt"]
+        if regtype not in regtype_options:
+            self.log.error("Registration type '%s' not recognized." % regtype)
+        self.regtype = regtype
+        
+        self.cmd_kwargs = kwargs
+        
+        self._isset_options = True
+        return
+    
+        
+        
 class RegressSubject(SubjectBase):
     
     _logname = "regress_subject"
@@ -866,5 +1186,447 @@ class RegressSubject(SubjectBase):
         self.compile()
         self.log.info("Running fsl_regfilt")
         self.log.command(self.cmd, cwd=op.dirname(self.cmd_opts["out"]))
+    
+
+class FsfGroup(Base):
+    _logname = "fsf_group"
+    
+    def __init__(self, *args, **kwargs):
+        """
+        Parameters
+        ----------
+        verbosity : 0=minimal, 1=verbose, 2=debug
+        template_vars: template variables for paths
+        """
+        super(FsfGroup, self).__init__(*args, **kwargs)
+        
+        self.env = Environment(loader=PackageLoader('analysis', 'templates'))
+                
+        self.fsf_context = {}
+        self.inputs = []
+        self.groups = []
+        self.evs = OrderedDict()
+        self.contrasts = OrderedDict()
+        self.ftests = []
+        
+        isset_names = ['data', 'evs', 'contrasts', 'stats', 'poststats']
+        self._isset = dict.fromkeys(isset_names, False)
+        self._is_compiled = False
+        
+        self.fsf = []
+        
+        self.log.debug("Starting Group FSF")
+        return
+    
+    def fromDict(self, config):
+        self.check_req(config, ["data", "stats"])
+        
+        # Data
+        data = config.pop("data")
+        self.check_req(data, ["inputs", "input_type", "model_type", "outdir", "outfsf"])
+        ## infile
+        self.setData(**data)
+        
+        # Stats
+        stats = config.pop("stats")
+        self.check_req(stats, ["evs", "contrasts"])
+        self.setStats(**stats)
+        
+        # Post-Stats
+        poststats = config.pop("poststats", {})
+        if poststats:
+            self.setPostStats(**poststats)
+        else:
+            self.setPostStats(do_poststats=False)
+        
+        if len(config) > 0:
+            self.log.error("Stuff left-over from config: %s" % config)
+        
+        return
+    
+    def run(self, check=True):
+        fsf = self.compile()
+        self.write(check=check)
+        return fsf
+    
+    def write(self, check=True):
+        sfsf = self._remove_extra_stuff("\n".join(self.fsf))
+        f = open(self.outfsf, 'w')
+        f.write(sfsf)
+        f.close()
+        if check:
+            if 'confoundev_file' in self.fsf_context:
+                conf = " " + self.fsf_context['confoundev_file']
+            else:
+                conf = ""
+            self.log.command("feat_model %s%s" % (op.splitext(self.outfsf)[0], conf))
+        return
+    
+    def _remove_extra_stuff(self, a):
+        b = re.sub("\n\ +", "\n", a)
+        c = re.sub("\n\n+", "\n\n", b)
+        return c
+    
+    def _render(self, fname, **context):
+        template = self.env.get_template(fname + '.jinja')
+        result = template.render(**context)
+        return self._remove_extra_stuff(result)
+    
+    def compile(self):
+        self.log.debug("Compiling fsf...")
+        
+        # Checks
+        self.log.debug("checks")
+        for name,isset in self._isset.iteritems():
+            if not isset:
+                self.log.error("Have not set %s" % name)
+        if not len(self.inputs) > 1:
+            self.log.fatal("You must specify at least 2 inputs")
+        if len(self.evs) == 0:
+            self.log.fatal("You must specify at least one EV")
+        if len(self.contrasts) == 0:
+            self.log.fatal("You must specify at least one contrast")
+        
+        # Gather fsf        
+        fsf = []
+        ## header
+        self.log.debug("get header")
+        fsf_part = self._render('group_header', **self.fsf_context)
+        fsf.append(fsf_part)
+        ## inputs
+        self.log.debug("get inputs")
+        fsf_part = self._render('group_inputs', **self.fsf_context)
+        fsf.append(fsf_part)
+        ## evs
+        self.log.debug("get evs")
+        fsf_part = self._render('group_evs', **self.fsf_context)
+        fsf.append(fsf_part)
+        ## cons
+        self.log.debug("get cons")
+        fsf_part = self._render('group_contrasts', **self.fsf_context)
+        fsf.append(fsf_part)
+        ## con masks
+        self.log.debug("get con masking")
+        fsf_part = self._render('group_contrast_masking', n=len(self.contrasts)+len(self.ftests))
+        fsf.append(fsf_part)
+        ## end
+        self.log.debug("get non-gui end")
+        fsf_part = self._render('group_nongui', **self.fsf_context)
+        fsf.append(fsf_part)
+        
+        self.fsf = fsf
+        return self._remove_extra_stuff("\n".join(fsf))
+    
+    def setData(self, input_type, inputs, model_type, outdir, outfsf, overwrite=0):
+        outdir = self._substitute(outdir)
+        inputs = self._getInputsWorker(inputs)
+        outfsf = self._substitute(outfsf)
+        
+        # Input Type
+        input_type_choices = {
+            'feats': 1,
+            'copes': 2
+        }
+        if input_type not in input_type_choices:
+            self.log.error("Input type (%s) must be one of %s" % 
+                                (input_type, " ".join(input_type_choices.keys)))
+        self.input_type = input_type
+        self.fsf_context['input_type'] = input_type_choices[input_type]
+        
+        # Inputs
+        if not len(inputs) > 1:
+            self.log.error("Need at least 2 inputs")
+        ## check for number of copes and for a reg folder in each input
+        if input_type == "feats":
+            all_ncopes = [ len(glob(op.join(x, "stats", "cope[0-9]+[.]*"))) for x in inputs ]
+            ref_ncopes = all_ncopes[0]
+            for i,inpath in enumerate(inputs):
+                if not op.isdir(op.join(inpath, "reg")):
+                    self.log.warning("Registration directory '%s' does not exist" % 
+                                        op.join(inpath, "reg"))
+                if all_ncopes[i] != ref_ncopes:
+                    self.log.error("Input '%s' has %i copes but should have %i!" % 
+                                        (inpath, all_ncopes[i], ref_ncopes))
+            self.fsf_context['num_copes'] = ref_ncopes
+        self.inputs = inputs
+        self.fsf_context['inputs'] = inputs
+        self.ninputs = len(inputs)
+        self.fsf_context['num_inputs'] = len(inputs)
+        
+        # Model Type
+        model_type_choices = {
+            'fixed': 3,
+            'ols': 0,
+            'flame1': 2,
+            'flame2': 1
+        }
+        if model_type not in model_type_choices:
+            self.log.error("Model type (%s) must be one of %s" % 
+                                (model_type, " ".join(model_type_choices.keys)))
+        self.fsf_context['model_type'] = model_type_choices[model_type]
+        
+        # Output Directory
+        outdir = op.splitext(outdir)[0] + ".gfeat"
+        if overwrite == 0 and op.isdir(outdir):
+            self.log.error("Output directory '%s' already exists" % outdir)
+        elif overwrite > 0:
+            self.fsf_context['overwrite'] = overwrite - 1
+            overwrite = bool(overwrite - 1)
+        if op.isdir(outdir):
+            if overwrite:
+                self.log.warning("Output directory already exists, will overwrite")
+            else:
+                self.log.warning("Output directory already exists, instead of overwriting will create a new output directory")
+        dir_outdir = op.dirname(outdir)
+        if not op.isdir(dir_outdir):
+            self.log.info("Creating directory '%s' for feat output" % dir_outdir)
+            os.mkdir(dir_outdir)
+        self.fsf_context['outputdir'] = outdir
+        
+        # Output Fsf File
+        dir_outfsf = op.dirname(outfsf)
+        if not op.isdir(dir_outfsf):
+            self.log.info("Creating directory '%s' for fsf output" % dir_outfsf)
+            os.mkdir(dir_outfsf)
+        self.outfsf = op.splitext(outfsf)[0] + ".fsf"
+        
+        self._isset['data'] = True
+        return
+    
+    def _getDialect(f):
+        sample = f.read(1024)
+        f.seek(0)
+        
+        has_header = csv.Sniffer().has_header(sample)
+        if not has_header:
+            self.log.warning("file (%s) does not seem to have a header row" % fpath)
+        
+        dialect = csv.Sniffer().sniff(sample)
+        return dialect
+    
+    def _evsPreCheck(self):
+        if not self.inputs:
+            self.log.fatal("Must set data before auto-setting EVs")
+        if self._isset['evs']:
+            self.log.fatal("Can't set EVs more than once")
+        return
+    
+    def _evsPostCheck(self):
+        if len(self.evs) == 0:
+            self.log.fatal("No EV exist")
+        if len(self.groups) == 0:
+            self.log.fatal("No group memberships set")
+        if len(self.groups) != self.ninputs:
+            self.log.error("Should have %i elements for group list but got %i instead" % 
+                                (self.ninputs, len(self.groups)))
+        for name,vals in self.evs.iteritems():
+            if len(vals) != self.ninputs:
+                self.log.error("Should have %i elements for EV '%s' but got %i instead." % 
+                                    (self.ninputs, name, len(vals)))
+        self.fsf_context['groups'] = self.groups
+        self.fsf_context['evs'] = self.evs
+        self.nevs = len(self.evs)
+        self.fsf_context['num_evs'] = self.nevs
+        self._isset['evs'] = True
+        return
+    
+    def _setEvsFile(self, evs_file):
+        self.log.info("Setting EVs using file '%s'" % evs_file)
+        
+        # Checks
+        evs_file = self._substitute(evs_file)
+        if not op.isfile(evs_file):
+            self.log.critical("EV file '%s' does not exist" % evs_file)
+        self._evsPreCheck()
+        
+        # Look through file
+        with open(evs_file, "rb") as f:
+            # Find type of file
+            dialect = self._getDialect(f)
+            try:
+                reader = csv.reader(f, dialect=dialect)
+                # Get/check header
+                fieldnames = reader.next()
+                if fieldnames[0] != "group":
+                    self.log.error("First column of EV file '%s' must be 'group'" % evs_file)
+                if len(fieldnames) != self.ninputs:
+                    self.log.critical("Expected %i columns but got %s in header row" % 
+                                        (self.ninputs, len(fieldnames)))
+                # Setup
+                groups = []
+                evs = [ (name, []) for name in fieldnames[1:] ]
+                # Go through file
+                for row in reader:
+                    if len(row) != self.ninputs:
+                        self.log.critical("Expected %i columns but got %s (line %d)" % 
+                                            (ncols, len(row), reader.line_num))
+                    try:
+                        row = [ float(r) for r in row ]
+                    except ValueError, e:
+                        self.log.error("file %s, line %d: something isn't a number" % 
+                                            (evs_file, reader.line_num))
+                    groups.append(row.pop(0))
+                    for ri,r in enumerate(row):
+                        evs[ri][1].append(r)
+            except csv.Error, e:
+                self.log.critical('file %s, line %d: %s' % (evs_file, reader.line_num, e))
+            self.groups = groups
+            self.evs = OrderedDict(evs)
+        self._evsPostCheck()
+        return
+    
+    def _setEvsAuto(self, auto):
+        self.log.info("Autosetting EVs (%s)" % auto)
+        self._evsPreCheck()
+        autoevs = auto.split("_")
+        evs = OrderedDict()
+        groups = []
+        for ev in autoevs:
+            if ev == "groupave":
+                evs[ev] = [ 1 for x in xrange(self.ninputs) ]
+                groups = [ 1 for x in xrange(self.ninputs) ]
+            else:
+                self.log.error("Unrecognized auto EV '%s'" % ev)
+        self.groups = groups
+        self.evs = evs
+        self._evsPostCheck()
+        return
+    
+    def _contrastsPreCheck(self):
+        if not self.evs:
+            self.log.fatal("Must set EVs before contrasts")
+        if self._isset['contrasts']:
+            self.log.fatal("Cannot set contrasts more than once")
+    
+    def _contrastsPostCheck(self):
+        if len(self.contrasts) == 0:
+            self.log.fatal("No contrasts exist")
+        for name,vals in self.contrasts.iteritems():
+            if len(vals) != self.nevs:
+                self.log.error("Should have %i elements for contrast '%s' but got %i instead." % 
+                                    (self.nevs, name, len(vals)))
+        self.ncontrasts = len(self.contrasts)
+        self.fsf_context['contrasts'] = self.contrasts
+        self.fsf_context['num_cons'] = self.ncontrasts
+        self._isset['contrasts'] = True
+        return
+    
+    def _setContrastsFile(self, contrast_file):
+        self.log.info("Setting contrasts with file '%s'" % contrast_file)
+        
+        contrast_file = self._substitute(contrast_file)
+        if not op.isfile(contrast_file):
+            self.log.critical("Contrast file '%s' does not exist" % contrast_file)
+        self._contrastsPreCheck()
+        
+        with open(evs_file, "rb") as f:
+            dialect = self._getDialect(f)
+            try:
+                reader = csv.reader(f, dialect=dialect)
+                contrasts = OrderedDict()
+                for row in reader:
+                    name = row.pop(0)
+                    if len(row) != self.nevs:
+                        self.log.error("Expected %i columns for contrast '%s' but got %i" % 
+                                            (self.nevs, name, len(row)))
+                    try:
+                        row = [ float(r) for r in row ]
+                    except ValueError, e:
+                        self.log.error("file %s, line %d: something isn't a number" % 
+                                            (contrast_file, reader.line_num))
+                    contrasts[name] = row
+            except csv.Error, e:
+                self.log.critical('file %s, line %d: %s' % (evs_file, reader.line_num, e))
+            self.contrasts = contrasts
+        self._contrastsPostCheck()
+        return
+    
+    def _setContrastsAuto(self, auto):
+        self.log.info("Autosetting contrasts (%s)" % auto)
+        self._contrastsPreCheck()
+        autocons = auto.split("_")
+        contrasts = OrderedDict()
+        for con in autocons:
+            if con == "pos":
+                contrasts[con] = [1] + [ 0 for x in xrange(self.nevs-1) ]
+            elif con == "neg":
+                contrasts[con] = [-1] + [ 0 for x in xrange(self.nevs-1) ]
+            else:
+                self.log.error("Unrecognized auto contrast '%s'" % con)
+        self.contrasts = contrasts
+        self._contrastsPostCheck()
+        return
+    
+    def setStats(self, evs, contrasts):
+        # Evs
+        if evs.find("auto_") == 0:
+            self._setEvsAuto(evs[5:])
+        else:
+            self._setEvs(evs)
+        # Contrasts
+        if contrasts.find("auto_") == 0:
+            self._setContrastsAuto(contrasts[5:])
+        else:
+            self._setContrasts(contrasts)
+        # no ftests for now
+        self.ftests = []
+        self.fsf_context['ftests'] = self.ftests
+        self.fsf_context['num_ftests'] = len(self.ftests)
+        
+        self._isset['stats'] = True
+        return
+    
+    def setPostStats(self, thresh_type="cluster", vox_thresh=2.3, clust_thresh=0.05, prethreshold_mask="", do_poststats=True):
+        self.poststats = do_poststats
+        
+        thresh_type_choices = {
+            'none':         0,
+            'uncorrected':  1,
+            'voxel':        2,
+            'cluster':      3
+        }
+        try:
+            self.fsf_context['thresh_type'] = thresh_type_choices[thresh_type]
+        except KeyError:
+            self.log.error("Unrecognized threshold type '%s'" % thresh_type)
+        
+        prethreshold_mask = self._substitute(prethreshold_mask)
+        self.fsf_context['prethreshold_mask'] = prethreshold_mask
+        if prethreshold_mask and not op.isfile(prethreshold_mask):
+                self.log.error("Could not find pre-threshold mask %s" % prethreshold_mask)
+        
+        self._isset['poststats'] = True
+        return
+    
+
+class FeatGroup(Base):
+    """docstring for FeatGroup"""
+    
+    _logname = "feat_group"
+    
+    def __init__(self, *args, **kwargs):
+        super(FeatGroup, self).__init__(*args, **kwargs)
+    
+    def fromDict(self, config_dict):
+        self.check_req(config_dict, ["infsf"])
+        self.setData(**config_dict)
+    
+    def run(self):
+        # Run feat
+        self.log.info("Running feat")
+        cmd = "feat %s" % self.infsf
+        self.log.command(cmd)
+        
+        # TODO: check input directories
+        
+        return
+    
+    def setData(self, infsf):
+        infsf = self._substitute(infsf)
+        if not op.isfile(infsf):
+            self.log.error("Can't find input fsf file '%s'" % infsf)
+        self.infsf = infsf
+        
+        return
     
 

@@ -1,0 +1,27 @@
+# Contrast & F-tests mode
+# real : control real EVs
+# orig : control original EVs
+set fmri(con_mode_old) real
+set fmri(con_mode) real
+
+{% for con_name,con in contrasts.iteritems() %}
+    {% set con_num = loop.index %}
+    
+    # Display images for contrast_real {{ con_num }}
+    set fmri(conpic_real.{{ con_num }}) 1
+    
+    # Title for contrast_real {{ con_num }}
+    set fmri(conname_real.{{ con_num }}) "{{ con_name }}"
+    
+    {% for elem in con %}
+        {% set elem_num = loop.index %}
+        # Real contrast_real vector {{ con_num }} element {{ elem_num }}
+        set fmri(con_real{{ con_num }}.{{ elem_num }}) {{ elem }}
+    {% endfor %}
+    
+    {% for i in range(num_ftests) %}
+        {% set elem_num = loop.index %}
+        # F-test {{ elem_num }} element {{ con_num }}
+        set fmri(ftest_real{{ elem_num }}.{{ con_num }}) {{ ftests[elem_num][con_num] }}
+    {% endfor %}    
+{% endfor %}

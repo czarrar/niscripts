@@ -26,19 +26,7 @@ def list_template_vars(string):
             res.append(x[2])
     return res
 
-
-class SubjectBase(object):
-    """
-    Base Class for CombineFuncs and FsfSubject
-    
-    Examples
-    --------
-    >>> from feat_subject import SubjectBase
-    >>> sb = SubjectBase('test', 2, {'base': "/path/to/base", 'jack': "${base}/jack", 
-                                    'black': "${jack}/black"})
-    >>> sb._substitute("${black}")   # should have /path/to/base/jack/black
-    """
-    
+class Base(object):
     _logname = "default"
     
     def __init__(self, verbosity, template_context, dry_run=False, log=None):
@@ -47,7 +35,7 @@ class SubjectBase(object):
         ----------
         log_name
         """
-        super(SubjectBase, self).__init__()
+        super(Base, self).__init__()
         
         if verbosity == 0:
             self.loglevel = zlogger.logging.IMPORTANT
@@ -68,19 +56,32 @@ class SubjectBase(object):
         for e in l:
             if e not in d:
                 self.log.error("%s must be in options" % e)
-
+    
     def check_ex(self, d, l):
         """Check that each element of l is NOT in d"""
         for e in l:
             if e in d:
                 self.log.error("%s must not be in options" % e)
     
-    def _file_ncols(self, fname):
-        f = open(fname, 'r')
-        l = f.readline()
-        f.close()
-        ncols = len(re.split("[ \t]+", l.strip()))
-        return ncols
+    def _getInputsWorker(self, infiles, itype='path'):
+           new_infiles = []
+           if isinstance(infiles, str):
+               infiles = self._substitute(infiles)
+               new_infiles = glob(infiles)
+               if len(new_infiles) == 0:
+                   self.log.error("Input %s '%s' does not exist" % (itype, infiles))
+           elif isinstance(infiles, list):
+               for infile in infiles:
+                   new_infile = glob(self._substitute(infile))
+                   if len(new_infile) == 0:
+                       self.log.error("List input %s '%s' does not exist" % (itype, infile))
+                   elif len(new_infile) > 1:
+                       self.log.warning("List input '%s' points to more than one %s" % (infile, 
+                                                                                           itype))
+                   new_infiles.extend(new_infile)
+           else:
+               raise Exception("Incorrect type for infiles: %s" % infiles)
+           return new_infiles
     
     def addTemplateContext(self, k, v):
         self.template_context[k] = v
@@ -122,25 +123,26 @@ class SubjectBase(object):
             self.log.warning("Did not finish substitition of '%s'" % template)
         return result
     
-    def _getInputsWorker(self, infiles, itype):
-        new_infiles = []
-        if isinstance(infiles, str):
-            infiles = self._substitute(infiles)
-            new_infiles = glob(infiles)
-            if len(new_infiles) == 0:
-                self.log.error("Input %s '%s' does not exist" % (itype, infiles))
-        elif isinstance(infiles, list):
-            for infile in infiles:
-                new_infile = glob(self._substitute(infile))
-                if len(new_infile) == 0:
-                    self.log.error("List input %s '%s' does not exist" % (itype, infile))
-                elif len(new_infile) > 1:
-                    self.log.warning("List input '%s' points to more than one %s" % (infile, 
-                                                                                        itype))
-                new_infiles.extend(new_infile)
-        else:
-            raise Exception("Incorrect type for infiles: %s" % infiles)
-        return new_infiles
+
+
+class SubjectBase(Base):
+    """
+    Base Class for CombineFuncs and FsfSubject
+    
+    Examples
+    --------
+    >>> from feat_subject import SubjectBase
+    >>> sb = SubjectBase('test', 2, {'base': "/path/to/base", 'jack': "${base}/jack", 
+                                    'black': "${jack}/black"})
+    >>> sb._substitute("${black}")   # should have /path/to/base/jack/black
+    """
+    
+    def _file_ncols(self, fname):
+        f = open(fname, 'r')
+        l = f.readline()
+        f.close()
+        ncols = len(re.split("[ \t]+", l.strip()))
+        return ncols
     
     def getInputs(self, infiles, runfile, mkdir):
         # Run file

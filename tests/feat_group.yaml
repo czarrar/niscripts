@@ -1,0 +1,20 @@
+vars:
+    base: "/Users/zarrar/Projects/tnetworks/output/${subject}"
+    locdir: ${base}/localizer
+
+fsf:
+    data:
+        input_type: feats
+        inputs:
+            - ${locdir}/analysis/loc_hrf.feat
+            - ${locdir}/analysis/loc_hrf.feat
+        model_type: fixed
+        outdir: ${locdir}/analysis/group_test.gfeat
+        outfsf: ${locdir}/fsfs/group_test.fsf
+        overwrite: 0
+    
+    stats:
+        evs: auto_groupave
+        contrasts: auto_pos_neg
+    
+

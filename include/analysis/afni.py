@@ -1,4 +1,4 @@
-import os, re, shutil
+import os, re, shutil, tempfile
 import os.path as op
 from analysis.base import SubjectBase
 from collections import OrderedDict
@@ -13,6 +13,209 @@ def check_label(label):
         raise DeconWarning(("Label '%s' is too long. " % label) + 
             ("It should have a length of 24 characters or less but has a length of %i." % l))
 
+
+class CorrelateSubject(SubjectBase):
+    
+    _logname = "correlate_subject"
+    
+    def __init__(self, *args, **kwargs):
+        super(CorrelateSubject, self).__init__(*args, **kwargs)
+        self.log.info("Starting Correlate Subject")
+        
+        self.infunc = None
+        self.outts = None
+        self.ts_opts = []
+        self._isset_ts = False
+        self.ts_cmd = ""
+        
+        self.cor_opts = []
+        self._isset_cor = False
+        self.cor_cmd = ""
+        return
+    
+    def fromDict(self, config):
+        self.check_req(config, ["cor"])
+        
+        ts = config.pop("ts", None)
+        if ts:
+            self.check_req(ts, ["infunc"])
+            self.setTs(**ts)
+        
+        cor = config.pop("cor")
+        self.check_req(cor, ["outmap"])
+        self.setCor(**cor)
+        
+        cores = config.pop("cores", 1)
+        self.setCores(cores)
+        
+        for k in config:
+            self.log.error("Unknown option '%s' given" % k)
+        
+        return
+    
+    def compile(self):
+        self.log.info("Compiling")
+        if not self._isset_cor:
+            self.log.critical("You must set cor before compiling")
+        if self.ts_opts:
+            self.ts_cmd = " ".join(self.ts_opts)
+        self.cor_cmd = " ".join(self.cor_opts)
+        return
+    
+    def run(self):
+        self.compile()
+        self.log.info("Running")
+        
+        # 3dmaskave
+        if self.ts_cmd:
+            f = file(self.outts, 'r')
+            self.log.drycommand(self.ts_cmd)
+            if not self.dry_run:
+                p = Process(self.ts_cmd, stdout=f)
+                if p.retcode != 0:
+                    self.log.error("Error running 3dmaskave")
+                    print p.stderr
+            f.close()
+        
+        # 3dTcor1D
+        if self.dry_run:
+            self.log.drycommand(self.cor_cmd)
+        else:
+            self.log.command(self.cor_cmd)
+        
+        return
+    
+    def setCores(self, val):
+        val = str(val)
+        self.log.info("Setting cores to %s" % val)
+        os.putenv("OMP_NUM_THREADS", val)
+        return
+    
+    def setTs(self, infunc, inmask=None, invox=None, outts=None, **kwargs):
+        self.log.info("Setting Time-Series Args/Options")
+        ts_opts = ["3dmaskave"]
+        
+        # Check
+        if inmask is not None and invox is not None:
+            self.log.error("Cannot specify both input mask (inmask) and input voxel (invox)")
+        
+        # ROI: Voxel or Mask
+        if invox:   # Set voxel coordinates
+            if not isinstance(invox, list):
+                self.log.error("Input voxel must be a list of 4-5 elements long")
+            elif invox[0][1:] == "box":
+                if len(invox) != 4:
+                    self.log.error("Input box ROI must be a list of 4 elements long")
+            elif invox[0][1:] == "ball":
+                if len(invox) != 5:
+                    self.log.error("Input sphere ROI must be a list of 5 elements long")
+            elif invox[0][0] not in ["x", "d", "n", "i"]:
+                self.log.error("First element of input voxel list must begin with x, d, n, or i")
+            else:
+                self.log.error("First element of input voxel list must be Xbox or Xball")
+            ts_opts.append("-%s %s" % (invox[0], " ".join(invox[1:])))
+        elif inmask: # Or mask
+            inmask = self._substitute(inmask)
+            if not op.isfile(inmask):
+                self.log.error("Input mask '%s' does not exist" % inmask)
+            ts_opts.append("-mask %s" % inmask)
+        else:       # Eeek
+            self.log.error("Must specify either input mask (inmask) or input voxel (invox)")
+        
+        # Other options
+        self.check_ex(kwargs, ["dump", "udump", "indump"])
+        for k,v in kwargs.iteritems():
+            ts_opts.append("-%s %s" % (k,v))
+        
+        # Quiet
+        ts_opts.append("-quiet")
+        
+        # Input functional
+        infunc = self._substitute(infunc)
+        if not op.isfile(infunc):
+            self.log.error("Input 4D functional '%s' does not exist" % infunc)
+        self.infunc = infunc
+        ts_opts.append(infunc)
+        
+        # Output time-series
+        if outts:
+            outts = self._substitute(outts)
+        else:
+            outts = tempfile.mktemp(".1D")  # TODO: when destruct...make sure to delete this
+        self.outts = outts
+        
+        self.ts_opts = ts_opts
+        self._isset_ts = True
+        return
+    
+    def setCor(self, outmap, infunc=None, ints=None, mask='', correlation='pearson', outtype='float', overwrite=False):
+        self.log.info("Setting Correlation Args/Options")
+        cor_opts = ["3dTcorr1D"]
+        
+        # Options
+        ## correlation
+        correlation_options = ["pearson", "spearman", "quadrant", "ktaub"]
+        if correlation not in correlation_options:
+            self.log.error("correlation '%s' not recognized, must be: %s" % 
+                                (correlation, ", ".join(correlation_options)))
+        cor_opts.append("-%s" % correlation)
+        ## output type
+        outtype_options = ["float", "short"]
+        if outtype not in outtype_options:
+            self.log.error("outtype '%s' not recognized, must be: %s" % 
+                                (outtype, ", ".join(outtype_options)))
+        cor_opts.append("-%s" % outtype)
+        ## mask
+        mask = self._substitute(mask)
+        if mask:
+            cor_opts.append("-mask %s" % mask)
+        ## output
+        outmap = self._substitute(outmap)
+        if op.isfile(outmap):
+            if overwrite:
+                self.log.warning("Removing output '%s'" % outmap)
+                os.remove(outmap)
+            else:
+                self.log.error("Output '%s' already exists" % outmap)
+        cor_opts.append("-prefix %s" % outmap)
+        
+        # Arguments
+        ## 4D functional
+        ### assign value
+        if infunc is None and self.infunc:
+            infunc = self.infunc
+        elif infunc is None:
+            self.log.error("Must specify input functional or must set time-series")
+        else:
+            infunc = self._substitute(infunc)
+        ### check if exists
+        if not op.isfile(infunc):
+            self.log.error("Input 4D functional '%s' does not exist" % infunc)
+        ### set
+        cor_opts.append(infunc)
+        ## 1D time-series
+        ### assign value
+        if ints is None and self.outts:
+            ints = self.outts
+        elif ints is None:
+            self.log.error("Must specify input time-series or must set time-series")
+        else:
+            ints = self._substitute(ints)
+        ### check if exists
+        if not op.isfile(ints):
+            self.log.error("Input time-series '%s' does not exist" % ints)
+        ### check if good
+        ncols = self._file_ncols(ints)
+        if ncols != 1:
+            self.log.error("Input time-series '%s' has %i columns but should have only 1." % 
+                                (ints, ncols))
+        ### set
+        cor_opts.append(ints)
+        
+        self.cor_opts = cor_opts
+        self._isset_cor = True
+        return
+    
 
 class DeconSubject(SubjectBase):
     

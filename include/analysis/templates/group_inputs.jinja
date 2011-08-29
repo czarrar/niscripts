@@ -1,0 +1,17 @@
+# Number of lower-level copes feeding into higher-level analysis
+set fmri(ncopeinputs) {{ num_copes|default(0)|int }}
+
+{% for i in range(num_copes) %}
+  {% set cope_num = loop.index %}
+  # Use lower-level cope {{ cope_num }} for higher-level analysis
+  set fmri(copeinput.{{ cope_num }}) 1
+{% endfor %}
+
+{% for inpath in inputs %}
+  {% set inpath_num = loop.index %}
+  # 4D AVW data or FEAT directory ({{ inpath_num }})
+  set feat_files({{ inpath_num }}) {{ inpath }}
+{% endfor %}
+
+# Add confound EVs text file
+set fmri(confoundevs) 0

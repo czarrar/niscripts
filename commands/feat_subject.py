@@ -25,9 +25,11 @@ def create_parser():
     group.add_argument("--combine", action="append_const", const="combine", dest="run_keys")
     group.add_argument("--res-decon", action="append_const", const="res_decon", 
                         dest="run_keys")
+    group.add_argument("--ts", action="append_const", const="ts", dest="run_keys")
     group.add_argument("--fsf", action="append_const", const="fsf", dest="run_keys")
     group.add_argument("--feat", action="append_const", const="feat", dest="run_keys")
     group.add_argument("--regress", action="append_const", const="regress", dest="run_keys")
+    group.add_argument("--apply-reg", action="append_const", const="apply_reg", dest="run_keys")
     group.add_argument("--verbose", action="store_const", const=1, dest="verbosity", default=0)
     group.add_argument("--debug", action="store_const", const=2, dest="verbosity", default=0)
     group.add_argument("--dry-run", action="store_true", default=False)
@@ -48,7 +50,7 @@ def main(arglist):
     args = parser.parse_args(arglist)
     kwargs = vars(args)
     if 'run_keys' not in kwargs and not kwargs['run_keys']:
-        kwargs['run_keys'] = ["res_decon", "fsf", "feat", "regress"]
+        kwargs['run_keys'] = ["fsf", "feat"]
     if 'vars' not in kwargs:
         template_vars = {}
     else:
