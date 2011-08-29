@@ -81,6 +81,7 @@ class Base(object):
                    new_infiles.extend(new_infile)
            else:
                raise Exception("Incorrect type for infiles: %s" % infiles)
+           new_infiles.sort()
            return new_infiles
     
     def addTemplateContext(self, k, v):
