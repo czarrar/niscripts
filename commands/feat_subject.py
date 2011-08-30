@@ -55,11 +55,16 @@ def main(arglist):
         template_vars = {}
     else:
         template_vars = dict(kwargs.pop("vars"))
+            
+    # Logger
+    loglevel = get_loglevel(args.verbosity)
+    log = create_logger("coordinate_subjects", loglevel, args.log)
+    
     subjects = kwargs.pop("subjects")
     for subject in subjects:
         try:
             template_vars['subject'] = subject
-            fromYamlSubject(user_template_vars=template_vars, **kwargs)
+            fromYamlSubject(user_template_vars=template_vars, logger=log, **kwargs)
             del template_vars['subject']
         except (LoggerError, LoggerCritical) as err:
             pass

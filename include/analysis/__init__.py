@@ -58,7 +58,7 @@ def fromYamlGroup(inputs, run_keys, verbosity=0, dry_run=False, log=None, user_t
     return
 
 
-def fromYamlSubject(inputs, run_keys, verbosity=0, dry_run=False, log=None, user_template_vars={}):
+def fromYamlSubject(inputs, run_keys, verbosity=0, dry_run=False, log=None, user_template_vars={}, logger=None):
     """
     Runs both CombineFuncs and FsfSubject
     """
@@ -76,7 +76,7 @@ def fromYamlSubject(inputs, run_keys, verbosity=0, dry_run=False, log=None, user
         opts = config_dict.pop(k, None)
         if opts:
             class_name = "".join([ x.capitalize() for x in k.split("_") ]) + "Subject"
-            c = eval(class_name)(verbosity, deepcopy(template_vars), dry_run, log)
+            c = eval(class_name)(verbosity, deepcopy(template_vars), dry_run, log, logger)
             c.fromDict(opts)
             c.run()
         else:
