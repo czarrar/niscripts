@@ -4,7 +4,8 @@ import argparse, os, sys
 sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
 
 from usage import NiArgumentParser, store_filename, store_input, append_var
-from analysis import fromYamlSubject, get_loglevel, create_parser
+from analysis import fromYamlSubject
+from analysis.base import get_loglevel, create_parser
 from zlogger import (LoggerError, LoggerCritical)
 
 #####
