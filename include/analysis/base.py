@@ -1,4 +1,4 @@
-import zlogger, re, os
+import zlogger, re, os, shutil
 import os.path as op
 from glob import glob
 from string import Template
@@ -26,10 +26,23 @@ def list_template_vars(string):
             res.append(x[2])
     return res
 
+def get_loglevel(verbosity):
+    if verbosity == 0:
+        loglevel = zlogger.logging.IMPORTANT
+    elif verbosity == 1:
+        loglevel = zlogger.logging.COMMAND_INFO
+    else:
+        loglevel = zlogger.logging.DEBUG
+    return loglevel
+
+def create_logger(name, level, fname):
+    log = zlogger.getLogger(name, level, fname=fname, allow_exceptions=True)
+    return log
+
 class Base(object):
     _logname = "default"
     
-    def __init__(self, verbosity, template_context, dry_run=False, log=None):
+    def __init__(self, verbosity, template_context, dry_run=False, log=None, logger=None):
         """
         Parameters
         ----------
@@ -37,13 +50,13 @@ class Base(object):
         """
         super(Base, self).__init__()
         
-        if verbosity == 0:
-            self.loglevel = zlogger.logging.IMPORTANT
-        elif verbosity == 1:
-            self.loglevel = zlogger.logging.COMMAND_INFO
+        self.loglevel = get_loglevel(verbosity)
+        
+        # ghetto fix!!!
+        if not logger:
+            self.log = create_logger(self._logname, self.loglevel, log)
         else:
-            self.loglevel = zlogger.logging.DEBUG
-        self.log = zlogger.getLogger(self._logname, level=self.loglevel, fname=log, allow_exceptions=True)
+            self.log = logger
         
         self._setTemplateContext(template_context)
         
@@ -57,11 +70,47 @@ class Base(object):
             if e not in d:
                 self.log.error("%s must be in options" % e)
     
-    def check_ex(self, d, l):
+    def _check_ex(self, d, l):
         """Check that each element of l is NOT in d"""
         for e in l:
             if e in d:
                 self.log.error("%s must not be in options" % e)
+    
+    def _check_infile(self, fpath, desc="input file", substitute=False):
+        if substitute:
+            fpath = self._substitute(fpath)
+        if not op.isfile(fpath):
+            self.log.error("%s '%s' does not exist." % (desc, fpath))
+        return fpath
+    
+    def _check_indir(self, dpath, desc="input directory", substitute=False):
+        if substitute:
+            dpath = self._substitute(dpath)
+        if not op.isdir(dpath):
+            self.log.error("%s '%s' does not exist." % (desc, dpath))
+        return dpath
+    
+    def _check_outfile(self, fpath, desc="output file", overwrite=False, substitute=False):
+        if substitute:
+            fpath = self._substitute(fpath)
+        if op.isfile(fpath):
+            if overwrite:
+                self.log.warning("removing %s '%s'" % (desc, fpath))
+                os.remove(fpath)
+            else:
+                self.log.error("%s '%s' already exists" % (desc, fpath))
+        return fpath
+    
+    def _check_outdir(self, dpath, desc="output directory", overwrite=False, substitute=False):
+        if substitute:
+            dpath = self._substitute(dpath)
+        if op.isfile(dpath):
+            if overwrite:
+                self.log.warning("removing %s '%s'" % (desc, dpath))
+                shutil.rmtree(dpath)
+            else:
+                self.log.error("%s '%s' already exists" % (desc, dpath))
+        return dpath
     
     def _getInputsWorker(self, infiles, itype='path'):
            new_infiles = []

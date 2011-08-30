@@ -60,8 +60,10 @@ class Adapter(logging.LoggerAdapter):
     def command(self, cmd, cwd=None, shell=False, *args, **kwargs):
         self.log(logging.COMMAND, cmd, *args, **kwargs)
         p = Process(cmd, to_print=False, cwd=cwd, shell=shell)
-        self.log(logging.COMMAND_STDOUT, p.stdout)
-        self.log(logging.COMMAND_STDERR, p.stderr)
+        if p.stdout:
+            self.log(logging.COMMAND_STDOUT, p.stdout)
+        if p.stderr:
+            self.log(logging.COMMAND_STDERR, p.stderr)
         if self.allow_exceptions and p.retcode != 0:
             raise LoggerError("Error calling: %s" % cmd)
         return p
