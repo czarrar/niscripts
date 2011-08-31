@@ -7,7 +7,7 @@ from analysis.feat import (FsfGroup, FeatGroup)
 from analysis.afni import (DeconSubject, RemlSubject, BetaSeriesSubject, RegisterBetaSeriesSubject, 
                             CorrelateSubject)
 
-import sys
+import os, sys
 sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
 from zlogger import (LoggerError, LoggerCritical)
 
