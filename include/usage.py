@@ -45,7 +45,6 @@ class store_io(argparse.Action):
         namespace.outputs[self.dest] = values[1]
     
 
-f
 class store_run(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         values = [ x.replace("-", "_") for x in values ]
