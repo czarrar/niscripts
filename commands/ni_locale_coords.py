@@ -121,6 +121,7 @@ class CoordinateSubject(Base):
         
         # Outputs
         self.outputs = {}
+        outprefix = self._substitute(outprefix)
         for k,v in self._output_suffix.iteritems():
             out = "%s_%s" % (outprefix, v)
             out = self._check_outfile(out, desc="%s file" % k, substitute=True, 
