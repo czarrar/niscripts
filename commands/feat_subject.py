@@ -65,7 +65,7 @@ def main(arglist):
     subjects = kwargs.pop("subjects")
     for subject in subjects:
         try:
-            self.log.title("Subject: %s" % subject)
+            log.title("Subject: %s" % subject)
             template_vars['subject'] = subject
             fromYamlSubject(user_template_vars=template_vars, logger=log, **kwargs)
             del template_vars['subject']
