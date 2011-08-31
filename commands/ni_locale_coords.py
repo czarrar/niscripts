@@ -4,6 +4,7 @@ import argparse, os, sys
 import os.path as op
 import numpy as np
 from copy import deepcopy
+from string import Template
 
 import nipype.interfaces.fsl as fsl # fsl
 standard_image = fsl.Info.standard_image
@@ -23,7 +24,13 @@ class CoordinateSubject(Base):
         "peaks": "table.txt",
         "filt": "table_filt.1D",
         "coord": "peak.1D",
-        "roi": "roi.nii.gz"
+        "roi": "roi.nii.gz",
+        "tmp_thresh": "thresh.nii.gz",
+        "tmp_rendered": "rendered.nii.gz",
+        "tmp_x": "x.png", 
+        "tmp_y": "y.png", 
+        "tmp_z": "z.png", 
+        "pic": "activity.png"
     }
     
     def __init__(self, *args, **kwargs):
@@ -36,11 +43,18 @@ class CoordinateSubject(Base):
         self.cmds_filt = []
         return
     
+    def __del__(self):
+        rmfiles = ["tmp_thresh", "tmp_rendered", "tmp_x", "tmp_y", "tmp_z"]
+        for k in rmfiles:
+            if k in self.outputs and op.isfile(self.outputs[k]):
+                self.log.debug("removing %s" % self.outputs[k])
+                os.remove(self.outputs[k])
+    
     def compile(self):
         self.log.info("Compiling")
         if not self._isset_data and not self._isset_options:
             self.log.fatal("Must set data and options")
-        self.cmd_extrema = "3dExtrema -data_thr %.3f -mask_file %s -volume %s" % (
+        self.cmd_extrema = "3dExtrema -data_thr %.5f -mask_file %s -volume %s" % (
                                 self.thresh, self.inmask, self.infile)
         
         self.cmd_filt = "tail -n +11 %s" % self.outputs['peaks']
@@ -49,6 +63,18 @@ class CoordinateSubject(Base):
                             self.outputs['roi'], self.std, self.roi_rad, self.orient, 
                             self.outputs['coord'])
         
+        p = Process("3dBrickStat -slow -max %s" % self.infile)
+        if not p.stdout:
+            maxval = 5
+        else:
+            maxval = p.stdout
+            maxval = int(float(maxval.strip()))
+        self.cmd_threshold = "fslmaths %s -thr %.5f %s" % (self.infile, self.thresh, 
+                                                           self.outputs['tmp_thresh'])
+        self.cmd_overlay = "overlay 1 0 %s -a %s %.5f %i %s" % (self.std, self.outputs['tmp_thresh'], self.thresh, maxval, self.outputs["tmp_rendered"])
+        self.cmd_std2img = "std2imgcoord -img %s -std %s -vox %s" % (self.std, self.std, self.outputs['coord'])
+        self.cmd_slicer = "slicer %(tmp_rendered)s -L -t -x -${x} %(tmp_x)s -y -${y} %(tmp_y)s -z -${z} %(tmp_z)s" % self.outputs
+        self.cmd_append = "pngappend %(tmp_x)s + %(tmp_y)s + %(tmp_z)s %(pic)s" % self.outputs
     
     def _run_closest_coord(self):
         if not self._isset_data:
@@ -110,9 +136,19 @@ class CoordinateSubject(Base):
                 self.log.debug("...save ROI")
                 self.log.command(self.cmd_roi)
             
+            if self.outpic:
+                self.log.debug("...save png")
+                self.log.command(self.cmd_threshold)
+                self.log.command(self.cmd_overlay)
+                p = self.log.command(self.cmd_std2img)
+                ijk = p.stdout.splitlines()[0].split()
+                cmd_slicer = Template(self.cmd_slicer).substitute(x=ijk[0], y=ijk[1], z=ijk[2])
+                self.log.command(cmd_slicer)
+                self.log.command(self.cmd_append)
+            
             return res
     
-    def setData(self, infile, inmask, std, outprefix, refcoord, outroi=False, overwrite=False):
+    def setData(self, infile, inmask, std, outprefix, refcoord, outroi=False, outpic=False, overwrite=False):
         self.log.info("Setting up data")
         
         # Inputs
@@ -132,6 +168,7 @@ class CoordinateSubject(Base):
             self.log.info("Creating base directory '%s' for output" % op.dirname(outprefix))
             os.mkdir(op.dirname(outprefix))
         self.outroi = outroi
+        self.outpic = outpic
         
         # Coordinate
         if len(refcoord) != 3:
@@ -169,12 +206,13 @@ def create_parser():
     
     group = parser.add_argument_group('Command Options')
     group.add_argument("-t", "--thresh", type=float, default=2.3, metavar="THRESHOLD", help="default: %(default)s")
-    group.add_argument('--std', default=standard_image("MNI152_T1_2mm.nii.gz"), metavar="FILE", help="default: %(default)s")
+    group.add_argument('--std', default=standard_image("MNI152_T1_2mm_brain.nii.gz"), metavar="FILE", help="default: %(default)s")
     group.add_argument("--orient", default="LPI", metavar="XXX", help="default: %(default)s")
     group.add_argument('-r', "--radius", type=int, default=1, metavar="mm", help="default: %(default)s")
     
     group = parser.add_argument_group('I/O Options')
     group.add_argument('--roi', action="store_true", default=False, help="create ROI")
+    group.add_argument('--pic', action="store_true", default=False, help="create picture")
     group.add_argument('-s', '--subjects', nargs="+", metavar="ID")
     group.add_argument('--var', action="append", type=append_var, dest="vars")
     group.add_argument('--overwrite', action="store_true", default=False, help="default: %(default)s")
@@ -188,7 +226,8 @@ def create_parser():
 def run_subject(log, args, template_vars):
     ## setup
     cs = CoordinateSubject(args.verbosity, deepcopy(template_vars), args.dry_run, logger=log)
-    cs.setData(args.input, args.mask, args.std, args.prefix, args.coord, args.roi, args.overwrite)
+    cs.setData(args.input, args.mask, args.std, args.prefix, args.coord, args.roi, args.pic, 
+               args.overwrite)
     cs.setOptions(args.thresh, args.radius, args.orient)
     ## run
     cs.run()

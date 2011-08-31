@@ -57,7 +57,6 @@ def fromYamlGroup(inputs, run_keys, verbosity=0, dry_run=False, log=None, user_t
     
     return
 
-
 def fromYamlSubject(inputs, run_keys, verbosity=0, dry_run=False, log=None, user_template_vars={}, logger=None):
     """
     Runs both CombineFuncs and FsfSubject
