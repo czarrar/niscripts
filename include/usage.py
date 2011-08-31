@@ -45,6 +45,14 @@ class store_io(argparse.Action):
         namespace.outputs[self.dest] = values[1]
     
 
+f
+class store_run(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        values = [ x.replace("-", "_") for x in values ]
+        setattr(namespace, self.dest, values)
+        return
+    
+
 class store_filename(argparse.Action):
     def __call__(self, parser, namespace, value, option_string=None):
         if not os.path.isfile(value):

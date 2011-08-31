@@ -3,7 +3,7 @@
 import argparse, os, sys
 sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
 
-from usage import NiArgumentParser, store_filename, store_input, append_var
+from usage import NiArgumentParser, store_filename, store_input, append_var, store_run
 from analysis import fromYamlSubject
 from analysis.base import get_loglevel, create_logger
 from zlogger import (LoggerError, LoggerCritical)
@@ -23,7 +23,7 @@ def create_parser():
     group.add_argument('--var', action="append", type=append_var, dest="vars")
     
     group = parser.add_argument_group('Optional')
-    group.add_argument("--run", nargs="+", dest="run_keys")
+    group.add_argument("--run", action=store_run, nargs="+", dest="run_keys")
     group.add_argument("--combine", action="append_const", const="combine", dest="run_keys")
     group.add_argument("--res-decon", action="append_const", const="res_decon", 
                         dest="run_keys")
