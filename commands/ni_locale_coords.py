@@ -186,7 +186,7 @@ def create_parser():
 
 def run_subject(log, args, template_vars):
     ## setup
-    cs = CoordinateSubject(args.verbosity, template_vars, args.dry_run, logger=log)
+    cs = CoordinateSubject(args.verbosity, deepcopy(template_vars), args.dry_run, logger=log)
     cs.setData(args.input, args.mask, args.std, args.prefix, args.coord, args.roi, args.overwrite)
     cs.setOptions(args.thresh, args.radius, args.orient)
     ## run
