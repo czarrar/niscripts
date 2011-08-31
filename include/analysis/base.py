@@ -138,25 +138,16 @@ class Base(object):
     
     def _setTemplateContext(self, context):
         self.log.debug("setting template context")
-        for i in xrange(10):
-            to_stop = True
-            for k,v in context.iteritems():
-                if i==0:
-                    self.log.debug("%s = %s" % (k,v))
-                if not v:
-                    self.log.fatal("Value for variable '%s' is empty" % k)
-                t = Template(v)
-                try:
-                    context[k] = t.substitute(**context)
-                    if (len(list_template_vars(v)) > 0):
-                        to_stop = False
-                except KeyError as kk:
-                    self.log.warning("Could not find value for '%s' in '%s'" % (kk,k))
-                    context[k] = t.safe_substitute(**context)
-            if to_stop:
-                break
-        if not to_stop:
-            self.log.warning("Did not finish substitutions of template context")
+        for k,v in context.iteritems():
+            self.log.debug("%s = %s" % (k,v))
+            if not v:
+                self.log.fatal("Value for variable '%s' is empty" % k)
+            t = Template(v)
+            try:
+                context[k] = t.substitute(**context)
+            except KeyError as kk:
+                self.log.debug("Could not find value for '%s' in '%s'" % (kk,k))
+                context[k] = t.safe_substitute(**context)
         self.template_context = context
     
     def _substitute(self, template, maxloops=5):

@@ -191,6 +191,7 @@ def run_subject(log, args, template_vars):
     cs.setOptions(args.thresh, args.radius, args.orient)
     ## run
     cs.run()
+    del cs
     return
 
 def main(arglist):
