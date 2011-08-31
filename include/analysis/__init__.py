@@ -87,7 +87,7 @@ def fromYamlSubject(inputs, run_keys, verbosity=0, dry_run=False, log=None, user
             except (LoggerError, LoggerCritical) as err:
                 pass
         else:
-            self.log.warning("Couldn't find anything in yaml file for %s" % k)
+            print("Couldn't find anything in yaml file for %s" % k)
 
     return
 
