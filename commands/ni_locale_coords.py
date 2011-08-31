@@ -3,6 +3,7 @@
 import argparse, os, sys
 import os.path as op
 import numpy as np
+from copy import deepcopy
 
 import nipype.interfaces.fsl as fsl # fsl
 standard_image = fsl.Info.standard_image
