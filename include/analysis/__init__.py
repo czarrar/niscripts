@@ -7,6 +7,11 @@ from analysis.feat import (FsfGroup, FeatGroup)
 from analysis.afni import (DeconSubject, RemlSubject, BetaSeriesSubject, RegisterBetaSeriesSubject, 
                             CorrelateSubject)
 
+import sys
+sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
+from zlogger import (LoggerError, LoggerCritical)
+
+
 def fromYamlSubjectOld(inputs, run_keys, verbosity=0, dry_run=False, log=None, **user_template_vars):
     """
     Runs both CombineFuncs and FsfSubject
@@ -74,10 +79,13 @@ def fromYamlSubject(inputs, run_keys, verbosity=0, dry_run=False, log=None, user
     for k in run_keys:
         opts = config_dict.pop(k, None)
         if opts:
-            class_name = "".join([ x.capitalize() for x in k.split("_") ]) + "Subject"
-            c = eval(class_name)(verbosity, deepcopy(template_vars), dry_run, log, logger)
-            c.fromDict(opts)
-            c.run()
+            try:
+                class_name = "".join([ x.capitalize() for x in k.split("_") ]) + "Subject"
+                c = eval(class_name)(verbosity, deepcopy(template_vars), dry_run, log, logger)
+                c.fromDict(opts)
+                c.run()
+            except (LoggerError, LoggerCritical) as err:
+                pass
         else:
             self.log.warning("Couldn't find anything in yaml file for %s" % k)
 
