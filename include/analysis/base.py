@@ -141,7 +141,7 @@ class Base(object):
         for i in xrange(10):
             to_stop = True
             for k,v in context.iteritems():
-                if i==1:
+                if i==0:
                     self.log.debug("%s = %s" % (k,v))
                 if not v:
                     self.log.fatal("Value for variable '%s' is empty" % k)
