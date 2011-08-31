@@ -73,7 +73,7 @@ class CoordinateSubject(Base):
                                                            self.outputs['tmp_thresh'])
         self.cmd_overlay = "overlay 1 0 %s -a %s %.5f %i %s" % (self.std, self.outputs['tmp_thresh'], self.thresh, maxval, self.outputs["tmp_rendered"])
         self.cmd_std2img = "std2imgcoord -img %s -std %s -vox %s" % (self.std, self.std, self.outputs['coord'])
-        self.cmd_slicer = "slicer %(tmp_rendered)s -L -t -x -${x} %(tmp_x)s -y -${y} %(tmp_y)s -z -${z} %(tmp_z)s" % self.outputs
+        self.cmd_slicer = "slicer %(tmp_rendered)s -s 2 -L -t -x -${x} %(tmp_x)s -y -${y} %(tmp_y)s -z -${z} %(tmp_z)s" % self.outputs
         self.cmd_append = "pngappend %(tmp_x)s + %(tmp_y)s + %(tmp_z)s %(pic)s" % self.outputs
     
     def _run_closest_coord(self):
