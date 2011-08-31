@@ -182,7 +182,7 @@ class NiWrapper(SubjectBase):
                 for k in self.run_keys:
                     self.log.subtitle("command: %s" % k)
                     cmd = "%s -s %s" % (self._commands[k], s)
-                    self._execute(s, k, cmd)        
+                    self._execute(cmd, s, k)        
         return
     
     def _setup_sge(self):
