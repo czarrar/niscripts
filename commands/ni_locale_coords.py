@@ -183,7 +183,7 @@ class CoordinateSubject(Base):
     def setOptions(self, thresh=2.3, roi_rad=2, orient="LPI"):
         self.log.info("Setting options")
         
-        self.thresh = 2.3
+        self.thresh = thresh
         self.roi_rad = roi_rad
         self.orient = orient
         
