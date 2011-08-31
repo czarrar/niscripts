@@ -23,6 +23,7 @@ def create_parser():
     group.add_argument('--var', action="append", type=append_var, dest="vars")
     
     group = parser.add_argument_group('Optional')
+    group.add_argument("--run", nargs="+", dest="run_keys")
     group.add_argument("--combine", action="append_const", const="combine", dest="run_keys")
     group.add_argument("--res-decon", action="append_const", const="res_decon", 
                         dest="run_keys")
