@@ -177,6 +177,9 @@ class CorrelateSubject(SubjectBase):
                 os.remove(outmap)
             else:
                 self.log.error("Output '%s' already exists" % outmap)
+        if not op.isdir(op.dirname(outmap)):
+            self.log.info("Creating base directory for output '%s'" % op.dirname(outmap))
+            op.mkdir(op.dirname(outmap))
         cor_opts.append("-prefix %s" % outmap)
         
         # Arguments
