@@ -76,10 +76,10 @@ class Base(object):
             if e in d:
                 self.log.error("%s must not be in options" % e)
     
-    def _check_input_one(self, inputs, desc="input files"):
+    def _input_list2str(self, inputs, desc="input files"):
         if len(inputs) > 1:
             self.log.error("Too many %s found: %s" % (decs, infunc))
-        return
+        return inputs[0]
     
     def _check_infile(self, fpath, desc="input file", substitute=False):
         if substitute:

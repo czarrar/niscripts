@@ -116,7 +116,7 @@ class CorrelateSubject(SubjectBase):
             ts_opts.append("-%s %s" % (invox[0], " ".join(invox[1:])))
         elif inmask: # Or mask
             inmask = self._getInputsWorker(inmask)
-            self._check_input_one(inmask, "input masks")
+            inmask = self._input_list2str(inmask, "input masks")
             if not op.isfile(inmask):
                 self.log.error("Input mask '%s' does not exist" % inmask)
             ts_opts.append("-mask %s" % inmask)
@@ -133,7 +133,7 @@ class CorrelateSubject(SubjectBase):
         
         # Input functional
         infunc = self._getInputsWorker(infunc)
-        self._check_input_one(infunc, "input functionals")
+        infunc = self._input_list2str(infunc, "input functionals")
         self.infunc = infunc
         ts_opts.append(infunc)
         
@@ -191,7 +191,7 @@ class CorrelateSubject(SubjectBase):
             self.log.error("Must specify input functional or must set time-series")
         else:
             infunc = self._getInputsWorker(infunc)
-            self._check_input_one(infunc, "input functionals")
+            infunc = self._input_list2str(infunc, "input functionals")
         ### check if exists
         if not op.isfile(infunc):
             self.log.error("Input 4D functional '%s' does not exist" % infunc)
@@ -205,7 +205,7 @@ class CorrelateSubject(SubjectBase):
             self.log.error("Must specify input time-series or must set time-series")
         else:
             ints = self._getInputsWorker(ints)
-            self._check_input_one(ints, "input time-series")
+            ints = self._input_list2str(ints, "input time-series")
         ### check if exists
         if not op.isfile(ints):
             self.log.error("Input time-series '%s' does not exist" % ints)
