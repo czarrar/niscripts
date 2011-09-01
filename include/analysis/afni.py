@@ -142,6 +142,9 @@ class CorrelateSubject(SubjectBase):
             outts = self._substitute(outts)
         else:
             outts = tempfile.mktemp(".1D")  # TODO: when destruct...make sure to delete this
+        if not op.isdir(op.dirname(outts)):
+            self.log.info("Creating base directory of output '%s'" % op.dirname(outts))
+            os.mkdir(op.dirname(outts))
         self.outts = outts
         
         self.ts_opts = ts_opts
