@@ -192,9 +192,6 @@ class CorrelateSubject(SubjectBase):
         else:
             infunc = self._getInputsWorker(infunc)
             infunc = self._input_list2str(infunc, "input functionals")
-        ### check if exists
-        if not op.isfile(infunc):
-            self.log.error("Input 4D functional '%s' does not exist" % infunc)
         ### set
         cor_opts.append(infunc)
         ## 1D time-series
@@ -206,14 +203,11 @@ class CorrelateSubject(SubjectBase):
         else:
             ints = self._getInputsWorker(ints)
             ints = self._input_list2str(ints, "input time-series")
-        ### check if exists
-        if not op.isfile(ints):
-            self.log.error("Input time-series '%s' does not exist" % ints)
-        ### check if good
-        ncols = self._file_ncols(ints)
-        if ncols != 1:
-            self.log.error("Input time-series '%s' has %i columns but should have only 1." % 
-                                (ints, ncols))
+            ### check if good
+            ncols = self._file_ncols(ints)
+            if ncols != 1:
+                self.log.error("Input time-series '%s' has %i columns but should have only 1." % 
+                                    (ints, ncols))
         ### set
         cor_opts.append(ints)
         
