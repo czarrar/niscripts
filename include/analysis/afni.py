@@ -5,6 +5,7 @@ from collections import OrderedDict
 import numpy as np
 from subprocess import Popen, PIPE
 from copy import deepcopy
+from execute import Process
 
 def check_label(label):
     """Display warning if label is greater than 26 characters"""
