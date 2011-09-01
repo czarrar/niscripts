@@ -70,7 +70,7 @@ class Base(object):
             if e not in d:
                 self.log.error("%s must be in options" % e)
     
-    def _check_ex(self, d, l):
+    def check_ex(self, d, l):
         """Check that each element of l is NOT in d"""
         for e in l:
             if e in d:
