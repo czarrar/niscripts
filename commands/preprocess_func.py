@@ -141,7 +141,8 @@ def functional_preprocessing(
     subject_list, 
     inputs, outputs, workingdir, output_type, 
     fwhm, hpfilter, lpfilter, tr, motion_nstages, label, 
-    name="%s_preprocessing", whichvol="middle", timeshift=False, tpattern=None):
+    whichvol="middle", timeshift=False, tpattern=None, delete_vols=0, 
+    name="%s_preprocessing"):
     """todo"""
     
     #####
@@ -154,7 +155,8 @@ def functional_preprocessing(
         print "ERROR: You must have a '%s' in the name for the label"
         raise SystemExit(2)
     
-    preproc = create_func_preproc_workflow(name, whichvol, timeshift, tpattern)
+    preproc = create_func_preproc_workflow(name, whichvol, timeshift, tpattern, 
+                                           delete_vols)
     preproc.base_dir = workingdir
     
     preproc.inputs.inputspec.fwhm = fwhm    
@@ -227,7 +229,7 @@ def functional_preprocessing(
 
 # whichvol can be first, middle, or mean
 # hp should be in TRs
-def create_func_preproc_workflow(name='functional_preprocessing', whichvol='middle', timeshift=False, tpattern=None):
+def create_func_preproc_workflow(name='functional_preprocessing', whichvol='middle', timeshift=False, tpattern=None, delete_vols=0):
         
     #####
     # Setup workflow
@@ -310,6 +312,14 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     preproc.connect(inputnode, 'func', img2float, 'in_file')
     nextnode = img2float
     
+    # Remove the first X frames to account for T2 stabalization
+    if delete_vols > 0:
+        trimmer = pe.MapNode(fsl.ExtractROI(t_min=delete_vols),
+                             iterfield=["in_file"],
+                             name="00_trimmer")
+        preproc.connect(img2float, 'out_file', trimmer, 'in_file')
+        nextnode = trimmer
+    
     """
     Time Shift Slices
     """
@@ -319,7 +329,7 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
                             iterfield=["in_file"], name="01_tshift")
         if tpattern is not None:
             tshift.inputs.tpattern = tpattern
-        preproc.connect(img2float, 'out_file', tshift, 'in_file')
+        preproc.connect(nextnode, 'out_file', tshift, 'in_file')
         nextnode = tshift
     
     """
@@ -664,6 +674,7 @@ class FuncPreprocParser(usage.NiParser):
         group.add_argument('--whichvol', default="middle", choices=["first", "middle", "mean"])
         group.add_argument("--timeshift", default=False, action="store_true")
         group.add_argument("--tpattern", choices=["alt+z", "alt+z2", "alt-z", "seq+z", "seq-z"])
+        group.add_argument("--delete-vols", type=int, default=0)
         return parser
     
     def _post_run(self):

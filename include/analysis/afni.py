@@ -70,7 +70,7 @@ class CorrelateSubject(SubjectBase):
         # 3dmaskave
         if self.ts_cmd:
             f = file(self.outts, 'w')
-            self.log.drycommand(self.ts_cmd)
+            self.log.drycommand(self.ts_cmd + " > %s" % self.outts)
             if not self.dry_run:
                 p = Process(self.ts_cmd, stdout=f)
                 if p.retcode != 0:
