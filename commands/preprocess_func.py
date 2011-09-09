@@ -314,6 +314,7 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
                            name="00_img2float")
     preproc.connect(inputnode, 'func', img2float, 'in_file')
     nextnode = img2float
+    nextout = 'out_file'
     
     # Remove the first X frames to account for T2 stabalization
     if delete_vols > 0:
@@ -322,6 +323,7 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
                              name="00_trimmer")
         preproc.connect(img2float, 'out_file', trimmer, 'in_file')
         nextnode = trimmer
+        nextout = 'roi_file'
     
     """
     Time Shift Slices
@@ -332,8 +334,9 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
                             iterfield=["in_file"], name="01_tshift")
         if tpattern is not None:
             tshift.inputs.tpattern = tpattern
-        preproc.connect(nextnode, 'out_file', tshift, 'in_file')
+        preproc.connect(nextnode, nextout, tshift, 'in_file')
         nextnode = tshift
+        nextout = 'out_file'
     
     """
     Deoblique and Reorient to FSL Friendly Space
@@ -341,7 +344,7 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     
     deoblique = pe.MapNode(interface=afni.ThreedWarp(deoblique=True), 
                             iterfield=["in_file"], name='01_deoblique')
-    preproc.connect(nextnode, "out_file", deoblique, "in_file")
+    preproc.connect(nextnode, nextout, deoblique, "in_file")
     
     # TODO:
     # get orientation using following command:
