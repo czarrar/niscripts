@@ -136,6 +136,8 @@ class NiWrapper(SubjectBase):
         
         self.log.info("Compiling")
         commands = {}
+        if self.sge:
+            self._workingdir = self._commands_opts.pop('workingdir', None)
         for k,v in self._commands_opts.iteritems():
             cmd = []
             prog,opts = v
@@ -181,8 +183,7 @@ class NiWrapper(SubjectBase):
                 self.log.title("Subject: %s" % s)
                 for k in self.run_keys:
                     self.log.subtitle("command: %s" % k)
-                    cmd = "%s -s %s" % (self._commands[k], s)
-                    self._execute(cmd, s, k)        
+                    self._execute(self._commands[k], s, k)        
         return
     
     def _setup_sge(self):
@@ -194,10 +195,11 @@ class NiWrapper(SubjectBase):
             os.mkdir(self.sge_scripts)
         return
     
-    def _execute(self, cmd, subject=None, label=None):
+    def _execute(self, cmd_opt, subject=None, label=None):
         if not self._is_parsed:
             raise Exception("Have not parsed anything yet")
         if self.sge:
+            cmd = "%s --workingdir %s/%s -s %s" % (cmd_opt, subject, subject)
             if subject is None or label is None:
                 self.log.fatal("Must specificy subject and label for _execute")
             script = op.join(self.sge_scripts, "x_%s_%s.bash" % (subject, label))
@@ -211,13 +213,18 @@ class NiWrapper(SubjectBase):
             f.close()
             # New command
             cmd = "qsub %s -o '%s' '%s'" % (self.sge_opts, output, script)
+        else:
+            cmd = "%s -s %s" % (cmd_opt, subject)
         # Execute
         self.log.drycommand(cmd)
-        p = Popen(cmd, shell=True, cwd=os.getcwd(), stdout=sys.stdout, stderr=sys.stderr)
-        p.communicate()
-        if p.returncode != 0:
-            self.log.error("Error running command")
-        return p.returncode
+        if self.dry_run:
+            p = Popen(cmd, shell=True, cwd=os.getcwd(), stdout=sys.stdout, stderr=sys.stderr)
+            p.communicate()
+            if p.returncode != 0:
+                self.log.error("Error running command")
+            return p.returncode
+        else
+            return 0
     
 
 def main(arglist):
