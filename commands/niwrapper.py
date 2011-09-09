@@ -203,6 +203,8 @@ class NiWrapper(SubjectBase):
         if self.sge:
             if not self._workingdirs[label]:
                 raise Exception("error in workingdirs %s" % self._workingdirs)
+            if not op.isdir(self._workingdirs[label]):
+                os.mkdir(self._workingdirs[label])
             cmd = "%s --workingdir %s/%s -s %s" % (cmd_opt, self._workingdirs[label], 
                                                    subject, subject)
             if subject is None or label is None:
