@@ -199,7 +199,8 @@ class NiWrapper(SubjectBase):
         if not self._is_parsed:
             raise Exception("Have not parsed anything yet")
         if self.sge:
-            cmd = "%s --workingdir %s/%s -s %s" % (cmd_opt, subject, subject)
+            cmd = "%s --workingdir %s/%s -s %s" % (cmd_opt, self._workingdir, subject, 
+                                                   subject)
             if subject is None or label is None:
                 self.log.fatal("Must specificy subject and label for _execute")
             script = op.join(self.sge_scripts, "x_%s_%s.bash" % (subject, label))
