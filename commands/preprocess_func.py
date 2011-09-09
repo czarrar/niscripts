@@ -135,6 +135,14 @@ def get_overlay_args(fname):
 
 tolist = lambda x: [x]
 
+def get_trimmed_length(func, ndelete):
+    """Return the desired length after removing two frames."""
+    from nibabel import load
+    funcfile = func
+    if isinstance(func, list):
+        funcfile = func[0]
+    _,_,_,timepoints = load(funcfile).get_shape()
+    return timepoints-int(ndelete)
 
 
 def functional_preprocessing(
@@ -322,6 +330,8 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
                              iterfield=["in_file"],
                              name="00_trimmer")
         preproc.connect(img2float, 'out_file', trimmer, 'in_file')
+        preproc.connect(img2float, ('out_file', get_trimmed_length, delete_vols), 
+                        trimmer, 't_size')
         nextnode = trimmer
         nextout = 'roi_file'
     
