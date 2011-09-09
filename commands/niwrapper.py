@@ -141,7 +141,8 @@ class NiWrapper(SubjectBase):
             cmd = []
             prog,opts = v
             if self.sge:
-                self._workingdirs[k] = opts.pop('workingdir', None)
+                w = opts.pop('workingdir', '')
+                self._workingdirs[k] = self._substitute(w)
             for ko,vo in opts.iteritems():
                 if len(ko) == 1:
                     pre = "-"
@@ -200,7 +201,7 @@ class NiWrapper(SubjectBase):
         if not self._is_parsed:
             raise Exception("Have not parsed anything yet")
         if self.sge:
-            if self._workingdirs[label] is None:
+            if not self._workingdirs[label]:
                 raise Exception("error in workingdirs %s" % self._workingdirs)
             cmd = "%s --workingdir %s/%s -s %s" % (cmd_opt, self._workingdirs[label], 
                                                    subject, subject)
@@ -221,7 +222,7 @@ class NiWrapper(SubjectBase):
             cmd = "%s -s %s" % (cmd_opt, subject)
         # Execute
         self.log.drycommand(cmd)
-        if self.dry_run:
+        if not self.dry_run:
             p = Popen(cmd, shell=True, cwd=os.getcwd(), stdout=sys.stdout, stderr=sys.stderr)
             p.communicate()
             if p.returncode != 0:
