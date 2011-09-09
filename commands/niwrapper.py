@@ -203,10 +203,10 @@ class NiWrapper(SubjectBase):
         if self.sge:
             if not self._workingdirs[label]:
                 raise Exception("error in workingdirs %s" % self._workingdirs)
-            if not op.isdir(self._workingdirs[label]):
-                os.mkdir(self._workingdirs[label])
-            cmd = "%s --workingdir %s/%s -s %s" % (cmd_opt, self._workingdirs[label], 
-                                                   subject, subject)
+            wd = op.join(self._workingdirs[label], subject)
+            if not op.isdir(wd):
+                os.mkdir(wd)
+            cmd = "%s --workingdir %s -s %s" % (cmd_opt, wd, subject)
             if subject is None or label is None:
                 self.log.fatal("Must specificy subject and label for _execute")
             script = op.join(self.sge_scripts, "x_%s_%s.bash" % (subject, label))

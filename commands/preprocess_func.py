@@ -265,12 +265,12 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
         "motion_trans",     # plot of translations
         "motion_disp",      # plot of abs/rel displacement
         "motion_max",       # textfile with max abs/rel displacement
-        "func_mc",          # 4D motion corrected and skull stripped data
+#        "func_mc",          # 4D motion corrected and skull stripped data
         "func_afnimask",    # mask from 3dAutomask
         "example_func",     # useful for registration later (simply a mean image)
         "func_mask",        # mask that is less contrained
-        "func_mc_sm",       # smoothed data
-        "func_mc_sm_ft",    # time filtered data
+#        "func_mc_sm",       # smoothed data
+#        "func_mc_sm_ft",    # time filtered data
         "func_preproc",     # final output (also has been intensity normalized)
         "func_mean",        # mean of final output
         "example_func_all", 
@@ -488,7 +488,7 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
                            name = "03_funcbrain1")
     preproc.connect(motion_correct, 'out_file', funcbrain1, 'in_file')
     preproc.connect(meanmask1, 'out_file', funcbrain1, 'mask_file')
-    renamer.connect(funcbrain1, 'out_file', 'func_mc')
+    #renamer.connect(funcbrain1, 'out_file', 'func_mc')
     
     """
     Dilated Brain Mask
@@ -559,6 +559,7 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     preproc.connect(motion_correct, "par_file", art, "realignment_parameters")
     preproc.connect(funcbrain2, "out_file", art, "realigned_files")
     preproc.connect(dilatemask, "out_file", art, "mask_file")
+    renamer.connect(art, 'out_file', 'func_mask_all', format_string="func_mask")
     
     plotmean = pe.MapNode(fsl.PlotTimeSeries(title="Global Mean Intensity"),
                           iterfield=["in_file"],
@@ -593,10 +594,10 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     selectnode = pe.Node(interface=util.Select(),name='06_select')
     preproc.connect(concatnode, 'out', selectnode, 'inlist')
     preproc.connect(inputnode, ('fwhm', chooseindex), selectnode, 'index')
-    rename_smooth = renamer.connect(selectnode, 'out', 'func_mc_sm', 
-                                    format_string="func_mc_sm%(fwhm)s", 
-                                    fwhm=None)
-    preproc.connect(inputnode, ('fwhm', fwhm_used), rename_smooth, 'fwhm')
+    #rename_smooth = renamer.connect(selectnode, 'out', 'func_mc_sm', 
+    #                                format_string="func_mc_sm%(fwhm)s", 
+    #                                fwhm=None)
+    #preproc.connect(inputnode, ('fwhm', fwhm_used), rename_smooth, 'fwhm')
     
     """
     Filter
@@ -609,12 +610,12 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     preproc.connect(inputnode, 'lowpass', filt, 'lowpass_sigma')
     preproc.connect(selectnode, 'out', filt, 'in_file')
     ## set renamed output
-    rename_filt = renamer.connect(filt, 'out_file', 'func_mc_sm_ft', 
-                                  format_string="func_mc_sm%(fwhm)s_hp%(hp)s_lp%(lp)s",
-                                  fwhm=None, hp=None, lp=None)
-    preproc.connect(inputnode, ('fwhm', fwhm_used), rename_filt, 'fwhm')
-    preproc.connect(inputnode, ('highpass', filter_used), rename_filt, 'hp')
-    preproc.connect(inputnode, ('lowpass', filter_used), rename_filt, 'lp')
+    #rename_filt = renamer.connect(filt, 'out_file', 'func_mc_sm_ft', 
+    #                              format_string="func_mc_sm%(fwhm)s_hp%(hp)s_lp%(lp)s",
+    #                              fwhm=None, hp=None, lp=None)
+    #preproc.connect(inputnode, ('fwhm', fwhm_used), rename_filt, 'fwhm')
+    #preproc.connect(inputnode, ('highpass', filter_used), rename_filt, 'hp')
+    #preproc.connect(inputnode, ('lowpass', filter_used), rename_filt, 'lp')
     
     """
     Intensity Normalization
