@@ -285,7 +285,10 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
         "pics_func_mean_head1",
         "pics_func_mean_head2",
         "pics_func_mean_brain1",
-        "pics_func_mean_brain2"
+        "pics_func_mean_brain2",
+        "outlier_vols", 
+        "pics_outlier_vols", 
+        "pics_global_plot"        
     ]
     outputnode = pe.Node(util.IdentityInterface(fields=output_fields),
                         name="outputspec")
@@ -559,12 +562,14 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     preproc.connect(motion_correct, "par_file", art, "realignment_parameters")
     preproc.connect(funcbrain2, "out_file", art, "realigned_files")
     preproc.connect(dilatemask, "out_file", art, "mask_file")
-    renamer.connect(art, 'out_file', 'func_mask_all', format_string="func_mask")
+    renamer.connect(art, 'outlier_files', 'outlier_vols')
+    renamer.connect(art, 'plot_files', 'pics_outlier_vols')
     
     plotmean = pe.MapNode(fsl.PlotTimeSeries(title="Global Mean Intensity"),
                           iterfield=["in_file"],
                           name="05_plotmean")
     preproc.connect(art, 'intensity_files', plotmean, 'in_file')
+    renamer.connect(plotmean, 'out_file', 'pics_global_plot')
     
     """
     Smoothing
