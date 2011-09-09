@@ -136,11 +136,12 @@ class NiWrapper(SubjectBase):
         
         self.log.info("Compiling")
         commands = {}
-        if self.sge:
-            self._workingdir = self._commands_opts.pop('workingdir', None)
+        self._workingdirs = {}
         for k,v in self._commands_opts.iteritems():
             cmd = []
             prog,opts = v
+            if self.sge:
+                self._workingdirs[k] = opts.pop('workingdir', None)
             for ko,vo in opts.iteritems():
                 if len(ko) == 1:
                     pre = "-"
@@ -199,8 +200,10 @@ class NiWrapper(SubjectBase):
         if not self._is_parsed:
             raise Exception("Have not parsed anything yet")
         if self.sge:
-            cmd = "%s --workingdir %s/%s -s %s" % (cmd_opt, self._workingdir, subject, 
-                                                   subject)
+            if self._workingdirs[label] is None:
+                raise Exception("error in workingdirs %s" % self._workingdirs)
+            cmd = "%s --workingdir %s/%s -s %s" % (cmd_opt, self._workingdirs[label], 
+                                                   subject, subject)
             if subject is None or label is None:
                 self.log.fatal("Must specificy subject and label for _execute")
             script = op.join(self.sge_scripts, "x_%s_%s.bash" % (subject, label))
