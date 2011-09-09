@@ -223,7 +223,7 @@ class NiWrapper(SubjectBase):
             if p.returncode != 0:
                 self.log.error("Error running command")
             return p.returncode
-        else
+        else:
             return 0
     
 
