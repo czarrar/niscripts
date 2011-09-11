@@ -163,8 +163,11 @@ def functional_preprocessing(
         print "ERROR: You must have a '%s' in the name for the label"
         raise SystemExit(2)
     
+    
+    func_preproc_name = "func_preproc_%ism_%ihp_%ilp" % (int(fwhm*10), 
+                            hpfilter*(hpfilter>0), lpfilter*(lpfilter>0))
     preproc = create_func_preproc_workflow(name, whichvol, timeshift, tpattern, 
-                                           delete_vols)
+                                           delete_vols, func_preproc_name)
     preproc.base_dir = workingdir
     
     preproc.inputs.inputspec.fwhm = fwhm    
@@ -237,7 +240,7 @@ def functional_preprocessing(
 
 # whichvol can be first, middle, or mean
 # hp should be in TRs
-def create_func_preproc_workflow(name='functional_preprocessing', whichvol='middle', timeshift=False, tpattern=None, delete_vols=0):
+def create_func_preproc_workflow(name='functional_preprocessing', whichvol='middle', timeshift=False, tpattern=None, delete_vols=0, func_preproc_name="func_preproc"):
         
     #####
     # Setup workflow
@@ -273,13 +276,13 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
         "motion_trans",     # plot of translations
         "motion_disp",      # plot of abs/rel displacement
         "motion_max",       # textfile with max abs/rel displacement
-#        "func_mc",          # 4D motion corrected and skull stripped data
+        "func_mc",          # 4D motion corrected and skull stripped data
         "func_afnimask",    # mask from 3dAutomask
         "example_func",     # useful for registration later (simply a mean image)
         "func_mask",        # mask that is less contrained
 #        "func_mc_sm",       # smoothed data
 #        "func_mc_sm_ft",    # time filtered data
-        "func_preproc",     # final output (also has been intensity normalized)
+        func_preproc_name,  # final output (also has been intensity normalized)
         "func_mean",        # mean of final output
         "example_func_all", 
         "func_mask_all",
@@ -553,6 +556,7 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
                            name="04_funcbrain2")
     preproc.connect(motion_correct, 'out_file', funcbrain2, 'in_file')
     preproc.connect(dilatemask, 'out_file', funcbrain2, 'mask_file')
+    renamer.connect(funcbrain2, 'out_file', 'func_mc')
     
     # Get a new mean image from each functional run
     meanfunc3 = pe.MapNode(fsl.MeanImage(),
@@ -651,7 +655,7 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     Get Final Functional Data and Mean
     """
     ## functional 4D
-    renamer.connect(meanscale, 'out_file', 'func_preproc')
+    renamer.connect(meanscale, 'out_file', func_preproc_name)
     ## mean
     meanfunc4 = pe.MapNode(fsl.MeanImage(),
                            iterfield=["in_file"],
