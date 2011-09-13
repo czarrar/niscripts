@@ -955,8 +955,8 @@ def create_func2standard_workflow(
                 ('standard', 'inputspec.ref_file'),
                 (('interp', interp4fnirt), 'inputspec.interp')
             ]),
-            (inputnode, fnirt_func2standard, [
-                ('highres2standard_mat', 'inputspec.in2ref_mat_file')
+            (func2highres, fnirt_func2standard, [
+                ('outputspec.in2ref_mat', 'inputspec.in2ref_mat_file')
             ]),
             (inputnode, fnirt_func2standard, [
                 ('highres2standard_warp', 'inputspec.in2ref_field_file')

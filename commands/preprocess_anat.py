@@ -299,24 +299,24 @@ def create_ap_freesurfer_workflow(freesurfer_dir, name="preproc_anat_freesurfer"
     
     # Create brain mask
     brain_mask = pe.Node(interface=fsl.ImageMaths(op_string='-bin'), name='brain_mask')
-    preproc.connect(convert_brain, 'out_file', brain_mask, 'in_file')
+    preproc.connect(reorient_brain, 'out_file', brain_mask, 'in_file')
     renamer(brain_mask, 'out_file', 'brain_mask')
     
     # Pic of head
     slicer_head = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), 
                             name='slicer_head')
-    preproc.connect(convert_head, 'out_file', slicer_head, 'in_file')
+    preproc.connect(reorient_head, 'out_file', slicer_head, 'in_file')
     renamer(slicer_head, 'out_file', 'head_axial_pic')
     
     # Pic of brain mask overlaid on head (axial)
     slicer_mask1 = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="axial"), name='slicer_mask1')
-    preproc.connect(convert_head, 'out_file', slicer_mask1, 'in_file')
+    preproc.connect(reorient_head, 'out_file', slicer_mask1, 'in_file')
     preproc.connect(brain_mask, ('out_file', get_overlay_args), slicer_mask1, 'overlay1')
     renamer(slicer_mask1, 'out_file', 'brain_mask_axial_pic')
     
     # Pic of brain mask overlaid on head (sagittal)
     slicer_mask2 = pe.Node(interface=misc.Slicer(width=5, height=4, slice_name="sagittal"), name='slicer_mask2')
-    preproc.connect(convert_head, 'out_file', slicer_mask2, 'in_file')
+    preproc.connect(reorient_head, 'out_file', slicer_mask2, 'in_file')
     preproc.connect(brain_mask, ('out_file', get_overlay_args), slicer_mask2, 'overlay1')
     renamer(slicer_mask2, 'out_file', 'brain_mask_sagittal_pic')
     
