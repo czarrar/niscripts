@@ -570,7 +570,7 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     
     art = pe.MapNode(ra.ArtifactDetect(use_differences = [True, False],
                                        use_norm = True,
-                                       zintensity_threshold = 3,
+                                       zintensity_threshold = 4,
                                        norm_threshold = 1,
                                        parameter_source = "FSL",
                                        mask_type = "file"),
