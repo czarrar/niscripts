@@ -297,6 +297,8 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
         "pics_func_mean_head2",
         "pics_func_mean_brain1",
         "pics_func_mean_brain2",
+        "global_intensity", 
+        "norm", 
         "outlier_vols", 
         "pics_outlier_vols", 
         "pics_global_plot"        
@@ -579,6 +581,8 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     preproc.connect(motion_correct, "par_file", art, "realignment_parameters")
     preproc.connect(funcbrain2, "out_file", art, "realigned_files")
     preproc.connect(dilatemask, "out_file", art, "mask_file")
+    renamer.connect(art, 'intensity_files', 'global_intensity')
+    renamer.connect(art, 'norm_files', 'norm')
     renamer.connect(art, 'outlier_files', 'outlier_vols')
     renamer.connect(art, 'plot_files', 'pics_outlier_vols')
     
