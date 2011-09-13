@@ -22,7 +22,7 @@
     		<h1>Report Page - {{ title }}</h1>
     		{% if links %}
     		  <hr />|
-      		{% for name,link in links.iteritems() %}
+      		{% for name,link in links %}
       		    <a href="{{ link }}">{{ name }}</a> | 
       		{% endfor %}
     		{% endif %}
