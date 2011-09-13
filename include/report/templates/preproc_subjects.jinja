@@ -10,9 +10,13 @@
     <link rel="stylesheet" href="css/blueprint/screen.css" type="text/css" media="screen, projection" />
     <link rel="stylesheet" href="css/blueprint/print.css" type="text/css" media="print" />
     <!--[if IE]><link rel="stylesheet" href="blueprint/ie.css" type="text/css" media="screen, projection" /><![endif]-->
+    
+    <!-- Javascript Zoom -->
+    <script src="js/FancyZoom.js" type="text/javascript"></script>
+    <script src="js/FancyZoomHTML.js" type="text/javascript"></script>
     {% endblock head %}
   </head>
-  <body >
+  <body onload="setupZoom()">
     <div class="container">
     	<div class="span-24" id="header">
     		<h1>Report Page - {{ title }}</h1>
@@ -56,7 +60,9 @@
           <h3 class="loud" id="anat_{{ label }}">Anatomical - {{ label }}</h3>
           {% for name,location in content %}
             <h4>{{ name }}</h4>
-            <p><img src="{{ location }}" alt="{{ name }}" width="100%"></p>
+            <p><a href="{{ location }}"> 
+               <img src="{{ location }}" alt="{{ name }}" width="100%">
+            </a></p>
           {% endfor %}
         {% endfor %}
         <hr />
@@ -64,7 +70,9 @@
           <h3 class="loud" id="reg_{{ label }}">Registration - {{ label }}</h3>
           {% for name,location in content %}
             <h4>{{ name }}</h4>
-            <p><img src="{{ location }}" alt="{{ name }}" width="100%"></p>
+            <p><a href="{{ location }}">
+                <img src="{{ location }}" alt="{{ name }}" width="100%">
+            </a></p>
           {% endfor %}
         {% endfor %}
         <hr />
@@ -77,7 +85,13 @@
               <br />
               <em>Max Relative Motion:</em> {{ run_content.rel }} mm
               <br />
-              <img src="{{ run_content.disp }}" alt="displacement">
+              <a href="{{ run_content.disp }}">
+                  <img src="{{ run_content.disp }}" alt="displacement">
+              </a>
+              <br />
+              <a href="{{ run_content.outlier }}">
+                <img src="{{ run_content.outlier }}" alt="outliers">
+              </a>
             </p>
           {% endfor %}
         {% endfor %}

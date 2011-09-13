@@ -59,7 +59,12 @@ class Reporter(object):
         self.log = zlogger.getLogger(self._logname, level=self.loglevel, fname=logfile, 
                                      allow_exceptions=True)
         
-        shutil.copytree(op.join(os.getenv("NISCRIPTS"), "etc", "css"), op.join(outdir, "css"))
+        shutil.copytree(op.join(os.getenv("NISCRIPTS"), "etc", "css"), 
+                        op.join(outdir, "css"))
+        shutil.copytree(op.join(os.getenv("NISCRIPTS"), "etc", "js"), 
+                        op.join(outdir, "js"))
+        shutil.copytree(op.join(os.getenv("NISCRIPTS"), "etc", "images"), 
+                        op.join(outdir, "images"))
         
         self._setTemplateContext(template_context)
         self.env = Environment(loader=PackageLoader('report', 'templates'))

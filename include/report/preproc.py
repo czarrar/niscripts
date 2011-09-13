@@ -12,6 +12,7 @@ class PreprocReporter(Reporter):
     _logname = "preproc_report"
     _motion_max_fname = "motion_max.txt"
     _motion_disp_fname = "motion_disp.png"
+    _motion_outliers_fname = "pics_outlier_vols.png"
     
     def __init__(self, *args, **kwargs):
         super(PreprocReporter, self).__init__(*args, **kwargs)
@@ -135,6 +136,11 @@ class PreprocReporter(Reporter):
                 if not op.isfile(fdisp):
                     self.log.error("Displacment picture '%s' does not exist" % fdisp)
                 tmpinfo['disp'] = fdisp
+                # outliers pic
+                foutlier = op.join(rundir, self._motion_outliers_fname)
+                if not op.isfile(foutlier):
+                    self.log.error("Outlier picture '%s' does not exist" % foutlier)
+                tmpinfo['outlier'] = foutlier
                 # save
                 minfo[label].append((run+1,tmpinfo))
         
