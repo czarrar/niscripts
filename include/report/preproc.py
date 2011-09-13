@@ -29,6 +29,7 @@ class PreprocReporter(Reporter):
         for subject,context in self.subjects:
             self.log.info("...subject %s" % subject)
             subfile = op.join(self.outdir, subject + ".html")
+            context['subject'] = subject
             context['title'] = 'Preprocessing'
             context['links'] = links
             report = self._render('preproc_subjects', **context)        
