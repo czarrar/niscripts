@@ -25,15 +25,23 @@ class PreprocReporter(Reporter):
             self.log.fatal("Subjects not set!")
                 
         self.log.info("Creating report")
+        links = [ (s, op.join(self.outdir, s + ".html")) for s in self.subjects ]
         for subject,context in self.subjects:
             self.log.info("...subject %s" % subject)
             subfile = op.join(self.outdir, subject + ".html")
             context['title'] = 'Preprocessing'
+            context['links'] = links
             report = self._render('preproc_subjects', **context)        
             self.log.debug("...writing %s" % subfile)
             f = file(subfile, 'w')
             f.write(report)
             f.close()
+        # index page
+        self.log.info("...index page")
+        ofile = op.join(self.outdir, "index.html")
+        context['title'] = 'Preprocessing'
+        context['subjects'] = links
+        report = self._render('preproc_index', **context)
         return
     
     def _psub(self, path):
