@@ -23,9 +23,9 @@ class PreprocReporter(Reporter):
     def run(self):
         if not self.subjects:
             self.log.fatal("Subjects not set!")
-                
+        
         self.log.info("Creating report")
-        links = [ (s, op.join(self.outdir, s + ".html")) for s,c in self.subjects ]
+        links = [ (s, s + ".html") for s,c in self.subjects ]
         for subject,context in self.subjects:
             self.log.info("...subject %s" % subject)
             subfile = op.join(self.outdir, subject + ".html")
