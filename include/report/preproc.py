@@ -43,6 +43,10 @@ class PreprocReporter(Reporter):
         context['title'] = 'Preprocessing'
         context['subjects'] = links
         report = self._render('preproc_index', **context)
+        self.log.debug("...writing %s" % ofile)
+        f = file(ofile, 'w')
+        f.write(report)
+        f.close()
         return
     
     def _psub(self, path):
