@@ -38,10 +38,10 @@
               <br />
             {% endfor %}
           </div>
-          <h3 class="caps">Registration</h3>
+          <h3 class="caps">Segmentation</h3>
           <div class="box">
-            {% for label in reg %}
-              <a href="#reg_{{ label }}">{{ label }}</a>
+            {% for label in seg %}
+              <a href="#seg_{{ label }}">{{ label }}</a>
               <br />
             {% endfor %}
           </div>
@@ -49,6 +49,20 @@
           <div class="box">
             {% for label in motion %}
               <a href="#motion_{{ label }}">{{ label }}</a>
+              <br />
+            {% endfor %}
+          </div>
+          <h3 class="caps">Registration</h3>
+          <div class="box">
+            {% for label in reg %}
+              <a href="#reg_{{ label }}">{{ label }}</a>
+              <br />
+            {% endfor %}
+          </div>
+          <h3 class="caps">Nuisance</h3>
+          <div class="box">
+            {% for label in nuisance %}
+              <a href="#nuisance_{{ label }}">{{ label }}</a>
               <br />
             {% endfor %}
           </div>
@@ -66,12 +80,12 @@
           {% endfor %}
         {% endfor %}
         <hr />
-        {% for label,content in reg.iteritems() %}
-          <h3 class="loud" id="reg_{{ label }}">Registration - {{ label }}</h3>
+        {% for label,content in seg.iteritems() %}
+          <h3 class="loud" id="seg_{{ label }}">Segmentation - {{ label }}</h3>
           {% for name,location in content %}
             <h4>{{ name }}</h4>
-            <p><a href="{{ location }}">
-                <img src="{{ location }}" alt="{{ name }}" width="100%">
+            <p><a href="{{ location }}"> 
+               <img src="{{ location }}" alt="{{ name }}" width="100%">
             </a></p>
           {% endfor %}
         {% endfor %}
@@ -95,6 +109,38 @@
             </p>
           {% endfor %}
         {% endfor %}
+        <hr />
+        {% for label,content in reg.iteritems() %}
+          <h3 class="loud" id="reg_{{ label }}">Registration - {{ label }}</h3>
+          {% for name,location in content %}
+            <h4>{{ name }}</h4>
+            <p><a href="{{ location }}">
+                <img src="{{ location }}" alt="{{ name }}" width="100%">
+            </a></p>
+          {% endfor %}
+        {% endfor %}
+        {% for label,content in nuisance.iteritems() %}
+          <h3 class="loud" id="nuisance_{{ label }}">Nuisance - {{ label }}</h3>
+          {% for run,run_content in content %}
+            <h4>Run {{ run }}</h4>
+            <p>
+              <a href="{{ run_content.global }}">
+                  <img src="{{ run_content.global }}" alt="global" width="100%">
+              </a>
+            </p>
+            <p>
+              <a href="{{ run_content.wm }}">
+                <img src="{{ run_content.wm }}" alt="wm" width="100%">
+              </a>
+            </p>
+            <p>
+              <a href="{{ run_content.csf }}">
+                <img src="{{ run_content.csf }}" alt="csf" width="100%">
+              </a>
+            </p>
+          {% endfor %}
+        {% endfor %}
+
       </div>
       
     	<div class="span-24">

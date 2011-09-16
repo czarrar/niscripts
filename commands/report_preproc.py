@@ -31,8 +31,10 @@ def create_parser():
     group = parser.add_argument_group('Required "Options"')
     group.add_argument('-s', '--subjects', nargs="+", required=True)
     group.add_argument('-a', '--anatdirs', nargs="+", action=store_special, required=True)
-    group.add_argument('-r', '--regdirs', nargs="+", action=store_special, required=True)
-    group.add_argument('-f', '--funcdirs', nargs="+", action=store_special, required=True)
+    group.add_argument('-r', '--regdirs', nargs="+", action=store_special, default=None)
+    group.add_argument('-f', '--funcdirs', nargs="+", action=store_special, default=None)
+    group.add_argument('-e', '--segdirs', nargs="+", action=store_special, default=None)
+    group.add_argument('-n', '--nuidirs', nargs="+", action=store_special, default=None)
     group.add_argument('-o', '--outdir', required=True)
     
     group = parser.add_argument_group('Optional "Options"')
@@ -47,7 +49,8 @@ def main(arglist):
     args = parser.parse_args(arglist)
     try:
         reporter = PreprocReporter(args.verbosity, args.outdir, overwrite=args.overwrite)
-        reporter.setData(args.subjects, args.anatdirs, args.regdirs, args.funcdirs)
+        reporter.setData(args.subjects, args.anatdirs, args.funcdirs, args.regdirs, 
+                         args.segdirs, args.nuidirs)
         reporter.run()
     except (LoggerError, LoggerCritical):
         parser.error("Quiting")
