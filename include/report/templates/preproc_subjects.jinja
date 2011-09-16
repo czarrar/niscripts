@@ -123,16 +123,19 @@
           <h3 class="loud" id="nuisance_{{ label }}">Nuisance - {{ label }}</h3>
           {% for run,run_content in content %}
             <h4>Run {{ run }}</h4>
+            <h5>Global Mask</h5>
             <p>
               <a href="{{ run_content.global }}">
                   <img src="{{ run_content.global }}" alt="global" width="100%">
               </a>
             </p>
+            <h5>WM Mask</h5>
             <p>
               <a href="{{ run_content.wm }}">
                 <img src="{{ run_content.wm }}" alt="wm" width="100%">
               </a>
             </p>
+            <h5>CSF Mask</h5>
             <p>
               <a href="{{ run_content.csf }}">
                 <img src="{{ run_content.csf }}" alt="csf" width="100%">
