@@ -61,7 +61,7 @@ class PreprocReporter(Reporter):
         
         sinfo = {}
         ainfo = {}  # mask
-        sinfo = {}  # segmentation
+        einfo = {}  # segmentation
         minfo = {}  # motion
         rinfo = {}  # reg
         ninfo = {}  # nuisance
@@ -129,12 +129,12 @@ class PreprocReporter(Reporter):
         if segdirs:
             self.log.debug("...segmentation")
             for label,segdir in segdirs:
-                sinfo[label] = [
+                einfo[label] = [
                     ('gm', op.join(segdir, "gm.png")), 
                     ('wm', op.join(segdir, "wm.png")), 
                     ('csf', op.join(segdir, "csf.png"))
                 ]
-                for k,v in sinfo[label]:
+                for k,v in einfo[label]:
                     if not op.isfile(v):
                         self.log.error("segmentation pic '%s' does not exist" % v)
         
@@ -211,7 +211,7 @@ class PreprocReporter(Reporter):
         self.addTemplateContext('subject', None)
         self.subjects.append((subject, {
             'anat': ainfo,
-            'seg': sinfo, 
+            'seg': einfo, 
             'motion': minfo, 
             'reg': rinfo, 
             'nuisance': ninfo
