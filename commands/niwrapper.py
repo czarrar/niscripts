@@ -222,8 +222,10 @@ class NiWrapper(SubjectBase):
             f.close()
             # New command
             cmd = "qsub %s -o '%s' '%s'" % (self.sge_opts, output, script)
-        else:
+        elif subject is not None:
             cmd = "%s -s %s" % (cmd_opt, subject)
+        else:
+            cmd = "%s" % cmd_opt
         # Execute
         self.log.drycommand(cmd)
         if not self.dry_run:
