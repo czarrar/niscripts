@@ -153,8 +153,8 @@ def functional_preprocessing(
     datasource.inputs.base_directory=os.path.abspath(inputs.basedir)
     datasource.inputs.template = "*"
     datasource.inputs.field_template = dict(
-        func = os.path.join("%s", inputs.funcdir, "run_?", inputs.infunc),
-        func_mask = os.path.join("%s", inputs.funcdir, "run_?", inputs.inmask)
+        func = os.path.join("%s", inputs.funcdir, "run_[0-9]+", inputs.infunc),
+        func_mask = os.path.join("%s", inputs.funcdir, "run_[0-9]+", inputs.inmask)
     )
     datasource.inputs.template_args = dict(
                                         func = [['subject_id']],
@@ -165,6 +165,7 @@ def functional_preprocessing(
     datasource.inputs.subject_id = subject_list
     ds = datasource.run()
     print [ x for x in ds.outputs.func ]
+    print ds.outputs.func
     raise SystemExit(1)
     runs = [ len(x) for x in ds.outputs.func ]  # list with number of runs per subject
     max_runs = max(runs)
