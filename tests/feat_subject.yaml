@@ -14,7 +14,7 @@ combine:
         polort: A   # can remove run effects if have multiple runs
         inconfound: ${base}/motion_all.par
         outconfound: ${funcdir}/confound_evs.1D
-
+    
 fsf:
     data:
         infile: "${funcdir}/func_preproc.nii.gz"
@@ -23,7 +23,7 @@ fsf:
         highpass_filter: 128
         # TR is automatic but you could do tr: 2 to force a TR of 2 seconds
         overwrite: 0    # 0 = quit if output exists, 1 = add '+' to outdir if exists, 2 = overwrite
-
+    
     stats:
         prewhiten: True         # default = True
         confoundev_file: ${funcdir}/confound_evs.1D # default = none
@@ -38,11 +38,13 @@ fsf:
                 convolution: double-gamma
                 tempfilt: True
                 tempderiv: True
+                # bytrial: ['all', TMPDIR]
             none_corr:
                 fname: ${evdir}/delay2_corr_none.txt
                 convolution: double-gamma
                 tempfilt: True
                 tempderiv: True
+                # bycolumn: ['all', TMPDIR]
             scenes_corr:
                 fname: ${evdir}/delay2_corr_scenes.txt
                 convolution: double-gamma

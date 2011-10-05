@@ -192,6 +192,13 @@ class SubjectBase(Base):
         ncols = len(re.split("[ \t]+", l.strip()))
         return ncols
     
+    def _file_nrows(self, fname):
+        f = open(fname, 'r')
+        ls = f.readlines()
+        f.close()
+        nrows = len([ l for l in ls if l.strip() ])
+        return nrows
+    
     def getInputs(self, infiles, runfile, mkdir):
         # Run file
         if runfile:

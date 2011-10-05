@@ -718,7 +718,8 @@ class FsfSubject(SubjectBase):
         return
     
     
-    def addEV(self, name, fname, convolution, tempfilt=False, tempderiv=False, **opts):
+    def addEV(self, name, fname, convolution, tempfilt=False, tempderiv=False, 
+              bytrial=None, bycolumn=None, **opts):
         """
         Adds an Expanatory Variable (EV) to the evs list.
         See FEAT help for more details on inputs.
@@ -755,16 +756,20 @@ class FsfSubject(SubjectBase):
             self.log.error("Can't add EV '%s', since it already exists" % name)
         if not op.isfile(fname):
             self.log.error("File '%s' for EV '%s' does not exist" % (fname, name))
+        if bytrial is None and bycolumn is None:
+            self.log.error("Cannot specify both bytrial and bycolumn")
         
         # Waveform Shape (1 column or 3 column file)
         ncols = self._file_ncols(fname)
-        if ncols == 1:
+        if bycolumn is not None:
             waveform = waveform_choices['custom1']
-        elif ncols == 3:
-            waveform = waveform_choices['custom3']
-        if ncols != 1 and ncols != 3:
-            self.log.error("File %s for EV %s must have 1 or 3 columns, instead %i were found" % 
-                                (fname, name, ncols))
+        else:
+            if ncols == 1:
+                waveform = waveform_choices['custom1']
+            elif ncols == 3:
+                waveform = waveform_choices['custom3']
+            if ncols != 1 and ncols != 3:
+                self.log.error("File %s for EV %s must have 1 or 3 columns, instead %i were found" % (fname, name, ncols))
         
         # Convolution
         try:
@@ -772,18 +777,83 @@ class FsfSubject(SubjectBase):
         except KeyError as k:
             self.log.error("Convolution '%s' not recognized" % convolution)
         
-        ev = {
-            'waveform': waveform,
-            'convolution': convolution,
-            'fname': fname,
-            'tempfilt': tempfilt,
-            'tempderiv': tempderiv
-        }
-        ev.update(opts)
-        self.evs[name] = ev
+        # Calculate for individual trials?
+        if bytrial is not None:
+            self.log.info("ev %s will be split into individual trials" % name)
+            if not isinstance(bytrial, list):
+                self.log.fatal("bytrial must be a list of 2 arguments [WHICH_TRIALS, TMP_DIRECTORY]")
+            if ncols != 3:
+                self.log.fatal("if calculating betas for each individual trial, then input file must be 3" \
+                               " column format")
+            f = open(fname, 'r')
+            lines = f.readlines()
+            lines = [ l.strip() for l in lines if l.strip() ]
+            ntrials = len(lines)
+            f.close()
+            which_trials, basedir = tuple(bytrial)
+            if not op.isdir(basedir):
+                self.log.info("Creating directory %s" % basedir)
+                os.mkdir(basedir)
+            
+            if which_trials == 'all':
+                for i in xrange(ntrials):
+                    sname = "%s_trial%04i" % (name, i+1)
+                    fn = op.join(basedir, "%s.txt" % sname)
+                    # create new ev files
+                    f = open(fn, 'w')
+                    f.write(lines[i] + "\n")
+                    f.close()
+                    # call ev function
+                    self.addEV(sname, fn, convolution, tempfilt, tempderiv, 
+                               bytrial=None, **opts)
+            else:
+                i = int(which_trials)
+                sname = "%s_trial_%04i" % (name, i)
+                fn = op.join(basedir, "%s.txt" % sname)
+                f = open(fn, 'w')
+                f.write(lines[i-1] + "\n")
+                f.close()
+                self.addEV(sname, fn, convolution, tempfilt, tempderiv, 
+                           bytrial=None, **opts)
+            return
+        elif bycolumn is not None:
+            self.log.info("ev %s will be split into individual columns" % name)
+            if not isinstance(bycolumn, list):
+                self.log.fatal("bycolumn must be a list of 2 arguments [WHICH_COLS, TMP_DIRECTORY]")
+            x = np.loadtxt(fname)
+            which_cols, basedir = tuple(bycolumn)
+            if not op.isdir(basedir):
+                self.log.info("Creating directory %s" % basedir)
+                os.mkdir(basedir)
+            
+            if which_cols == 'all':
+                for i in xrange(ncols):
+                    sname = "%s_col%04i" % (name, i+1)
+                    fn = op.join(basedir, "%s.txt" % sname)
+                    np.savetxt(fn, x[:,i], fmt="%f")
+                    self.addEV(sname, fn, convolution, tempfilt, tempderiv, 
+                               bycolumn=None, **opts)
+            else:
+                i = int(which_cols)
+                sname = "%s_col%04i" % (name, i)
+                fn = op.join(basedir, "%s.txt" % sname)
+                np.savetxt(fn, x[:,i-1], fmt="%f")
+                self.addEV(sname, fn, convolution, tempfilt, tempderiv, 
+                           bycolumn=None, **opts)
+            return
+        else:
+            ev = {
+                'waveform': waveform,
+                'convolution': convolution,
+                'fname': fname,
+                'tempfilt': tempfilt,
+                'tempderiv': tempderiv
+            }
+            ev.update(opts)
+            self.evs[name] = ev
         
-        self._isset['ev'] = True
-        return
+            self._isset['ev'] = True
+            return
     
     def addContrast(self, name, con):
         """

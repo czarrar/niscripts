@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-This script uses nipype for anatomical preprocessing
+This script uses nipype for functional preprocessing
 """
 
 import numpy as np
