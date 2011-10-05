@@ -310,7 +310,7 @@ def create_func_preproc_workflow(name='functional_preprocessing', func_preproc_n
     meanscale = pe.MapNode(interface=fsl.ImageMaths(suffix='_gms'),
                           iterfield=['in_file', 'op_string'],
                           name='04_meanscale')
-    preproc.connect(filt, 'out_outfile', meanscale, 'in_file')
+    preproc.connect(filt, 'out_file', meanscale, 'in_file')
     ## function to get scaling factor
     preproc.connect(medianval, ('out_stat', getmeanscale), meanscale, 'op_string')
     
