@@ -103,7 +103,7 @@ tolist = lambda x: [x]
 def functional_preprocessing(
     subject_list, 
     inputs, outputs, workingdir, output_type, 
-    fwhm, hpfilter, lpfilter, tr, label, 
+    fwhm, hpfilter, lpfilter, tr, label, outlabel, 
     name="%s_preprocessing_p2"):
     """todo"""
     
@@ -118,8 +118,9 @@ def functional_preprocessing(
         raise SystemExit(2)
     
     
-    func_preproc_name = "func_preproc_%ism_%ihp_%ilp" % (int(fwhm*10), 
+    func_preproc_name = "func_preproc_%s_%ism_%ihp_%ilp" % (outlabel, int(fwhm*10), 
                             hpfilter*(hpfilter>0), lpfilter*(lpfilter>0))
+    
     preproc = create_func_preproc_workflow(name, func_preproc_name)
     preproc.base_dir = workingdir
     
@@ -152,8 +153,8 @@ def functional_preprocessing(
     datasource.inputs.base_directory=os.path.abspath(inputs.basedir)
     datasource.inputs.template = "*"
     datasource.inputs.field_template = dict(
-        func = os.path.join("%s", inputs.func),
-        func_mask = os.path.join("%s", inputs.func_mask)
+        func = os.path.join("%s", inputs.funcdir, "run_?", inputs.infunc),
+        func_mask = os.path.join("%s", inputs.funcdir, "run_?", inputs.inmask)
     )
     datasource.inputs.template_args = dict(
                                         func = [['subject_id']],
@@ -186,7 +187,7 @@ def functional_preprocessing(
     datasink.inputs.substitutions = preprocsinksubs
     
     # replace subject_id stuff with functional scan
-    datasink.inputs.regexp_substitutions = (r"_subject_id_(\w|\d)+", outputs.func)
+    datasink.inputs.regexp_substitutions = (r"_subject_id_(\w|\d)+", outputs.funcdir)
     
     ## connect
     preproc.connect(subinfo, 'subject_id', datasink, 'container')
@@ -229,7 +230,6 @@ def create_func_preproc_workflow(name='functional_preprocessing', func_preproc_n
     # Outputs
     output_fields = [
         func_preproc_name,  # final output (also has been intensity normalized)
-        "func_mean",        # mean of final output
     ]
     outputnode = pe.Node(util.IdentityInterface(fields=output_fields),
                         name="outputspec")
@@ -312,12 +312,6 @@ def create_func_preproc_workflow(name='functional_preprocessing', func_preproc_n
     """
     ## functional 4D
     renamer.connect(meanscale, 'out_file', func_preproc_name)
-    ## mean
-    meanfunc = pe.MapNode(fsl.MeanImage(),
-                           iterfield=["in_file"],
-                           name="05_meanfunc")
-    preproc.connect(meanscale, 'out_file', meanfunc, 'in_file')
-    renamer.connect(meanfunc, 'out_file', 'func_mean')
     
     return preproc
 
@@ -332,8 +326,10 @@ class FuncPreprocParser(usage.NiParser):
         )
         group = parser.add_argument_group('Functional Preprocessing Options')
         group.add_argument('--label', required=True)
-        group.add_argument('--func', nargs=2, action=usage.store_io, required=True)
-        group.add_argument('--func-mask', action=usage.store_input, required=True)
+        group.add_argument('--outlabel', required=True)
+        group.add_argument('--funcdir', action=usage.store_io, required=True)
+        group.add_argument('--infunc', action=usage.store_input, required=True)
+        group.add_argument('--inmask', action=usage.store_input, required=True)
         group.add_argument('--fwhm', type=float, default=5.0)
         group.add_argument('--hpfilter', type=float, default=128)
         group.add_argument('--lpfilter', type=float, default=-1)
