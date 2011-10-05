@@ -164,8 +164,13 @@ def functional_preprocessing(
     # Get the number of runs for each participant (for renaming purposes)
     datasource.inputs.subject_id = subject_list
     ds = datasource.run()
-    runs = [ len(x) for x in tolist(ds.outputs.func) ]  # list with number of runs per subject
-    max_runs = max(runs)
+    runs1 = [ len(x) for x in tolist(ds.outputs.func) ] 
+    runs2 = [ len(x) for x in tolist(ds.outputs.func_mask) ]
+    for i in xrange(len(runs1)):
+        if runs1[i] != runs2[i]:
+            print "ERROR: mismatch in number of functionals and masks"
+            raise SystemExit(2)
+    max_runs = max(runs1)
     
     # Link inputs
     preproc.connect(subinfo, 'subject_id', datasource, 'subject_id')
