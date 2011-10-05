@@ -153,8 +153,8 @@ def functional_preprocessing(
     datasource.inputs.base_directory=os.path.abspath(inputs.basedir)
     datasource.inputs.template = "*"
     datasource.inputs.field_template = dict(
-        func = os.path.join("%s", inputs.funcdir, "run_[0-9]*", inputs.infunc),
-        func_mask = os.path.join("%s", inputs.funcdir, "run_[0-9]*", inputs.inmask)
+        func = os.path.join("%s", inputs.funcdir, inputs.infunc),
+        func_mask = os.path.join("%s", inputs.funcdir, inputs.inmask)
     )
     datasource.inputs.template_args = dict(
                                         func = [['subject_id']],
