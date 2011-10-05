@@ -164,6 +164,8 @@ def functional_preprocessing(
     # Get the number of runs for each participant (for renaming purposes)
     datasource.inputs.subject_id = subject_list
     ds = datasource.run()
+    print ds
+    raise SystemExit(1)
     runs = [ len(x) for x in ds.outputs.func ]  # list with number of runs per subject
     max_runs = max(runs)
     
