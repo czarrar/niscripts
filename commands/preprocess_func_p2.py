@@ -327,7 +327,7 @@ class FuncPreprocParser(usage.NiParser):
         group = parser.add_argument_group('Functional Preprocessing Options')
         group.add_argument('--label', required=True)
         group.add_argument('--outlabel', required=True)
-        group.add_argument('--funcdir', action=usage.store_io, required=True)
+        group.add_argument('--funcdir', nargs=2, action=usage.store_io, required=True)
         group.add_argument('--infunc', action=usage.store_input, required=True)
         group.add_argument('--inmask', action=usage.store_input, required=True)
         group.add_argument('--fwhm', type=float, default=5.0)
