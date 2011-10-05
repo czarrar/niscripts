@@ -299,11 +299,18 @@ def create_func_preproc_workflow(name='functional_preprocessing', func_preproc_n
     Intensity Normalization
     """
     
+    # Determine the median value of the functional runs using the mask
+    medianval = pe.MapNode(fsl.ImageStats(op_string="-k %s -p 50"),
+                           iterfield = ["in_file", "mask_file"],
+                           name="04_medianval")
+    preproc.connect(filt, 'out_file', medianval, 'in_file')
+    preproc.connect(inputnode, 'func_mask', medianval, 'mask_file')
+    
     # Scale mean value of run to 10000
     meanscale = pe.MapNode(interface=fsl.ImageMaths(suffix='_gms'),
                           iterfield=['in_file', 'op_string'],
                           name='04_meanscale')
-    preproc.connect(selectnode, 'out', meanscale, 'in_file')
+    preproc.connect(filt, 'out_outfile', meanscale, 'in_file')
     ## function to get scaling factor
     preproc.connect(medianval, ('out_stat', getmeanscale), meanscale, 'op_string')
     
