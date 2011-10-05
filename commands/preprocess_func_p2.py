@@ -164,7 +164,7 @@ def functional_preprocessing(
     # Get the number of runs for each participant (for renaming purposes)
     datasource.inputs.subject_id = subject_list
     ds = datasource.run()
-    runs = [ len(x) for x in ds.outputs.func ]  # list with number of runs per subject
+    runs = [ len(x) for x in tolist(ds.outputs.func) ]  # list with number of runs per subject
     max_runs = max(runs)
     
     # Link inputs
@@ -347,7 +347,7 @@ class FuncPreprocParser(usage.NiParser):
         """Fix permissions of output"""
         outputs = self.args.outputs
         subject_list = self.args.subject_list
-        outputs = [ op.join(outputs.basedir, s, outputs.func) for s in subject_list ]
+        outputs = [ op.join(outputs.basedir, s, outputs.funcdir) for s in subject_list ]
         for output in outputs:
             p = Process("chmod -R 775 %s" % output, to_print=True)
             if p.retcode != 0:
