@@ -30,6 +30,9 @@ class NiWrapper(SubjectBase):
         # Get context
         self.template_context = self.config.pop("vars", {})
         
+        # Check that certain variables are given via the command-line
+        self.require_user_vars = self.config.pop("require_user_vars", [])
+        
         # Setup
         self._parser_help = {}
         self._commands_opts = {}
@@ -66,6 +69,9 @@ class NiWrapper(SubjectBase):
         
         # Save
         self.template_context.update(vars)
+        for x in self.require_user_vars:
+            if x not in self.template_context:
+                die("The variable %s is required but not specified" % x)
         self.processors = processors
         self.run_keys = run_keys
         self.subjects = subjects
