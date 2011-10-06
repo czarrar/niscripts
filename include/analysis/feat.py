@@ -756,7 +756,7 @@ class FsfSubject(SubjectBase):
             self.log.error("Can't add EV '%s', since it already exists" % name)
         if not op.isfile(fname):
             self.log.error("File '%s' for EV '%s' does not exist" % (fname, name))
-        if bytrial is None and bycolumn is None:
+        if bytrial is not None and bycolumn is not None:
             self.log.error("Cannot specify both bytrial and bycolumn")
         
         # Waveform Shape (1 column or 3 column file)
