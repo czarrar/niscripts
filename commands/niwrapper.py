@@ -6,6 +6,7 @@ from datetime import datetime
 from analysis.base import SubjectBase
 from subprocess import Popen
 from zlogger import (LoggerError, LoggerCritical)
+from usage import append_var
 
 config_file = "niwrapper.yaml"
 
@@ -50,7 +51,7 @@ class NiWrapper(SubjectBase):
         return
     
     def setup(self, run_keys, log_dir, subjects, sge, sge_opts, verbosity, processors, 
-                dry_run=False, **cmds):
+                dry_run=False, vars={}, **cmds):
         # Set subjects
         new_subjects = []
         for s in subjects:
@@ -64,6 +65,7 @@ class NiWrapper(SubjectBase):
         subjects = new_subjects
         
         # Save
+        self.template_context.update(vars)
         self.processors = processors
         self.run_keys = run_keys
         self.subjects = subjects
@@ -115,6 +117,7 @@ class NiWrapper(SubjectBase):
         
         group = parser.add_argument_group('Subject Options')
         group.add_argument('-s', '--subjects', nargs="+", required=True, metavar="subject")
+        group.add_argument('--var', action="append", type=append_var, dest="vars")
         group.add_argument('-p', '--processors', default=1, type=int, help="use multiple processers on same computer (must specify number of processors)")
         group.add_argument('-q', '--sge', action="store_true", default=False, help="use SGE")
         group.add_argument('--sge-opts', default="-S /bin/bash -V -cwd -j y", 
