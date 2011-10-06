@@ -1127,7 +1127,7 @@ class ApplyRegSubject(SubjectBase):
         self._isset_data = True
         return
     
-    def setRegFiles(self, standard="standard.nii.gz", warp="highres2standard_warp.nii.gz", premat="example_func2highres.mat", mat="example_func2standard.mat"):
+    def setRegFiles(self, standard=None, warp=None, premat=None, mat=None):
         """Files found in the reg directory"""
         self.log.info("Setting registration files")
         
@@ -1138,10 +1138,18 @@ class ApplyRegSubject(SubjectBase):
             self.log.error("Must set options before setting registration files")
         
         # Paths
-        self.stdfile = op.join(self.regdir, self._substitute(standard))
-        self.warpfile = op.join(self.regdir, self._substitute(warp))
-        self.prematfile = op.join(self.regdir, self._substitute(premat))
-        self.matfile = op.join(self.regdir, self._substitute(mat))
+        if standard is None:
+            standard = op.join(self.regdir, "run_2_func2std.nii.gz")
+        self.stdfile = self._substitute(standard)
+        if warp is None:
+            warp = op.join(self.regdir, "highres2standard_warp.nii.gz")
+        self.warpfile = self._substitute(warp)
+        if premat is None:
+            premat = op.join(self.regdir, "example_func2highres.mat")
+        self.prematfile = self._substitute(premat)
+        if mat is None:
+            mat = op.join(self.regdir, "example_func2standard.mat")
+        self.matfile = self._substitute(mat)
         
         # Flirt or Fnirt?
         if self.regtype == "auto":
