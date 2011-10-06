@@ -741,7 +741,6 @@ class FsfSubject(SubjectBase):
             'empty': 10     # NOT used
         }
         convolution_choices = {
-            '0': 0, 
             'none': 0,
             'gamma': 2,
             'double-gamma': 3,
@@ -774,6 +773,7 @@ class FsfSubject(SubjectBase):
         
         # Convolution
         try:
+            orig_conv = convolution
             convolution = convolution_choices[convolution]
         except KeyError as k:
             self.log.error("Convolution '%s' not recognized" % convolution)
@@ -806,7 +806,7 @@ class FsfSubject(SubjectBase):
                     f.write(lines[i] + "\n")
                     f.close()
                     # call ev function
-                    self.addEV(sname, fn, convolution, tempfilt, tempderiv, 
+                    self.addEV(sname, fn, orig_conv, tempfilt, tempderiv, 
                                bytrial=None, **opts)
             else:
                 i = int(which_trials)
@@ -815,7 +815,7 @@ class FsfSubject(SubjectBase):
                 f = open(fn, 'w')
                 f.write(lines[i-1] + "\n")
                 f.close()
-                self.addEV(sname, fn, convolution, tempfilt, tempderiv, 
+                self.addEV(sname, fn, orig_conv, tempfilt, tempderiv, 
                            bytrial=None, **opts)
             return
         elif bycolumn is not None:
@@ -834,14 +834,14 @@ class FsfSubject(SubjectBase):
                     sname = "%s_col%04i" % (name, i+1)
                     fn = op.join(basedir, "%s.txt" % sname)
                     np.savetxt(fn, x[:,i], fmt="%f")
-                    self.addEV(sname, fn, convolution, tempfilt, tempderiv, 
+                    self.addEV(sname, fn, orig_conv, tempfilt, tempderiv, 
                                bycolumn=None, **opts)
             else:
                 i = int(which_cols)
                 sname = "%s_col%04i" % (name, i)
                 fn = op.join(basedir, "%s.txt" % sname)
                 np.savetxt(fn, x[:,i-1], fmt="%f")
-                self.addEV(sname, fn, convolution, tempfilt, tempderiv, 
+                self.addEV(sname, fn, orig_conv, tempfilt, tempderiv, 
                            bycolumn=None, **opts)
             return
         else:
