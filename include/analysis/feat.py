@@ -791,6 +791,7 @@ class FsfSubject(SubjectBase):
             ntrials = len(lines)
             f.close()
             which_trials, basedir = tuple(bytrial)
+            basedir = self._substitute(basedir)
             if not op.isdir(basedir):
                 self.log.info("Creating directory %s" % basedir)
                 os.mkdir(basedir)
@@ -822,6 +823,7 @@ class FsfSubject(SubjectBase):
                 self.log.fatal("bycolumn must be a list of 2 arguments [WHICH_COLS, TMP_DIRECTORY]")
             x = np.loadtxt(fname)
             which_cols, basedir = tuple(bycolumn)
+            basedir = self._substitute(basedir)
             if not op.isdir(basedir):
                 self.log.info("Creating directory %s" % basedir)
                 os.mkdir(basedir)
