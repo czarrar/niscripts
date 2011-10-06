@@ -71,7 +71,8 @@ class NiWrapper(SubjectBase):
         self.template_context.update(vars)
         for x in self.require_user_vars:
             if x not in self.template_context:
-                die("The variable %s is required but not specified" % x)
+                die("The variable %s is required but not specified (use --var %s=XXX)" % 
+                    (x, x))
         self.processors = processors
         self.run_keys = run_keys
         self.subjects = subjects
