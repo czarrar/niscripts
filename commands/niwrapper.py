@@ -12,7 +12,7 @@ config_file = "niwrapper.yaml"
 
 def die(msg):
     print "ERROR: %s" % msg
-    SystemExit(2)
+    raise SystemExit(2)
 
 class NiWrapper(SubjectBase):
     _niscripts = [
