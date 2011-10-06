@@ -741,6 +741,7 @@ class FsfSubject(SubjectBase):
             'empty': 10     # NOT used
         }
         convolution_choices = {
+            '0': 0, 
             'none': 0,
             'gamma': 2,
             'double-gamma': 3,
