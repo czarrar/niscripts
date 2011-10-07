@@ -330,7 +330,7 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     nextout = 'out_file'
     
     # Remove the first X frames to account for T2 stabalization
-    print delet_vols
+    print delete_vols
     raise SystemExit(2)
     if delete_vols > 0:
         trimmer = pe.MapNode(fsl.ExtractROI(t_min=delete_vols),
