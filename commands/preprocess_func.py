@@ -331,8 +331,8 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     
     # Remove the first X frames to account for T2 stabalization
     print delete_vols
-    raise SystemExit(2)
     if delete_vols > 0:
+        print 'yes'
         trimmer = pe.MapNode(fsl.ExtractROI(t_min=delete_vols),
                              iterfield=["in_file"],
                              name="00_trimmer")
@@ -341,6 +341,8 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
                         trimmer, 't_size')
         nextnode = trimmer
         nextout = 'roi_file'
+    
+    raise SystemExit(2)
     
     """
     Time Shift Slices
