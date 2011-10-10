@@ -14,7 +14,47 @@ combine:
         polort: A   # can remove run effects if have multiple runs
         inconfound: ${base}/motion_all.par
         outconfound: ${funcdir}/confound_evs.1D
-    
+
+# 1. generate the EVs
+# 2. run the GLM with python code (will only save coefs/t-stats for individual trial)
+    # use nibabel to read/write data
+    # each trial result will be concatenated into a 4D image
+# 3. can specify a regdir and a ref image
+beta-series:
+    data:
+        infile: ...
+        maskfile: ...
+        # no outdir
+        # no outfsf
+        highpass_filter: 128
+        overwrite: 0
+    bs: # beta-series of one ev
+        name: stop
+        fname: ${evdir}/stop.fsf
+        trials: 'all'
+        # overwrite: True or False, default is False
+        # outtype: coefs # can be coefs or tstats, default is coefs
+    stats:
+        prewhiten: False
+        evs:
+            - stop:
+                fname: ${evdir}/stop.stf
+                convolution: double-gamma
+                tempfilt: True
+                tempderiv: False
+                bytrial: ['${bs_trial}', '${outdir}/trial_evs']
+            - all:
+                ... # this would be an EV with everything
+            - motion:
+                fname: ${funcdir}/motion.par
+                convolution: none
+                tempfilt: True
+                tempderiv: True
+                bycolumn: ['all', TMPDIR]
+        contrasts:
+            all: '1*all'
+    # don't need poststats
+
 fsf:
     data:
         infile: "${funcdir}/func_preproc.nii.gz"

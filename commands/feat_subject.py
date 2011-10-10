@@ -29,6 +29,7 @@ def create_parser():
                         dest="run_keys")
     group.add_argument("--ts", action="append_const", const="ts", dest="run_keys")
     group.add_argument("--fsf", action="append_const", const="fsf", dest="run_keys")
+    group.add_argument("--beta-series", action="append_const", const="beta_series", dest="run_keys")
     group.add_argument("--feat", action="append_const", const="feat", dest="run_keys")
     group.add_argument("--regress", action="append_const", const="regress", dest="run_keys")
     group.add_argument("--apply-reg", action="append_const", const="apply_reg", dest="run_keys")

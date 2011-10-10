@@ -141,6 +141,9 @@ class Base(object):
     def addTemplateContext(self, k, v):
         self.template_context[k] = v
     
+    def delTemplateContext(self, k):
+        del self.template_context[k]
+    
     def _setTemplateContext(self, context):
         self.log.debug("setting template context")
         for k,v in context.iteritems():

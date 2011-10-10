@@ -10,6 +10,7 @@ import numpy as np
 from copy import deepcopy
 from execute import Process
 from analysis.base import Base, SubjectBase
+from copy import deepcopy
 #import nipype.interfaces.fsl as fsl # fsl
 
 # Time
@@ -451,7 +452,8 @@ class FsfSubject(SubjectBase):
         super(FsfSubject, self).__init__(*args, **kwargs)
         
         self.env = Environment(loader=PackageLoader('analysis', 'templates'))
-                
+        
+        self.bytrial_evnames = []
         self.fsf_context = {}
         self.evs = OrderedDict()
         self.contrasts = OrderedDict()
@@ -473,20 +475,7 @@ class FsfSubject(SubjectBase):
         # Data
         data = config.pop("data")
         self.check_req(data, ["infile", "outdir", "outfsf", "highpass_filter"])
-        ## infile
-        infile = data.pop("infile")
-        infile = self._substitute(infile)
-        gpaths = glob(infile)
-        if len(gpaths) == 1:
-            infile = gpaths[0]
-        elif len(gpaths) > 1:
-            self.log.error("Cannot have more than one infile %s from %s" % (gpaths, infile))
-        else:
-            self.log.error("Did not find infile %s" % infile)
-        ## outdir
-        outdir = data.pop("outdir")
-        outdir = self._substitute(outdir)
-        self.setData(infile, outdir, **data)
+        self.setData(**data)
         
         # Stats
         stats = config.pop("stats")
@@ -622,11 +611,20 @@ class FsfSubject(SubjectBase):
         result = template.render(**context)
         return self._remove_extra_stuff(result)
     
-    def setData(self, infile, outdir, outfsf, highpass_filter, hp_yn=False, tr=None, overwrite=0):
+    def setData(self, infile, outdir, outfsf, highpass_filter, 
+                hp_yn=False, tr=None, overwrite=0):
         infile = self._substitute(infile)
         outdir = self._substitute(outdir)
         outfsf = self._substitute(outfsf)
         
+        # infile
+        gpaths = glob(infile)
+        if len(gpaths) == 1:
+            infile = gpaths[0]
+        elif len(gpaths) > 1:
+            self.log.error("Cannot have more than one infile %s from %s" % (gpaths, infile))
+        else:
+            self.log.error("Did not find infile %s" % infile)
         if not op.isfile(infile):
             self.log.error("Could not find input file %s" % infile)
         
@@ -792,6 +790,7 @@ class FsfSubject(SubjectBase):
             ntrials = len(lines)
             f.close()
             which_trials, basedir = tuple(bytrial)
+            which_trials = self._substitute(which_trials)
             basedir = self._substitute(basedir)
             if not op.isdir(basedir):
                 self.log.info("Creating directory %s" % basedir)
@@ -824,6 +823,7 @@ class FsfSubject(SubjectBase):
                 self.log.fatal("bycolumn must be a list of 2 arguments [WHICH_COLS, TMP_DIRECTORY]")
             x = np.loadtxt(fname)
             which_cols, basedir = tuple(bycolumn)
+            which_cols = self._substitute(which_cols)
             basedir = self._substitute(basedir)
             if not op.isdir(basedir):
                 self.log.info("Creating directory %s" % basedir)
@@ -937,6 +937,208 @@ class FsfSubject(SubjectBase):
                     real_cons.append(0)
             self.real_contrasts[con] = real_cons
         
+        return
+    
+
+class BetaSeriesSubject(SubjectBase):
+    
+    _logname = "beta_series_subject"
+    
+    def __init__(self, *args, **kwargs):
+        """
+        Parameters
+        ----------
+        verbosity : 0=minimal, 1=verbose, 2=debug
+        template_vars: template variables for paths
+        """
+        self.verbosity = args[0]
+        super(BetaSeriesSubject, self).__init__(*args, **kwargs)
+        self.log.debug("Starting BetaSeriesSubject")
+        return
+    
+    def fromDict(self, config):
+        self.check_req(config, ["data", "stats", "bs"])
+        # Beta-Series
+        bs = config.pop("bs")
+        self.setBetaSeries(**bs)
+        # Save the rest of the config
+        self.setConfig(config)
+        return
+    
+    def compile(self):
+        return
+    
+    def run(self):
+        if self._isrun:
+            self.log.fatal("beta-series already run")
+        self.compile()
+        
+        # TODO: automask? with np.std along the cols of y?
+        self.log.info("loading mask")
+        mask = nibabel.load(self.maskfile)
+        m = mask.get_data()
+        m = m.reshape(np.product(m.shape))
+        inds = m.nonzero()[0]
+        
+        self.log.info("loading data")
+        func = nibabel.load(self.infile)
+        y = func.get_data()
+        # reshape to 2D matrix with rows as time-points and cols as voxels
+        nvoxs = np.product(y.shape[:-1])
+        ntpts = y.shape[-1]
+        y = y.reshape((nvoxs, ntpts)).transpose()
+        
+        self.log.info("masking data")
+        y = y[:,inds]
+        
+        self.log.info("creating empty beta-series image")
+        bseries = np.zeros((nvoxs, self.ntrials), dtype=np.float32)
+        
+        self.log.info("work time")
+        for i in self.trials:
+            ii = i - 1
+            self.log.title("Trial #%i", i)
+            
+            # fsf
+            self.log.subtitle("creating design matrix")
+            tmp_context = deepcopy(self.template_context)
+            tmp_context['data']['outdir'] = self.fsf_outdir
+            outprefix = "%s_trial%04i" % (self.fsf_prefix, i)
+            tmp_context['data']['outfsf'] = outprefix + ".fsf"
+            tmp_context['bs_trial'] = i
+            fsf = FsfSubject(self.verbosity, tmp_context, 
+                             dry_run=self.dry_run, logger=self.log)
+            fsf.fromDict(deepcopy(self.config))
+            fsf.run()
+            
+            # regression
+            self.log.subtitle("running regression")
+            ## get the generated mat file
+            outmat = outprefix + ".mat"
+            X = np.loadtxt(outtxt, skiprows=5)
+            ## calculate betas (code borrowed from statmodels)
+            pinv_X = np.linalg.pinv(X)
+            betas = np.dot(pinv_X, y)
+            ## save
+            bseries[:,inds[ii]] = betas[self.ev_index,:]
+        
+        # save as nifti
+        self.log.info("saving beta-series")
+        bseries.shape = tuple(list(func.shape[:3]) + [self.ntrials])
+        outfname = op.join(self.outdir, "betaseries.nii.gz")
+        hdr = func.get_header()
+        hdr.set_data_shape(bseries.shape)
+        nii_bseries = nibabel.Nifti1Image(bseries, func.get_affine(), hdr)
+        nii_bseries.to_filename(outfname)
+        
+        # save name in text file
+        f = file(op.join(self.outdir, "name.txt"), 'w')
+        f.write(self.name, "\n")
+        f.close()
+        
+        return
+    
+    def setBetaSeries(self, name, fname, trials, outdir, outtype='coefs', overwrite=False):
+        """Set the EV that will be used to create the beta-series
+        
+        Parameters
+        ----------
+        name : name of the EV
+        fname : filename with onsets of EV (must be 3 column format)
+        trials : can be 'all' for all trials, specified like [1,2,3,4], range like '1:3'
+        """
+        
+        # Name
+        self.name = name
+        
+        # Total Number of Trials
+        fname = self._substitute(fname)
+        f = open(fname, 'r')
+        lines = f.readlines()
+        lines = [ l.strip() for l in lines if l.strip() ]
+        ntrials = len(lines)
+        f.close()
+        
+        # Trials
+        if isinstance(trials, str):
+            l = trials.find(":")
+            start = 1
+            end = ntrials
+            step = 1
+            if trials == 'all':
+                pass
+            elif trials == 'even':
+                start = 2
+                step = 2
+            elif trials == 'odd':
+                step = 2
+            elif l == 0:
+                start = 1
+                end = int(trials[1:])
+            elif l == (len(tmp)-1):
+                start = int(tmp[:l])
+                end = ntrials
+            elif l != -1:
+                start = int(tmp[:l])
+                end = int(tmp[(l+1):])
+            else:
+                self.log.error("cannot parse beta-series trials '%s'" % trials)
+            trials = range(start, end+1, step)
+        elif isinstance(trials, list):
+            trials = [ int(x) for x in trials ]
+        else:
+            self.log.error("cannot parse beta-series trial '%s'" % trials)
+        
+        if len(trials) < 2:
+            self.log.error("must have at least 2 trials for beta-series")
+        
+        self.trials = trials
+        self.ntrials = len(self.trials)
+        
+        # Output
+        outdir = self._substitute(outdir)
+        if op.isdir(outdir):
+            if overwrite:
+                self.log.warning("Removing output directory '%s'" % outdir)
+                shutil.rmtree(outdir)
+            else:
+                self.log.warning("Output directory '%s' already exists" % outdir)
+        
+        dir_outdir = op.dirname(outdir)
+        if not op.isdir(dir_outdir):
+            self.log.info("Creating directory '%s' for beta-series output" % dir_outdir)
+            os.mkdir(dir_outdir)
+        
+        self.outdir = outdir
+        
+        # Output Type
+        outtype_choices = ['coefs', 'tstats']
+        if outtype not in outtype_choices:
+            self.log.error("unrecognized outtype '%s'" % outtype)
+        self.outtype = outtype
+        
+        # Stuff for fsf
+        self.fsf_outdir = op.join(self.outdir, "dont_run.feat")
+        fsfdir = op.join(self.outdir, "fsfs")
+        if not op.isdir(fsfdir):
+            os.mkdir(fsfdir)
+        self.fsf_prefix = op.join(fsfdir, "design")
+        
+        self._isset_bs = True
+        return
+    
+    def setConfig(config):
+        if not self._isset_bs:
+            self.log.fatal("must set beta-series first")
+        self.check_req(config, ["data", "stats"])
+        if self.name not in config['stats']['evs']:
+            self.log.error("couldn't find beta-series '%s' in EVs", self.name)
+        self.ev_index = config['stats']['evs'].keys().index(self.name)
+        infile = self._substitute(config["data"]["infile"])
+        if not op.isfile(infile):
+            self.log.error("input file '%s' does not exist", infile)
+        self.infile = infile
+        self.config = config
         return
     
 
