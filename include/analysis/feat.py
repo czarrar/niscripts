@@ -1142,7 +1142,7 @@ class BetaSeriesSubject(SubjectBase):
         self._isset_bs = True
         return
     
-    def setConfig(config):
+    def setConfig(self, config):
         self.log.debug("config in beta-series")
         if not self._isset_bs:
             self.log.fatal("must set beta-series first")
