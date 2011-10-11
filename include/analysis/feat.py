@@ -1027,10 +1027,12 @@ class BetaSeriesSubject(SubjectBase):
             betas = np.dot(pinv_X, y)
             ## save
             print betas.shape
+            print bseries.shape
             print self.ev_index
             print inds
             print inds[ii]
-            print betas[self.ev_index,1:10]
+            print betas[self.ev_index,]
+            print bseries[:,inds[ii]]
             bseries[:,inds[ii]] = betas[self.ev_index,:]
         
         # save as nifti
