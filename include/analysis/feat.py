@@ -953,6 +953,8 @@ class BetaSeriesSubject(SubjectBase):
         """
         print 'hey'
         self.verbosity = args[0]
+        self._isrun = False
+        self._isset_bs = False
         super(BetaSeriesSubject, self).__init__(*args, **kwargs)
         self.log.debug("Starting BetaSeriesSubject")
         return
@@ -1037,6 +1039,7 @@ class BetaSeriesSubject(SubjectBase):
         f.write(self.name, "\n")
         f.close()
         
+        self._isrun = True
         return
     
     def setBetaSeries(self, name, fname, trials, outdir, maskfile, 
