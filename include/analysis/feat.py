@@ -1038,7 +1038,7 @@ class BetaSeriesSubject(SubjectBase):
         
         # save name in text file
         f = file(op.join(self.outdir, "name.txt"), 'w')
-        f.write(self.name, "\n")
+        f.write(self.name + "\n")
         f.close()
         
         self._isrun = True
