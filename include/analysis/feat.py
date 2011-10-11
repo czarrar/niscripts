@@ -1026,6 +1026,8 @@ class BetaSeriesSubject(SubjectBase):
             pinv_X = np.linalg.pinv(X)
             betas = np.dot(pinv_X, y)
             ## save
+            print betas.shape
+            print self.ev_index
             bseries[:,inds[ii]] = betas[self.ev_index,:]
         
         # save as nifti
