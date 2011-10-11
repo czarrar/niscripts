@@ -1112,10 +1112,15 @@ class BetaSeriesSubject(SubjectBase):
                 shutil.rmtree(outdir)
             else:
                 self.log.warning("Output directory '%s' already exists" % outdir)
+        else:
+            self.log.debug("creating beta-series output directory '%s'" % 
+                           outdir)
+            os.mkdir(outdir)
         
         dir_outdir = op.dirname(outdir)
         if not op.isdir(dir_outdir):
-            self.log.info("Creating directory '%s' for beta-series output" % dir_outdir)
+            self.log.debug("creating directory '%s' for beta-series output" % 
+                            dir_outdir)
             os.mkdir(dir_outdir)
         
         self.outdir = outdir
@@ -1130,6 +1135,7 @@ class BetaSeriesSubject(SubjectBase):
         self.fsf_outdir = op.join(self.outdir, "dont_run.feat")
         fsfdir = op.join(self.outdir, "fsfs")
         if not op.isdir(fsfdir):
+            self.log.debug("creating main fsf dir")
             os.mkdir(fsfdir)
         self.fsf_prefix = op.join(fsfdir, "design")
         
