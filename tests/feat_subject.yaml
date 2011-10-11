@@ -23,13 +23,13 @@ combine:
 beta-series:
     data:
         infile: ...
-        maskfile: ...
         # no outdir
         # no outfsf
         highpass_filter: 128
         overwrite: 0
     bs: # beta-series of one ev
         name: stop
+        maskfile: ...
         fname: ${evdir}/stop.fsf
         trials: 'all'
         # overwrite: True or False, default is False

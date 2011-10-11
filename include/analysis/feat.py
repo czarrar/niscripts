@@ -1038,7 +1038,8 @@ class BetaSeriesSubject(SubjectBase):
         
         return
     
-    def setBetaSeries(self, name, fname, trials, outdir, outtype='coefs', overwrite=False):
+    def setBetaSeries(self, name, fname, trials, outdir, maskfile, 
+                      outtype='coefs', overwrite=False):
         """Set the EV that will be used to create the beta-series
         
         Parameters
@@ -1047,6 +1048,11 @@ class BetaSeriesSubject(SubjectBase):
         fname : filename with onsets of EV (must be 3 column format)
         trials : can be 'all' for all trials, specified like [1,2,3,4], range like '1:3'
         """
+        
+        # Mask File
+        self.maskfile = self._substitute(maskfile)
+        if not op.isfile(self.maskfile):
+            self.log.error("couldn't find maskfile '%s'", self.maskfile)
         
         # Name
         self.name = name
