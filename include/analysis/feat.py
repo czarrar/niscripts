@@ -1147,9 +1147,10 @@ class BetaSeriesSubject(SubjectBase):
         if not self._isset_bs:
             self.log.fatal("must set beta-series first")
         self.check_req(config, ["data", "stats"])
-        if self.name not in config['stats']['evs']:
+        ks = [ x.keys()[0] for x in config['stats']['evs'] ]
+        if self.name not in ks:
             self.log.error("couldn't find beta-series '%s' in EVs", self.name)
-        self.ev_index = config['stats']['evs'].keys().index(self.name)
+        self.ev_index = ks.index(self.name)
         infile = self._substitute(config["data"]["infile"])
         if not op.isfile(infile):
             self.log.error("input file '%s' does not exist", infile)
