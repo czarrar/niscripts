@@ -1009,7 +1009,7 @@ class BetaSeriesSubject(SubjectBase):
             tmp_config = deepcopy(self.config)
             tmp_config['data']['outdir'] = self.fsf_outdir
             outprefix = "%s_trial%04i" % (self.fsf_prefix, i)
-            tmp_confix['data']['outfsf'] = outprefix + ".fsf"
+            tmp_config['data']['outfsf'] = outprefix + ".fsf"
             fsf = FsfSubject(self.verbosity, tmp_context, 
                              dry_run=self.dry_run, logger=self.log)
             fsf.fromDict(tmp_config)
