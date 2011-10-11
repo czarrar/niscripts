@@ -891,6 +891,8 @@ class FsfSubject(SubjectBase):
                 except ValueError:
                     self.log.error("Could not find EV %s for contrast %s" % (ev_name, name))
             con = final_con
+        elif isinstance(con, int):
+            con = [ con for x in xrange(len(self.evs)) ]
         
         self.contrasts[name] = con
         
@@ -1165,6 +1167,10 @@ class BetaSeriesSubject(SubjectBase):
         # add post-stats if needed
         if 'poststats' not in config:
             config["poststats"] = {}
+        # add empty contrast if needed
+        if 'contrasts' not in config['stats']:
+            config['stats']['contrasts'] = [0]
+        
         # save
         self.config = config
         return
