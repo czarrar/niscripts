@@ -1005,7 +1005,7 @@ class BetaSeriesSubject(SubjectBase):
             # fsf
             self.log.subtitle("creating design matrix")
             tmp_context = deepcopy(self.template_context)
-            tmp_context['bs_trial'] = i
+            tmp_context['bs_trial'] = str(i)
             tmp_config = deepcopy(self.config)
             tmp_config['data']['outdir'] = self.fsf_outdir
             outprefix = "%s_trial%04i" % (self.fsf_prefix, i)
