@@ -1148,17 +1148,24 @@ class BetaSeriesSubject(SubjectBase):
     
     def setConfig(self, config):
         self.log.debug("config in beta-series")
+        # general checks
         if not self._isset_bs:
             self.log.fatal("must set beta-series first")
         self.check_req(config, ["data", "stats"])
+        # check ev name and get index
         ks = [ x.keys()[0] for x in config['stats']['evs'] ]
         if self.name not in ks:
             self.log.error("couldn't find beta-series '%s' in EVs", self.name)
         self.ev_index = ks.index(self.name)
+        # check input functional
         infile = self._substitute(config["data"]["infile"])
         if not op.isfile(infile):
             self.log.error("input file '%s' does not exist", infile)
         self.infile = infile
+        # add post-stats if needed
+        if 'poststats' not in config:
+            config["poststats"] = {}
+        # save
         self.config = config
         return
     
