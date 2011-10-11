@@ -1169,7 +1169,7 @@ class BetaSeriesSubject(SubjectBase):
             config["poststats"] = {}
         # add empty contrast if needed
         if 'contrasts' not in config['stats']:
-            config['stats']['contrasts'] = [0]
+            config['stats']['contrasts'] = [{'empty': 0}]
         
         # save
         self.config = config
