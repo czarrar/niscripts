@@ -25,6 +25,7 @@ beta-series:
         infile: ...
         # no outdir
         # no outfsf
+        tr: 2
         highpass_filter: 128
         overwrite: 0
     bs: # beta-series of one ev
@@ -62,6 +63,7 @@ fsf:
         outfsf: "${funcdir}/fsfs/ztest.fsf"
         highpass_filter: 128
         # TR is automatic but you could do tr: 2 to force a TR of 2 seconds
+        tr: 2
         overwrite: 0    # 0 = quit if output exists, 1 = add '+' to outdir if exists, 2 = overwrite
     
     stats:

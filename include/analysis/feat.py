@@ -953,7 +953,6 @@ class BetaSeriesSubject(SubjectBase):
         verbosity : 0=minimal, 1=verbose, 2=debug
         template_vars: template variables for paths
         """
-        print 'hey'
         self.verbosity = args[0]
         self._isrun = False
         self._isset_bs = False
@@ -1026,14 +1025,7 @@ class BetaSeriesSubject(SubjectBase):
             pinv_X = np.linalg.pinv(X)
             betas = np.dot(pinv_X, y)
             ## save
-            #print betas.shape
-            #print bseries.shape
-            #print self.ev_index
-            #print inds
-            #print inds[ii]
-            #print betas[self.ev_index,]
-            #print bseries[:,inds[ii]]
-            bseries[inds,i] = np.squeeze(betas[self.ev_index,:])
+            bseries[inds,ii] = np.squeeze(betas[self.ev_index,:])
         
         # save as nifti
         self.log.info("saving beta-series")
