@@ -1049,6 +1049,8 @@ class BetaSeriesSubject(SubjectBase):
         trials : can be 'all' for all trials, specified like [1,2,3,4], range like '1:3'
         """
         
+        self.log.debug("setting beta-series options")
+        
         # Mask File
         self.maskfile = self._substitute(maskfile)
         if not op.isfile(self.maskfile):
@@ -1134,6 +1136,7 @@ class BetaSeriesSubject(SubjectBase):
         return
     
     def setConfig(config):
+        self.log.debug("config in beta-series")
         if not self._isset_bs:
             self.log.fatal("must set beta-series first")
         self.check_req(config, ["data", "stats"])
