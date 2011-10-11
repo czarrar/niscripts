@@ -1,11 +1,11 @@
 import os.path as op
 import yaml
 from copy import deepcopy
-from analysis.feat import (CombineSubject, ResDeconSubject, FsfSubject, FsfInfo, FeatSubject, 
-                            RegressSubject, TsSubject, ApplyRegSubject)
+from analysis.feat import (CombineSubject, ResDeconSubject, FsfSubject, FsfInfo, 
+                            FeatSubject, BetaSeriesSubject, RegressSubject, 
+                            TsSubject, ApplyRegSubject)
 from analysis.feat import (FsfGroup, FeatGroup)
-from analysis.afni import (DeconSubject, RemlSubject, BetaSeriesSubject, RegisterBetaSeriesSubject, 
-                            CorrelateSubject)
+from analysis.afni import (DeconSubject, RemlSubject, CorrelateSubject)
 
 import os, sys
 sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
