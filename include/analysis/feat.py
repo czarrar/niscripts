@@ -1021,7 +1021,7 @@ class BetaSeriesSubject(SubjectBase):
             self.log.subtitle("running regression")
             ## get the generated mat file
             outmat = outprefix + ".mat"
-            X = np.loadtxt(outtxt, skiprows=5)
+            X = np.loadtxt(outmat, skiprows=5)
             ## calculate betas (code borrowed from statmodels)
             pinv_X = np.linalg.pinv(X)
             betas = np.dot(pinv_X, y)
