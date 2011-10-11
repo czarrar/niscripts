@@ -1028,6 +1028,9 @@ class BetaSeriesSubject(SubjectBase):
             ## save
             print betas.shape
             print self.ev_index
+            print inds
+            print inds[ii]
+            print betas[self.ev_index,1:10]
             bseries[:,inds[ii]] = betas[self.ev_index,:]
         
         # save as nifti
