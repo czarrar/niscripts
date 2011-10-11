@@ -1026,14 +1026,14 @@ class BetaSeriesSubject(SubjectBase):
             pinv_X = np.linalg.pinv(X)
             betas = np.dot(pinv_X, y)
             ## save
-            print betas.shape
-            print bseries.shape
-            print self.ev_index
-            print inds
-            print inds[ii]
-            print betas[self.ev_index,]
-            print bseries[:,inds[ii]]
-            bseries[:,inds[ii]] = betas[self.ev_index,:]
+            #print betas.shape
+            #print bseries.shape
+            #print self.ev_index
+            #print inds
+            #print inds[ii]
+            #print betas[self.ev_index,]
+            #print bseries[:,inds[ii]]
+            bseries[inds,inds[ii]] = betas[self.ev_index,:]
         
         # save as nifti
         self.log.info("saving beta-series")
