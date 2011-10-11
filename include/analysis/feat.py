@@ -1033,7 +1033,7 @@ class BetaSeriesSubject(SubjectBase):
             #print inds[ii]
             #print betas[self.ev_index,]
             #print bseries[:,inds[ii]]
-            bseries[inds,inds[ii]] = betas[self.ev_index,:]
+            bseries[inds,inds[ii]] = np.squeeze(betas[self.ev_index,:])
         
         # save as nifti
         self.log.info("saving beta-series")
