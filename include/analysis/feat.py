@@ -951,6 +951,7 @@ class BetaSeriesSubject(SubjectBase):
         verbosity : 0=minimal, 1=verbose, 2=debug
         template_vars: template variables for paths
         """
+        print 'hey'
         self.verbosity = args[0]
         super(BetaSeriesSubject, self).__init__(*args, **kwargs)
         self.log.debug("Starting BetaSeriesSubject")
