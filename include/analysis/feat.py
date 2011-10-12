@@ -778,7 +778,7 @@ class FsfSubject(SubjectBase):
         
         # Calculate for individual trials?
         if bytrial is not None:
-            self.log.info("ev %s will be split into individual trials" % name)
+            self.log.debug("ev %s will be split into individual trials" % name)
             if not isinstance(bytrial, list):
                 self.log.fatal("bytrial must be a list of 2 arguments [WHICH_TRIALS, TMP_DIRECTORY]")
             if ncols != 3:
@@ -793,7 +793,7 @@ class FsfSubject(SubjectBase):
             which_trials = self._substitute(which_trials)
             basedir = self._substitute(basedir)
             if not op.isdir(basedir):
-                self.log.info("Creating directory %s" % basedir)
+                self.log.debug("creating directory %s" % basedir)
                 os.mkdir(basedir)
             
             if which_trials == 'all':
@@ -818,7 +818,7 @@ class FsfSubject(SubjectBase):
                            bytrial=None, **opts)
             return
         elif bycolumn is not None:
-            self.log.info("ev %s will be split into individual columns" % name)
+            self.log.debug("ev %s will be split into individual columns" % name)
             if not isinstance(bycolumn, list):
                 self.log.fatal("bycolumn must be a list of 2 arguments [WHICH_COLS, TMP_DIRECTORY]")
             x = np.loadtxt(fname)
@@ -826,7 +826,7 @@ class FsfSubject(SubjectBase):
             which_cols = self._substitute(which_cols)
             basedir = self._substitute(basedir)
             if not op.isdir(basedir):
-                self.log.info("Creating directory %s" % basedir)
+                self.log.debug("creating directory %s" % basedir)
                 os.mkdir(basedir)
             
             if which_cols == 'all':
@@ -978,13 +978,13 @@ class BetaSeriesSubject(SubjectBase):
         self.compile()
         
         # TODO: automask? with np.std along the cols of y?
-        self.log.info("loading mask")
+        self.log.info("Loading mask")
         mask = nibabel.load(self.maskfile)
         m = mask.get_data()
         m = m.reshape(np.product(m.shape))
         inds = m.nonzero()[0]
         
-        self.log.info("loading data")
+        self.log.info("Loading data")
         func = nibabel.load(self.infile)
         y = func.get_data()
         # reshape to 2D matrix with rows as time-points and cols as voxels
@@ -992,19 +992,19 @@ class BetaSeriesSubject(SubjectBase):
         ntpts = y.shape[-1]
         y = y.reshape((nvoxs, ntpts)).transpose()
         
-        self.log.info("masking data")
+        self.log.info("Masking data")
         y = y[:,inds]
         
-        self.log.info("creating empty beta-series image")
+        self.log.info("Creating empty beta-series image")
         bseries = np.zeros((nvoxs, self.ntrials), dtype=np.float32)
         
-        self.log.info("work time")
+        self.log.info("Processing:")
         for i in self.trials:
             ii = i - 1
-            self.log.title("Trial #%i", i)
+            self.log.info("...trial #%i", i)
             
             # fsf
-            self.log.subtitle("creating design matrix")
+            self.log.debug("creating design matrix")
             tmp_context = deepcopy(self.template_context)
             tmp_context['bs_trial'] = str(i)
             tmp_config = deepcopy(self.config)
@@ -1017,7 +1017,7 @@ class BetaSeriesSubject(SubjectBase):
             fsf.run()
             
             # regression
-            self.log.subtitle("running regression")
+            self.log.debug("running regression")
             ## get the generated mat file
             outmat = outprefix + ".mat"
             X = np.loadtxt(outmat, skiprows=5)
@@ -1028,7 +1028,7 @@ class BetaSeriesSubject(SubjectBase):
             bseries[inds,ii] = np.squeeze(betas[self.ev_index,:])
         
         # save as nifti
-        self.log.info("saving beta-series")
+        self.log.debug("saving beta-series")
         bseries.shape = tuple(list(func.shape[:3]) + [self.ntrials])
         outfname = op.join(self.outdir, "betaseries.nii.gz")
         hdr = func.get_header()
