@@ -809,10 +809,20 @@ class FsfSubject(SubjectBase):
                                bytrial=None, **opts)
             else:
                 i = int(which_trials)
-                sname = "%s_trial_%04i" % (name, i)
+                if i > ntrials:
+                    self.log.error("trying to access trial #%i in %s with %i trials" % 
+                                   i, fname, ntrials)
+                if i > 0:
+                    sname = "%s_trial%04i" % (name, abs(i))
+                    newlines = [lines[i-1] + "\n"]
+                elif i < 0:
+                    sname = "%s_exclude_trial%04i" % (name, abs(i))
+                    new_lines = [ lines[j]+"\n" for j in xrange(ntrials) if (j+1)!=i ]
+                else:
+                    self.log.error("which trials can't be 0")
                 fn = op.join(basedir, "%s.txt" % sname)
-                f = open(fn, 'w')
-                f.write(lines[i-1] + "\n")
+                f = open(fn, 'w')                
+                f.writelines(new_lines)
                 f.close()
                 self.addEV(sname, fn, orig_conv, tempfilt, tempderiv, 
                            bytrial=None, **opts)
