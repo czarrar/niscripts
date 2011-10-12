@@ -1067,13 +1067,11 @@ class BetaSeriesSubject(SubjectBase):
         
         # Total Number of Trials
         fname = self._substitute(fname)
+        self.fname = fname
         f = open(fname, 'r')
         lines = f.readlines()
         lines = [ l.strip() for l in lines if l.strip() ]
         ntrials = len(lines)
-        print lines
-        print fname
-        print ntrials
         f.close()
         
         # Trials
@@ -1161,6 +1159,10 @@ class BetaSeriesSubject(SubjectBase):
         if self.name not in ks:
             self.log.error("couldn't find beta-series '%s' in EVs", self.name)
         self.ev_index = ks.index(self.name)
+        # check ev filename
+        fname = config['stats']['evs'][self.ev_index].values()[0]['fname']
+        if self.fname != self._substitute(fname):
+            self.log.error("mismatch in EV filename and in beta-series filename")
         # check input functional
         infile = self._substitute(config["data"]["infile"])
         if not op.isfile(infile):
