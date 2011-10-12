@@ -1111,23 +1111,23 @@ class BetaSeriesSubject(SubjectBase):
         
         # Output
         outdir = self._substitute(outdir)
+        ## check
         if op.isdir(outdir):
             if overwrite:
                 self.log.warning("Removing output directory '%s'" % outdir)
                 shutil.rmtree(outdir)
             else:
                 self.log.error("Output directory '%s' already exists" % outdir)
-        else:
-            self.log.debug("creating beta-series output directory '%s'" % 
-                           outdir)
-            os.mkdir(outdir)
-        
+        ## parent directory
         dir_outdir = op.dirname(outdir)
         if not op.isdir(dir_outdir):
             self.log.debug("creating directory '%s' for beta-series output" % 
                             dir_outdir)
             os.mkdir(dir_outdir)
-        
+        ## output directory
+        self.log.debug("creating beta-series output directory '%s'" % 
+                       outdir)
+        os.mkdir(outdir)
         self.outdir = outdir
         
         # Output Type
