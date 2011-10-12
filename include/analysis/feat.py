@@ -813,10 +813,11 @@ class FsfSubject(SubjectBase):
                     self.log.error("trying to access trial #%i in %s with %i trials" % 
                                    i, fname, ntrials)
                 if i > 0:
-                    sname = "%s_trial%04i" % (name, abs(i))
+                    sname = "%s_trial%04i" % (name, i)
                     new_lines = [lines[i-1] + "\n"]
                 elif i < 0:
-                    sname = "%s_exclude_trial%04i" % (name, abs(i))
+                    i = abs(i)
+                    sname = "%s_exclude_trial%04i" % (name, i)
                     new_lines = [ lines[j]+"\n" for j in xrange(ntrials) if (j+1)!=i ]
                 else:
                     self.log.error("which trials can't be 0")
