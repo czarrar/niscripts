@@ -814,7 +814,7 @@ class FsfSubject(SubjectBase):
                                    i, fname, ntrials)
                 if i > 0:
                     sname = "%s_trial%04i" % (name, abs(i))
-                    newlines = [lines[i-1] + "\n"]
+                    new_lines = [lines[i-1] + "\n"]
                 elif i < 0:
                     sname = "%s_exclude_trial%04i" % (name, abs(i))
                     new_lines = [ lines[j]+"\n" for j in xrange(ntrials) if (j+1)!=i ]
