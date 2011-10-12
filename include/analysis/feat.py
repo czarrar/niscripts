@@ -1017,7 +1017,7 @@ class BetaSeriesSubject(SubjectBase):
             fsf.run()
             
             # regression
-            self.log.debug("running regression")
+            self.log.drycommand("running OLS regression")
             ## get the generated mat file
             outmat = outprefix + ".mat"
             X = np.loadtxt(outmat, skiprows=5)
@@ -1116,7 +1116,7 @@ class BetaSeriesSubject(SubjectBase):
                 self.log.warning("Removing output directory '%s'" % outdir)
                 shutil.rmtree(outdir)
             else:
-                self.log.warning("Output directory '%s' already exists" % outdir)
+                self.log.error("Output directory '%s' already exists" % outdir)
         else:
             self.log.debug("creating beta-series output directory '%s'" % 
                            outdir)
@@ -1299,6 +1299,8 @@ class ApplyRegSubject(SubjectBase):
                     else:
                         cmd_opts.append("--%s=%s" % (k,v))
                 many_cmd_opts.append(cmd_opts)
+        else:
+            self.log.fatal("unrecognized regtype: %s" % self.regtype)
         
         self.many_cmd_opts = many_cmd_opts
         return
