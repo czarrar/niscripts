@@ -160,6 +160,9 @@ class NiWrapper(SubjectBase):
                     pre = "--"
                 if isinstance(vo, bool) and vo == True:
                     cmd.append("%s%s" % (pre, ko))
+                elif isinstance(vo, list):
+                    for ivo in vo:
+                        cmd.append("%s%s %s" % (pre, ko, self._substitute(str(ivo))))
                 else:
                     cmd.append("%s%s %s" % (pre, ko, self._substitute(str(vo))))
             if prog in self._niscripts:
