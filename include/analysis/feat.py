@@ -1071,6 +1071,7 @@ class BetaSeriesSubject(SubjectBase):
         lines = f.readlines()
         lines = [ l.strip() for l in lines if l.strip() ]
         ntrials = len(lines)
+        print ntrials
         f.close()
         
         # Trials

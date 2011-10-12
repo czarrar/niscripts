@@ -215,7 +215,7 @@ class NiWrapper(SubjectBase):
             raise Exception("Have not parsed anything yet")
         if self.sge:
             if not self._workingdirs[label]:
-                self.log.warning("no workingdir found")
+                self.log.warning("no workingdir found (this is just a warning...if nothing goes wrong don't worry)")
                 cmd = "%s -s %s" % (cmd_opt, subject)
             else:
                 wd = op.join(self._workingdirs[label], subject)
