@@ -361,8 +361,8 @@ def create_func_preproc_workflow(name='functional_preprocessing', whichvol='midd
     #                        iterfield=["in_file"], name='01_deoblique')
     #preproc.connect(nextnode, nextout, deoblique, "in_file")
     deoblique = pe.MapNode(interface=afni.Threedrefit(deoblique=True), 
-                            iterfield=["infile"], name='01_deoblique')
-    preproc.connect(nextnode, nextout, deoblique, "infile")
+                            iterfield=["in_file"], name='01_deoblique')
+    preproc.connect(nextnode, nextout, deoblique, "in_file")
     
     # TODO:
     # get orientation using following command:

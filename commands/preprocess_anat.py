@@ -154,7 +154,7 @@ def create_ap_bet_workflow(name="preproc_anat_bet"):
     #deoblique = pe.Node(interface=afni.ThreedWarp(deoblique=True), name='deoblique')
     #preproc.connect(inputnode, 'struct', deoblique, 'in_file')
     deoblique = pe.Node(interface=afni.Threedrefit(deoblique=True), name='deoblique')
-    preproc.connect(inputnode, 'struct', deoblique, 'infile')
+    preproc.connect(inputnode, 'struct', deoblique, 'in_file')
     renamer(inputnode, 'struct', 'orig')
     
     # Reorient (so image plays well with registration)
