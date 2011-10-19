@@ -1392,7 +1392,7 @@ class ApplyRegSubject(SubjectBase):
         
         # Paths
         if standard is None:
-            standard = op.join(self.regdir, "run_2_func2std.nii.gz")
+            standard = op.join(self.regdir, "standard.nii.gz")
         self.stdfile = self._substitute(standard)
         if warp is None:
             warp = op.join(self.regdir, "highres2standard_warp.nii.gz")
