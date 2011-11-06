@@ -42,7 +42,8 @@ class NiWrapper(SubjectBase):
         # Setup
         self._parser_help = {}
         self._commands_opts = {}
-        self._long_dash = {}
+        self._short_opt = {}
+        self._long_opt = {}
         for k,opts in self.config.iteritems():
             # help
             if k in self._parser_help:
