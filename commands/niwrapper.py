@@ -5,8 +5,9 @@ import os.path as op
 from datetime import datetime
 from analysis.base import SubjectBase
 from subprocess import Popen
-from zlogger import (LoggerError, LoggerCritical)
+#from zlogger import (LoggerError, LoggerCritical)
 from usage import append_var
+from glob import glob
 
 config_file = "niwrapper.yaml"
 
@@ -15,9 +16,14 @@ def die(msg):
     raise SystemExit(2)
 
 class NiWrapper(SubjectBase):
-    _niscripts = [
-        "preprocess_anat.py", "preprocess_func.py", "register.py", "nuisance_evs.py"
+    # Scripts that make use of nipype
+    _use_nipype = [
+        "preprocess_anat.py", "preprocess_func.py", "register.py", "nuisance_evs.py", 
+        "preprocess_func_p2.py", 
     ]
+    # Scripts in niscripts (that use the -s option)
+    _niscripts = [ op.basename(x) 
+                    for x in glob(op.join(os.getenv("NISCRIPTS"),"commands","*.py")) ]
     
     def __init__(self, config_file):
         # Load config
@@ -36,6 +42,7 @@ class NiWrapper(SubjectBase):
         # Setup
         self._parser_help = {}
         self._commands_opts = {}
+        self._long_dash = {}
         for k,opts in self.config.iteritems():
             # help
             if k in self._parser_help:
@@ -48,6 +55,10 @@ class NiWrapper(SubjectBase):
                 p = opts.pop("program")
             except KeyError:
                 die("Must specify program in config file")
+            # short_opt/long_opt (e.g., - or -- or +)
+            self._short_opt[k] = opts.pop('short_opt', '--')
+            self._long_opt[k] = opts.pop('long_opt', '--')
+            # save options
             self._commands_opts[k] = (p, opts)
         
         self._is_parsed = False
@@ -155,9 +166,9 @@ class NiWrapper(SubjectBase):
                 self._workingdirs[k] = self._substitute(w)
             for ko,vo in opts.iteritems():
                 if len(ko) == 1:
-                    pre = "-"
+                    pre = self._short_opt[k]
                 else:
-                    pre = "--"
+                    pre = self._long_opt[k]
                 if isinstance(vo, bool) and vo == True:
                     cmd.append("%s%s" % (pre, ko))
                 elif isinstance(vo, list):
@@ -165,7 +176,7 @@ class NiWrapper(SubjectBase):
                         cmd.append("%s%s %s" % (pre, ko, self._substitute(str(ivo))))
                 else:
                     cmd.append("%s%s %s" % (pre, ko, self._substitute(str(vo))))
-            if prog in self._niscripts:
+            if prog in self._use_nipype:
                 cmd.append("--crash-dir %s" % op.join(self.logdir, "crashes"))
             commands[k] = "%s %s" % (prog, " ".join(cmd))
         self._commands = commands
@@ -175,19 +186,18 @@ class NiWrapper(SubjectBase):
         if not self._is_parsed:
             raise Exception("Have not parsed anything yet")
         
-        self.compile()
         self.log.info("Running")
-        
-        self.log.debug("checking command labels")
-        for k in self.run_keys:
-            if k not in self._commands:
-                self.log.error("Could not find command label %s" % k)
-        
+                
         self.log.debug("loop through each participant and run command")
         if self.sge:
             self.log.debug("...using SGE")
             self._setup_sge()
         if self.processors > 1:
+            self.compile()
+            self.log.debug("checking command labels")
+            for k in self.run_keys:
+                if k not in self._commands:
+                    self.log.error("Could not find command label %s" % k)
             for k in self.run_keys:
                 self.log.subtitle("command: %s" % k)
                 cmd = "%s --plugin MultiProc %i -s %s" % (self._commands[k], self.processors, 
@@ -196,9 +206,16 @@ class NiWrapper(SubjectBase):
         else:
             for s in self.subjects:
                 self.log.title("Subject: %s" % s)
+                self.template_context['subject'] = s
+                self.compile()
+                self.log.debug("checking command labels")
+                for k in self.run_keys:
+                    if k not in self._commands:
+                        self.log.error("Could not find command label %s" % k)
                 for k in self.run_keys:
                     self.log.subtitle("command: %s" % k)
-                    self._execute(self._commands[k], s, k)        
+                    self._execute(self._commands[k], s, k)
+                del self.template_context['subject']
         return
     
     def _setup_sge(self):
@@ -213,15 +230,18 @@ class NiWrapper(SubjectBase):
     def _execute(self, cmd_opt, subject=None, label=None):
         if not self._is_parsed:
             raise Exception("Have not parsed anything yet")
+        prog = cmd_opt.split(" ")[0]
         if self.sge:
             if not self._workingdirs[label]:
-                self.log.warning("no workingdir found (this is just a warning...if nothing goes wrong don't worry)")
-                cmd = "%s -s %s" % (cmd_opt, subject)
+                if prog in self._use_nipype:
+                    self.log.error("You must specify the workingdir for %s", prog)
             else:
                 wd = op.join(self._workingdirs[label], subject)
                 if not op.isdir(wd):
                     os.mkdir(wd)
-                cmd = "%s --workingdir %s -s %s" % (cmd_opt, wd, subject)
+                cmd_opt = "%s --workingdir %s" % (cmd_opt, wd)
+            if prog in self._niscripts:
+                cmd = "%s -s %s" % (cmd_opt, subject)
             if subject is None or label is None:
                 self.log.fatal("Must specificy subject and label for _execute")
             script = op.join(self.sge_scripts, "x_%s_%s.bash" % (subject, label))
@@ -236,7 +256,10 @@ class NiWrapper(SubjectBase):
             # New command
             cmd = "qsub %s -o '%s' '%s'" % (self.sge_opts, output, script)
         elif subject is not None:
-            cmd = "%s -s %s" % (cmd_opt, subject)
+            if prog in self._niscripts:
+                cmd = "%s -s %s" % (cmd_opt, subject)
+            else:
+                cmd = "%s" % cmd_opt
         else:
             cmd = "%s" % cmd_opt
         # Execute
