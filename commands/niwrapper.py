@@ -59,7 +59,7 @@ class NiWrapper(SubjectBase):
         self._outputs = {}
         self._overwrite = {}
         self._create_dirs = {}
-        self._commands_opts = {}
+        self._command_opts = {}
         for k,opts in self.config.iteritems():
             try:
                 params = opts.pop("_params")
