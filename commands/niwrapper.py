@@ -45,6 +45,12 @@ class NiWrapper(SubjectBase):
         self.require_user_vars = self.config.pop("require_user_vars", [])
         
         # Setup
+        self._setup_command_opts()
+        
+        self._is_parsed = False
+        return
+    
+    def _setup_command_opts(self):
         self._parser_help = {}
         self._commands_opts = {}
         self._short_opt = {}
@@ -53,12 +59,7 @@ class NiWrapper(SubjectBase):
         self._outputs = {}
         self._overwrite = {}
         self._create_dirs = {}
-        self._setup_command_opts()
-        
-        self._is_parsed = False
-        return
-    
-    def _setup_command_opts(self):
+        self._commands_opts = {}
         for k,opts in self.config.iteritems():
             try:
                 params = opts.pop("_params")
