@@ -59,7 +59,6 @@ class NiWrapper(SubjectBase):
         self._outputs = {}
         self._overwrite = {}
         self._create_dirs = {}
-        self._command_opts = {}
         for k,opts in self.config.iteritems():
             try:
                 params = opts.pop("_params")
@@ -110,7 +109,7 @@ class NiWrapper(SubjectBase):
                 die('some stuff is still left in params for %s: %s' % (k, params))
             # save options
             self._commands_opts[k] = (p, opts)
-        return self._command_opts
+        return self._commands_opts
     
     def setup(self, run_keys, log_dir, subjects, sge, sge_opts, verbosity, processors, 
                 dry_run=False, vars={}, **cmds):
@@ -286,8 +285,9 @@ class NiWrapper(SubjectBase):
                     os.mkdir(d)
         if self.sge:
             if not self._workingdirs[label]:
+                print self._workingdirs
                 if prog in self._use_nipype:
-                    self.log.error("You must specify the workingdir for %s", prog)
+                    self.log.error("You must specify the workingdir for %s" % prog)
             else:
                 wd = op.join(self._workingdirs[label], subject)
                 if not op.isdir(wd):
