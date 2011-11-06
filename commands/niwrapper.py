@@ -15,6 +15,11 @@ def die(msg):
     print "ERROR: %s" % msg
     raise SystemExit(2)
 
+def tolist(x):
+    if not isinstance(x, list):
+        x = [x]
+    return x
+
 class NiWrapper(SubjectBase):
     # Scripts that make use of nipype
     _use_nipype = [
@@ -44,26 +49,67 @@ class NiWrapper(SubjectBase):
         self._commands_opts = {}
         self._short_opt = {}
         self._long_opt = {}
+        self._setup_command_opts()
+        self._inputs = {}
+        self._outputs = {}
+        self._overwrite = {}
+        self._create_dirs = {}
+        
+        self._is_parsed = False
+        return
+    
+    def _setup_command_opts(self):
         for k,opts in self.config.iteritems():
+            try:
+                params = opts.pop("_params")
+            except KeyError:
+                die("You must specify the program paramaters (_params) in %s" % k)
             # help
             if k in self._parser_help:
                 die("Duplicate sub-command %s" % k)
-            self._parser_help[k] = opts.pop("help", "sub-command")
+            self._parser_help[k] = params.pop("help", "sub-command")
             # command
             if k in self._commands_opts:
                 die("Duplicate sub-command %s" % k)
             try:
-                p = opts.pop("program")
+                p = params.pop("program")
             except KeyError:
-                die("Must specify program in config file")
+                die("Must specify program in config file (within _params of %s)" % k)
             # short_opt/long_opt (e.g., - or -- or +)
-            self._short_opt[k] = opts.pop('short_opt', '--')
-            self._long_opt[k] = opts.pop('long_opt', '--')
+            self._short_opt[k] = params.pop('short_opt', '-')
+            self._long_opt[k] = params.pop('long_opt', '--')
+            # inputs to check
+            self._inputs[k] = {}
+            if 'in_opts' in params:
+                inopts = tolist(params.pop('in_opts'))
+                for inopt in inopts:
+                    if inopt not in opts:
+                        die("%s specified in in_opts but not an option in %s" % 
+                                (inopt, k))
+                    self._inputs[k].extend(str(opts[inopt]))
+            if 'inputs' in params:
+                self._inputs[k].append(tolist(params.pop('inputs')))
+            # outputs to check
+            self._outputs[k] = {}
+            if 'out_opts' in params:
+                outopts = tolist(params.pop('out_opts'))
+                for outopt in outopts:
+                    if outopt not in opts:
+                        die("%s specified in out_opts but not an option in %s" % 
+                                (outopt, k))
+                    self._outputs[k].append(str(opts[outopt]))
+            if 'outputs' in params:
+                self._outputs[k].extend(tolist(params.pop('outputs')))
+            # overwrite?
+            self._overwrite[k] = params.pop('overwrite', False)
+            # ensure certain directories exist before running program
+            self._create_dirs[k] = tolist(params.pop('create_dirs', []))
+            # check params
+            if params:
+                die('some stuff is still left in params for %s: %s' % (k, params))
             # save options
             self._commands_opts[k] = (p, opts)
-        
-        self._is_parsed = False
-        return
+        return self._command_opts
     
     def setup(self, run_keys, log_dir, subjects, sge, sge_opts, verbosity, processors, 
                 dry_run=False, vars={}, **cmds):
@@ -232,6 +278,11 @@ class NiWrapper(SubjectBase):
         if not self._is_parsed:
             raise Exception("Have not parsed anything yet")
         prog = cmd_opt.split(" ")[0]
+        if self._create_dirs[label]:
+            for d in self._create_dirs[label]:
+                if not op.isdir(d):
+                    self.log.debug("creating directory %s" % d)
+                    os.mkdir(d)
         if self.sge:
             if not self._workingdirs[label]:
                 if prog in self._use_nipype:
