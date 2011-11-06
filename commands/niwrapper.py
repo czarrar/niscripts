@@ -48,12 +48,12 @@ class NiWrapper(SubjectBase):
         self._parser_help = {}
         self._commands_opts = {}
         self._short_opt = {}
-        self._long_opt = {}
-        self._setup_command_opts()
+        self._long_opt = {}        
         self._inputs = {}
         self._outputs = {}
         self._overwrite = {}
         self._create_dirs = {}
+        self._setup_command_opts()
         
         self._is_parsed = False
         return
