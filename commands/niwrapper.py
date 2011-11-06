@@ -207,7 +207,7 @@ class NiWrapper(SubjectBase):
         commands = {}
         self._workingdirs = {}
         commands_opts = deepcopy(self._commands_opts)
-        for k,v in command_opts.iteritems():
+        for k,v in commands_opts.iteritems():
             cmd = []
             prog,opts = v
             if self.sge:
