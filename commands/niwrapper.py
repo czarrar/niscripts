@@ -8,6 +8,7 @@ from subprocess import Popen
 #from zlogger import (LoggerError, LoggerCritical)
 from usage import append_var
 from glob import glob
+from copy import deepcopy
 
 config_file = "niwrapper.yaml"
 
@@ -205,7 +206,8 @@ class NiWrapper(SubjectBase):
         self.log.info("Compiling")
         commands = {}
         self._workingdirs = {}
-        for k,v in self._commands_opts.iteritems():
+        commands_opts = deepcopy(self._commands_opts)
+        for k,v in command_opts.iteritems():
             cmd = []
             prog,opts = v
             if self.sge:
