@@ -266,7 +266,7 @@ class SubjectBase(Base):
         f = file(outfile, 'w')
         cmd = "cat %s" % " ".join(new_infiles)
         self.log.drycommand(cmd)
-        p = Popen(cmd, shell=True)  # ghetto fix
+        p = Popen(cmd, shell=True, stdout=f)  # ghetto fix
         p.communicate()
         if p.returncode != 0:
             self.log.error("Error running cat")
