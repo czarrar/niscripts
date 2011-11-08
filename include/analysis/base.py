@@ -2,6 +2,7 @@ import zlogger, re, os, shutil
 import os.path as op
 from glob import glob
 from string import Template
+from subprocess import Popen, PIPE
 
 import sys
 sys.path.append(os.path.join(os.environ.get("NISCRIPTS"), "include"))
@@ -263,8 +264,12 @@ class SubjectBase(Base):
         outfile = self._substitute(outfile)
         self.log.info("Creating new combined motion file '%s'" % outfile)
         f = file(outfile, 'w')
-        p = Process("cat %s" % " ".join(new_infiles), stdout=f, to_print=True)
-        print p.stderr
+        cmd = "cat %s" % " ".join(new_infiles)
+        self.log.drycommand(cmd)
+        p = Popen(cmd, shell=True)  # ghetto fix
+        p.communicate()
+        if p.returncode != 0:
+            self.log.error("Error running cat")
         self.outmotion = outfile
         
         return
