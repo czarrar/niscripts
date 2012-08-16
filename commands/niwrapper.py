@@ -251,7 +251,7 @@ class NiWrapper(SubjectBase):
                 self.log.subtitle("command: %s" % k)
                 cmd = "%s --plugin MultiProc %i -s %s" % (self._commands[k], self.processors, 
                                                             " ".join(self.subjects))
-                self._execute(cmd)
+                self._execute(cmd, label=k)
         else:
             for s in self.subjects:
                 self.log.title("Subject: %s" % s)
